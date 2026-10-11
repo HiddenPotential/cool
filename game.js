@@ -56,6 +56,7 @@ const defaultState = () => ({
   totalHatches: 0,
   lastDaily: null,  // 'YYYY-MM-DD'
   lastSeen: Date.now(),
+  sound: true,
 });
 
 let state = load();
@@ -172,47 +173,196 @@ function petCard(pet, { level, extra, locked } = {}) {
   return div;
 }
 
-function playHatch(results) {
-  hatching = true;
-  updateHud();
-  const egg = $('#egg');
-  egg.classList.add('shake');
-  $('#results').innerHTML = '';
+// ---------- Sound (tiny WebAudio synth) ----------
+let audio;
+function tone(freq, { dur = 0.15, type = 'sine', vol = 0.15, delay = 0, slide = 0 } = {}) {
+  if (!state.sound) return;
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const t = audio.currentTime + delay;
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    if (slide) osc.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(gain).connect(audio.destination);
+    osc.start(t);
+    osc.stop(t + dur);
+  } catch (e) { /* audio unavailable */ }
+}
+const sfx = {
+  charge: (step) => tone(260 * Math.pow(1.26, step), { dur: 0.25, type: 'triangle', slide: 1.2 }),
+  crack: () => tone(900, { dur: 0.08, type: 'square', vol: 0.06 }),
+  pop: () => tone(180, { dur: 0.35, type: 'sawtooth', vol: 0.12, slide: 0.3 }),
+  reveal: (tier) => [0, 4, 7, 12, 16].slice(0, 2 + tier).forEach((semi, i) =>
+    tone(523 * Math.pow(2, semi / 12), { dur: 0.5, type: 'triangle', vol: 0.12, delay: i * 0.09 })),
+  flip: (tier) => tone(600 + tier * 180, { dur: 0.1, type: 'sine', vol: 0.08 }),
+};
 
-  setTimeout(() => {
-    egg.classList.remove('shake');
-    const box = $('#results');
-    results.forEach((r, i) => {
-      const extra = r.isNew ? 'NEW' : r.levelUp ? 'LV UP' : r.refund ? `+${r.refund}🪙` : '';
-      const card = petCard(r.pet, { level: r.level, extra });
-      card.classList.add('reveal');
-      card.style.animationDelay = `${i * 0.08}s`;
-      box.appendChild(card);
-    });
+// ---------- Pull animation ----------
+const stage = $('#stage');
+let skipping = false;
+let wakeUp = null;
 
-    // Big reveal for the best rare pull
-    const best = results.reduce((a, b) =>
-      RARITY_ORDER.indexOf(b.pet.rarity) > RARITY_ORDER.indexOf(a.pet.rarity) ? b : a);
-    if (RARITY_ORDER.indexOf(best.pet.rarity) >= RARITY_ORDER.indexOf('legendary')) {
-      setTimeout(() => showModal(best), results.length * 80 + 200);
-    }
-
-    hatching = false;
-    renderAll();
-  }, 700);
+function wait(ms) {
+  if (skipping) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => { clearTimeout(timer); wakeUp = null; resolve(); };
+    const timer = setTimeout(done, ms);
+    wakeUp = done;
+  });
 }
 
-function showModal(result) {
-  const { pet } = result;
-  const card = $('.modal-card');
-  card.className = `modal-card ${pet.rarity}`;
-  $('#modal-body').innerHTML = `
-    <div class="big">${pet.emoji}</div>
-    <h2>${pet.name}</h2>
-    <div class="rarity" style="color:var(--rc);font-weight:700">${RARITIES[pet.rarity].label.toUpperCase()}</div>
-    <p>${result.isNew ? 'A new friend joins your collection!' : `Now level ${result.level}!`}</p>
+function waitTap(autoMs) {
+  return new Promise((resolve) => {
+    let timer;
+    const done = () => { clearTimeout(timer); stage.onclick = null; resolve(); };
+    // brief delay so the tap that skipped the intro doesn't also dismiss the reveal
+    setTimeout(() => { stage.onclick = done; }, 250);
+    if (autoMs) timer = setTimeout(done, autoMs);
+  });
+}
+
+function burst(tier) {
+  const box = stage.querySelector('.particles');
+  box.innerHTML = '';
+  const count = 18 + tier * 16;
+  const symbols = ['✨', '⭐', '💫', '🌟'];
+  const confetti = ['#ff4f8b', '#ffb52e', '#7dff6a', '#4aa8ff', '#c063ff'];
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('span');
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 120 + Math.random() * (160 + tier * 70);
+    const isStar = tier >= 2 && Math.random() < 0.45;
+    p.className = isStar ? 'particle' : 'particle dot';
+    if (isStar) p.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    if (!isStar && tier === 4) p.style.setProperty('--c', confetti[i % confetti.length]);
+    p.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+    p.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+    p.style.setProperty('--rot', `${Math.random() * 720 - 360}deg`);
+    p.style.setProperty('--size', isStar ? `${16 + Math.random() * 18}px` : `${5 + Math.random() * 7}px`);
+    p.style.setProperty('--dur', `${0.7 + Math.random() * 0.7}s`);
+    box.appendChild(p);
+  }
+}
+
+function resetStage() {
+  stage.className = 'stage-overlay';
+  stage.dataset.glow = 'common';
+  stage.style.setProperty('--amp', 3);
+  stage.querySelector('.particles').innerHTML = '';
+  stage.querySelector('.stage-pet').innerHTML = '';
+  stage.querySelector('.flash').classList.remove('go');
+  stage.querySelector('.stage-hint').textContent = 'Tap to skip';
+}
+
+async function playStage(best, count) {
+  const tier = RARITY_ORDER.indexOf(best.pet.rarity);
+  skipping = false;
+  resetStage();
+  stage.onclick = () => { skipping = true; if (wakeUp) wakeUp(); };
+
+  // 1. Charge up: the glow climbs one rarity at a time until it reaches the best pull
+  stage.classList.add('charging');
+  for (let step = 0; step <= Math.max(tier, 1); step++) {
+    const shown = Math.min(step, tier);
+    stage.dataset.glow = RARITY_ORDER[shown];
+    stage.style.setProperty('--amp', 3 + step * 3);
+    stage.classList.toggle('rays-on', shown >= 2);
+    if (!skipping) {
+      sfx.charge(step);
+      // little hop each time the egg "upgrades"
+      stage.classList.remove('hop'); void stage.offsetWidth;
+      if (step > 0 && shown === step) stage.classList.add('hop');
+    }
+    await wait(step === 0 ? 650 : 520);
+    stage.classList.remove('hop');
+  }
+
+  // 2. Crack (with a dramatic hold + quake for Legendary/Mythic)
+  stage.classList.add('cracking');
+  if (!skipping) sfx.crack();
+  if (tier >= 3) {
+    stage.classList.add('quake');
+    await wait(tier === 4 ? 1100 : 700);
+  } else {
+    await wait(450);
+  }
+
+  // 3. Burst open
+  stage.classList.remove('charging', 'quake');
+  stage.classList.add('open');
+  const flash = stage.querySelector('.flash');
+  flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+  burst(tier);
+  sfx.pop();
+  sfx.reveal(tier);
+
+  // 4. Show the best pet
+  const { pet } = best;
+  stage.querySelector('.stage-pet').innerHTML = `
+    <div class="big ${tier >= 3 ? 'float' : ''}">${pet.emoji}</div>
+    <div class="label">${RARITIES[pet.rarity].label.toUpperCase()}${tier >= 3 ? '!' : ''}</div>
+    <div class="pname">${pet.name}</div>
+    <div class="sub">${count > 1 ? `Best of ${count} · ` : ''}Lv ${best.level}</div>
+    ${best.isNew ? '<div class="new">NEW!</div>' : ''}
   `;
-  $('#modal').classList.remove('hidden');
+  stage.querySelector('.stage-hint').textContent = count > 1 ? 'Tap to see all pets' : 'Tap to continue';
+  await waitTap(tier <= 1 ? 1800 : null);
+
+  stage.classList.add('closing');
+  await new Promise((r) => setTimeout(r, 250));
+  stage.classList.add('hidden');
+}
+
+function dealCards(results, fast) {
+  const box = $('#results');
+  box.innerHTML = '';
+  const cards = results.map((r, i) => {
+    const extra = r.isNew ? 'NEW' : r.levelUp ? 'LV UP' : r.refund ? `+${r.refund}🪙` : '';
+    const wrap = document.createElement('div');
+    wrap.className = 'flip deal';
+    wrap.style.animationDelay = `${i * 0.04}s`;
+    const inner = document.createElement('div');
+    inner.className = 'flip-inner';
+    const back = document.createElement('div');
+    back.className = `card-back ${r.pet.rarity}`;
+    back.textContent = '🥚';
+    inner.append(back, petCard(r.pet, { level: r.level, extra }));
+    wrap.appendChild(inner);
+    box.appendChild(wrap);
+    return wrap;
+  });
+
+  // Flip one by one; save the rarest for last so the row ends on a high note
+  const order = cards.map((c, i) => i)
+    .sort((a, b) => RARITY_ORDER.indexOf(results[a].pet.rarity) - RARITY_ORDER.indexOf(results[b].pet.rarity));
+  const step = fast ? 60 : 170;
+  order.forEach((idx, n) => {
+    setTimeout(() => {
+      cards[idx].classList.add('flipped');
+      sfx.flip(RARITY_ORDER.indexOf(results[idx].pet.rarity));
+    }, 400 + n * step);
+  });
+  return 400 + order.length * step;
+}
+
+async function playHatch(results) {
+  hatching = true;
+  updateHud();
+  $('#results').innerHTML = '';
+
+  const best = results.reduce((a, b) =>
+    RARITY_ORDER.indexOf(b.pet.rarity) > RARITY_ORDER.indexOf(a.pet.rarity) ? b : a);
+  await playStage(best, results.length);
+
+  const dealTime = results.length > 1 ? dealCards(results, skipping) : (dealCards(results, true), 0);
+  setTimeout(() => {
+    hatching = false;
+    renderAll();
+  }, dealTime);
 }
 
 let filter = 'all';
@@ -317,7 +467,12 @@ $('#daily').onclick = () => {
   toast(`🎁 You got ${DAILY_GIFT} coins!`);
 };
 
-$('#modal-close').onclick = () => $('#modal').classList.add('hidden');
+$('#sound').onclick = () => {
+  state.sound = !state.sound;
+  $('#sound').textContent = state.sound ? '🔊' : '🔇';
+  save();
+};
+$('#sound').textContent = state.sound ? '🔊' : '🔇';
 
 $('#reset').onclick = () => {
   if (!confirm('Erase all pets and coins and start over?')) return;

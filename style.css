@@ -134,21 +134,184 @@ main { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; }
 .rates td:first-child { color: var(--rc); font-weight: 600; }
 .rules { color: var(--muted); line-height: 1.6; padding-left: 20px; }
 
-/* Modal */
-.modal {
-  position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 10;
-  display: flex; align-items: center; justify-content: center; padding: 16px;
+.icon-btn { background: none; border: 0; font-size: 1.1rem; padding: 0 2px; }
+
+/* ---------- Pull stage ---------- */
+.stage-overlay {
+  position: fixed; inset: 0; z-index: 10; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  --glow: #ffffff; --amp: 3; user-select: none; -webkit-tap-highlight-color: transparent;
+  animation: fadeIn .2s;
 }
-.modal.hidden { display: none; }
-.modal-card {
-  background: var(--bg2); border-radius: 18px; padding: 24px; text-align: center;
-  max-width: 340px; width: 100%; border: 2px solid var(--rc, var(--accent));
-  box-shadow: 0 0 40px var(--rc, transparent);
-  animation: pop .45s;
+.stage-overlay.hidden { display: none; }
+.stage-overlay.closing { animation: fadeOut .25s forwards; }
+.stage-overlay[data-glow="rare"]      { --glow: var(--rare); }
+.stage-overlay[data-glow="epic"]      { --glow: var(--epic); }
+.stage-overlay[data-glow="legendary"] { --glow: var(--legendary); }
+.stage-overlay[data-glow="mythic"]    { --glow: var(--mythic); }
+
+.stage-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--glow) 35%, #120d24), #07050f 70%);
+  transition: background .4s;
 }
-.modal-card .big { font-size: 96px; }
-.modal-card h2 { margin: 6px 0 2px; }
-.modal-card p { color: var(--muted); margin: 4px 0 16px; }
+.stage-overlay[data-glow="mythic"] .stage-bg,
+.stage-overlay[data-glow="mythic"] .rays { animation: rainbow 1.2s linear infinite; }
+
+.rays {
+  position: absolute; width: 180vmax; height: 180vmax; left: 50%; top: 45%;
+  translate: -50% -50%; opacity: 0; transition: opacity .5s;
+  background: repeating-conic-gradient(from 0deg,
+    color-mix(in srgb, var(--glow) 55%, transparent) 0deg 8deg, transparent 8deg 22deg);
+  -webkit-mask: radial-gradient(circle, #000 0%, transparent 45%);
+          mask: radial-gradient(circle, #000 0%, transparent 45%);
+}
+.stage-overlay.rays-on .rays { opacity: 1; }
+.rays { animation: spin 14s linear infinite; }
+.stage-overlay[data-glow="mythic"] .rays { animation: spin 6s linear infinite, rainbow 1.2s linear infinite; }
+
+.stage-egg {
+  position: relative; width: 1em; height: 1.2em; font-size: 170px;
+  margin-top: -40px; transition: filter .4s;
+  filter: drop-shadow(0 0 calc(10px + var(--amp) * 3px) var(--glow));
+}
+.stage-egg .half {
+  position: absolute; inset: 0; line-height: 1.2em; text-align: center;
+  transition: transform .55s cubic-bezier(.2,.8,.3,1), opacity .55s;
+}
+.stage-egg .top    { clip-path: polygon(0 0,100% 0,100% 50%,76% 50%,68% 56%,60% 44%,52% 58%,44% 44%,36% 58%,28% 50%,0 50%); }
+.stage-egg .bottom { clip-path: polygon(0 50%,28% 50%,36% 58%,44% 44%,52% 58%,60% 44%,68% 56%,76% 50%,100% 50%,100% 100%,0 100%); }
+.stage-overlay.charging .stage-egg { animation: wobble calc(.5s - var(--amp) * .025s) ease-in-out infinite; }
+.stage-overlay.hop .stage-egg { animation: hop .35s ease-out; }
+
+.crack { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.crack polyline {
+  fill: none; stroke: #2a1c08; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round;
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+  filter: drop-shadow(0 0 4px var(--glow));
+}
+.stage-overlay.cracking .crack polyline { transition: stroke-dashoffset .45s ease-in; stroke-dashoffset: 0; }
+
+.stage-overlay.open .stage-egg { animation: none; }
+.stage-overlay.open .crack { opacity: 0; }
+.stage-overlay.open .top    { transform: translate(-60px, -110px) rotate(-35deg); opacity: 0; }
+.stage-overlay.open .bottom { transform: translate(40px, 90px) rotate(20deg); opacity: 0; }
+
+.stage-overlay.quake { animation: quake .5s linear infinite; }
+
+.flash {
+  position: absolute; inset: 0; background: var(--glow); opacity: 0; pointer-events: none;
+}
+.flash.go { animation: flash .6s ease-out; }
+
+.particles { position: absolute; left: 50%; top: calc(45% - 20px); width: 0; height: 0; }
+.particle {
+  position: absolute; left: 0; top: 0; translate: -50% -50%;
+  font-size: var(--size); color: var(--glow);
+  animation: burst var(--dur) cubic-bezier(.1,.8,.3,1) forwards;
+}
+.particle.dot {
+  width: var(--size); height: var(--size); border-radius: 50%;
+  background: var(--c, var(--glow)); box-shadow: 0 0 8px var(--c, var(--glow));
+}
+
+.stage-pet {
+  position: absolute; top: 45%; left: 50%; translate: -50% -50%;
+  text-align: center; pointer-events: none; margin-top: -20px;
+}
+.stage-pet .big {
+  font-size: 150px; line-height: 1;
+  filter: drop-shadow(0 0 25px var(--glow));
+  animation: emerge .7s cubic-bezier(.2,1.4,.4,1) backwards;
+}
+.stage-pet .big.float { animation: emerge .7s cubic-bezier(.2,1.4,.4,1) backwards, bob 2.4s .7s ease-in-out infinite; }
+.stage-pet .label {
+  font-size: 1.1rem; font-weight: 800; letter-spacing: .35em; color: var(--glow);
+  margin-top: 14px; animation: slam .5s .35s backwards; text-shadow: 0 0 12px var(--glow);
+}
+.stage-overlay[data-glow="mythic"] .stage-pet .label {
+  background: linear-gradient(90deg, #ff4f8b, #ffb52e, #7dff6a, #4aa8ff, #c063ff, #ff4f8b);
+  background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
+  color: transparent; text-shadow: none; animation: slam .5s .35s backwards, slide 2s linear infinite;
+}
+.stage-pet .pname { font-size: 1.8rem; font-weight: 700; margin-top: 4px; animation: rise .4s .5s backwards; }
+.stage-pet .sub { color: var(--muted); margin-top: 6px; animation: rise .4s .65s backwards; }
+.stage-pet .new {
+  display: inline-block; background: var(--mythic); color: #fff; font-weight: 800; font-size: .8rem;
+  padding: 3px 8px; border-radius: 6px; margin-top: 10px; animation: slam .4s .8s backwards;
+}
+
+.stage-hint {
+  position: absolute; bottom: 28px; left: 0; right: 0; text-align: center;
+  color: rgba(255,255,255,.55); font-size: .85rem; animation: pulse 1.6s ease-in-out infinite;
+}
+
+/* Result cards: face down, then flip */
+.flip { perspective: 600px; }
+.flip-inner {
+  position: relative; transform-style: preserve-3d; height: 100%;
+  transition: transform .5s cubic-bezier(.3,1.4,.5,1);
+}
+.flip.flipped .flip-inner { transform: rotateY(180deg); }
+.flip .pet, .card-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; height: 100%; }
+.flip .pet { transform: rotateY(180deg); }
+.card-back {
+  position: absolute; inset: 0; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; font-size: 34px;
+  background: repeating-linear-gradient(45deg, #3d3166 0 8px, #342a5a 8px 16px);
+  border: 2px solid var(--rc); box-shadow: 0 0 12px color-mix(in srgb, var(--rc) 60%, transparent);
+}
+.flip.deal { animation: deal .35s backwards; }
+.card-back.legendary, .card-back.mythic { animation: throb .8s ease-in-out infinite; }
+.flip.flipped .pet.rare::after,
+.flip.flipped .pet.epic::after,
+.flip.flipped .pet.legendary::after,
+.flip.flipped .pet.mythic::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.55) 50%, transparent 60%) no-repeat;
+  background-size: 250% 100%; background-position: -150% 0;
+  animation: shine 1s .35s ease-out;
+}
+.flip.flipped .pet.legendary, .flip.flipped .pet.mythic { animation: celebrate .6s .3s; }
+
+@keyframes fadeIn  { from { opacity: 0; } }
+@keyframes fadeOut { to { opacity: 0; } }
+@keyframes spin    { to { rotate: 360deg; } }
+@keyframes rainbow { to { filter: hue-rotate(360deg); } }
+@keyframes wobble {
+  0%, 100% { transform: rotate(0) translateY(0); }
+  25% { transform: rotate(calc(var(--amp) * -1.5deg)) translateY(-2px); }
+  75% { transform: rotate(calc(var(--amp) * 1.5deg)) translateY(-2px); }
+}
+@keyframes hop { 40% { transform: translateY(-28px) scale(1.06, .95); } 70% { transform: translateY(0) scale(.95, 1.05); } }
+@keyframes quake {
+  0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(5px, -4px); } 60% { transform: translate(-4px, -3px); } 80% { transform: translate(6px, 4px); }
+}
+@keyframes flash { 0% { opacity: 0; } 15% { opacity: .95; } 100% { opacity: 0; } }
+@keyframes burst {
+  0% { transform: translate(0, 0) scale(.3) rotate(0); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1) rotate(var(--rot)); opacity: 0; }
+}
+@keyframes emerge {
+  0% { transform: translateY(60px) scale(0); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes bob { 50% { transform: translateY(-10px); } }
+@keyframes slam { 0% { transform: scale(2.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes rise { from { transform: translateY(14px); opacity: 0; } }
+@keyframes slide { to { background-position: 200% 0; } }
+@keyframes pulse { 50% { opacity: .25; } }
+@keyframes deal { from { transform: translateY(40px) scale(.6); opacity: 0; } }
+@keyframes throb { 50% { box-shadow: 0 0 26px var(--rc); } }
+@keyframes shine { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+@keyframes celebrate { 30% { transform: rotateY(180deg) scale(1.15); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-overlay *, .flip * { animation-duration: .01s !important; transition-duration: .01s !important; }
+  .stage-overlay.quake { animation: none; }
+}
 
 .toast {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px);
