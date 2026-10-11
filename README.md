@@ -4,7 +4,9 @@ A small browser gacha game: hatch eggs, collect 24 pets across 5 rarities, and l
 
 ## Play
 
-Open `index.html` in a browser. No install or build step.
+**Play online:** https://hiddenpotential.github.io/cool/
+
+Open `index.html` in a browser. The whole game is that one file, so you can download just it and double-click it. No install or build step.
 
 You can also run a local server:
 
@@ -13,8 +15,6 @@ python3 -m http.server 8000
 ```
 
 Then visit http://localhost:8000.
-
-To host it for free, turn on **GitHub Pages** (Settings → Pages → Deploy from branch → `main` / root).
 
 ## How it works
 
@@ -37,7 +37,4 @@ To host it for free, turn on **GitHub Pages** (Settings → Pages → Deploy fro
 
 ## Files
 
-- `index.html`: page layout
-- `style.css`: styles and animations
-- `fx.js`: canvas particle effects (sparks, shockwaves, lightning, fireworks, confetti)
-- `game.js`: game logic (pets, drop rates, saving). To add pets or change the odds, edit the `PETS` and `RARITIES` lists at the top.
+Everything is in `index.html`: the styles in the `<style>` tag, the particle effects (sparks, shockwaves, lightning, fireworks, confetti) in the first `<script>`, and the game logic in the second. To add pets or change the odds, edit the `PETS` and `RARITIES` lists at the top of the game script.

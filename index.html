@@ -4,7 +4,392 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pet Gacha</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+:root {
+  --bg: #1b1530;
+  --bg2: #2a2148;
+  --card: #342a5a;
+  --text: #f3efff;
+  --muted: #b3a9d6;
+  --accent: #8b6cff;
+  --gold: #ffc94a;
+  --common: #a9b4c2;
+  --rare: #4aa8ff;
+  --epic: #c063ff;
+  --legendary: #ffb52e;
+  --mythic: #ff4f8b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: radial-gradient(circle at 50% 0%, var(--bg2), var(--bg) 70%) fixed;
+  color: var(--text);
+  min-height: 100vh;
+}
+
+button { font: inherit; color: inherit; cursor: pointer; }
+
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; position: sticky; top: 0; z-index: 5;
+  background: rgba(27, 21, 48, .9); backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.topbar h1 { font-size: 1.3rem; margin: 0; }
+.stats { display: flex; gap: 12px; align-items: baseline; }
+.coins { font-size: 1.2rem; color: var(--gold); }
+.income { color: var(--muted); font-size: .9rem; }
+
+.tabs { display: flex; gap: 6px; padding: 10px 16px; max-width: 900px; margin: 0 auto; }
+.tab {
+  flex: 1; padding: 10px; border: 0; border-radius: 10px;
+  background: var(--card); color: var(--muted);
+}
+.tab.active { background: var(--accent); color: #fff; }
+.tab span { font-size: .8rem; opacity: .8; }
+
+main { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Hatch */
+.stage { text-align: center; padding: 20px 0 10px; }
+.egg {
+  font-size: 110px; line-height: 1; background: none; border: 0;
+  filter: drop-shadow(0 8px 20px rgba(139,108,255,.5));
+  transition: transform .08s; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.egg:active { transform: scale(.92); }
+.egg.shake { animation: shake .5s ease-in-out infinite; }
+.hint { color: var(--muted); font-size: .9rem; margin: 6px 0 0; }
+
+@keyframes shake {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-12deg); }
+  75% { transform: rotate(12deg); }
+}
+
+.pull-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+.btn {
+  border: 0; border-radius: 12px; padding: 12px 20px;
+  background: var(--accent); color: #fff; font-weight: 600;
+  display: inline-flex; flex-direction: column; align-items: center;
+  box-shadow: 0 4px 0 rgba(0,0,0,.3); transition: transform .08s, opacity .2s;
+}
+.btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.3); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn small { font-weight: 400; font-size: .75rem; opacity: .9; }
+.btn-gold { background: linear-gradient(135deg, #ffb52e, #ff7b2e); }
+.btn-small { padding: 8px 14px; font-size: .9rem; }
+.btn-danger { background: #c9384f; }
+#daily { display: flex; margin: 10px auto 0; }
+
+.pity { text-align: center; color: var(--muted); font-size: .85rem; margin: 10px 0 0; }
+
+.results {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px; margin-top: 24px;
+}
+
+/* Pet cards */
+.pet {
+  background: var(--card); border-radius: 14px; padding: 10px 6px; text-align: center;
+  border: 2px solid var(--rc, var(--common)); position: relative;
+  box-shadow: 0 0 0 0 var(--rc);
+}
+.pet .emoji { font-size: 42px; line-height: 1.2; }
+.pet .name { font-size: .85rem; font-weight: 600; margin-top: 4px; }
+.pet .rarity { font-size: .7rem; color: var(--rc); text-transform: uppercase; letter-spacing: .05em; }
+.pet .lvl { font-size: .7rem; color: var(--muted); }
+.pet .tag {
+  position: absolute; top: -8px; right: -6px; font-size: .65rem; font-weight: 700;
+  background: var(--mythic); color: #fff; border-radius: 6px; padding: 2px 5px;
+}
+.pet.reveal { animation: pop .4s backwards; }
+.pet.legendary, .pet.mythic { box-shadow: 0 0 18px var(--rc); }
+.pet.locked { border-color: rgba(255,255,255,.1); }
+.pet.locked .emoji { filter: brightness(0) opacity(.35); }
+.pet.locked .name { color: var(--muted); }
+
+@keyframes pop {
+  from { transform: scale(.3) rotate(-10deg); opacity: 0; }
+  70% { transform: scale(1.1); }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.common    { --rc: var(--common); }
+.rare      { --rc: var(--rare); }
+.epic      { --rc: var(--epic); }
+.legendary { --rc: var(--legendary); }
+.mythic    { --rc: var(--mythic); }
+
+/* Collection */
+.filters { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 14px; }
+.filters button {
+  border: 1px solid rgba(255,255,255,.15); background: transparent;
+  border-radius: 999px; padding: 4px 12px; font-size: .8rem; color: var(--muted);
+}
+.filters button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.dex { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+
+/* Rates */
+.rates { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.rates td, .rates th { padding: 8px; border-bottom: 1px solid rgba(255,255,255,.08); text-align: left; }
+.rates td:first-child { color: var(--rc); font-weight: 600; }
+.rules { color: var(--muted); line-height: 1.6; padding-left: 20px; }
+
+.icon-btn { background: none; border: 0; font-size: 1.1rem; padding: 0 2px; }
+
+/* ---------- Pull stage ---------- */
+.stage-overlay {
+  position: fixed; inset: 0; z-index: 10; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  --glow: #ffffff; --amp: 3; user-select: none; -webkit-tap-highlight-color: transparent;
+  animation: fadeIn .2s;
+}
+.stage-overlay.hidden { display: none; }
+.stage-overlay.closing { animation: fadeOut .25s forwards; }
+.stage-overlay[data-glow="rare"]      { --glow: var(--rare); }
+.stage-overlay[data-glow="epic"]      { --glow: var(--epic); }
+.stage-overlay[data-glow="legendary"] { --glow: var(--legendary); }
+.stage-overlay[data-glow="mythic"]    { --glow: var(--mythic); }
+
+.stage-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--glow) 35%, #120d24), #07050f 70%);
+  transition: background .4s;
+}
+.stage-overlay[data-glow="mythic"] .stage-bg,
+.stage-overlay[data-glow="mythic"] .rays { animation: rainbow 1.2s linear infinite; }
+
+.rays {
+  position: absolute; width: 180vmax; height: 180vmax; left: 50%; top: 45%;
+  translate: -50% -50%; opacity: 0; transition: opacity .5s;
+  background: repeating-conic-gradient(from 0deg,
+    color-mix(in srgb, var(--glow) 55%, transparent) 0deg 8deg, transparent 8deg 22deg);
+  -webkit-mask: radial-gradient(circle, #000 0%, transparent 45%);
+          mask: radial-gradient(circle, #000 0%, transparent 45%);
+}
+.stage-overlay.rays-on .rays { opacity: 1; }
+.rays { animation: spin 14s linear infinite; }
+.stage-overlay[data-glow="mythic"] .rays { animation: spin 6s linear infinite, rainbow 1.2s linear infinite; }
+
+.stage-egg {
+  position: relative; width: 1em; height: 1.2em; font-size: 170px;
+  margin-top: -40px; transition: filter .4s;
+  filter: drop-shadow(0 0 calc(10px + var(--amp) * 3px) var(--glow));
+}
+.stage-egg .half {
+  position: absolute; inset: 0; line-height: 1.2em; text-align: center;
+  transition: transform .55s cubic-bezier(.2,.8,.3,1), opacity .55s;
+}
+.stage-egg .top    { clip-path: polygon(0 0,100% 0,100% 50%,76% 50%,68% 56%,60% 44%,52% 58%,44% 44%,36% 58%,28% 50%,0 50%); }
+.stage-egg .bottom { clip-path: polygon(0 50%,28% 50%,36% 58%,44% 44%,52% 58%,60% 44%,68% 56%,76% 50%,100% 50%,100% 100%,0 100%); }
+.stage-overlay.charging .stage-egg { animation: wobble calc(.5s - var(--amp) * .025s) ease-in-out infinite; }
+.stage-overlay.hop .stage-egg { animation: hop .35s ease-out; }
+
+.crack { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.crack polyline {
+  fill: none; stroke: #2a1c08; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round;
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+  filter: drop-shadow(0 0 4px var(--glow));
+}
+.stage-overlay.cracking .crack polyline { transition: stroke-dashoffset .45s ease-in; stroke-dashoffset: 0; }
+
+.stage-overlay.open .stage-egg { animation: none; }
+.stage-overlay.open .crack { opacity: 0; }
+.stage-overlay.open .top    { transform: translate(-60px, -110px) rotate(-35deg); opacity: 0; }
+.stage-overlay.open .bottom { transform: translate(40px, 90px) rotate(20deg); opacity: 0; }
+
+.stage-bg::after {
+  content: ""; position: absolute; inset: 0; opacity: .7;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 28% 72%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 44% 10%, #fff, transparent),
+    radial-gradient(1px 1px at 63% 84%, #fff, transparent),
+    radial-gradient(2px 2px at 78% 26%, #fff, transparent),
+    radial-gradient(1px 1px at 90% 62%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 6% 88%, #fff, transparent),
+    radial-gradient(1px 1px at 52% 46%, #fff, transparent);
+  background-size: 320px 320px;
+  animation: twinkle 3s ease-in-out infinite alternate;
+}
+
+.stage-overlay.pre .stage-egg { opacity: 0; transform: scale(.4); }
+.stage-overlay.landed .stage-egg { animation: land .45s cubic-bezier(.3,1.6,.5,1); }
+
+.stage-overlay.glitch .stage-egg { animation: glitch .14s steps(2) infinite; }
+.stage-overlay.glitch .stage-bg { animation: glitchBg .2s steps(2) infinite; }
+
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 11; pointer-events: none; }
+.stage-overlay #fx { z-index: 0; }
+.stage-overlay .stage-pet, .stage-overlay .stage-hint { z-index: 1; }
+.stage-overlay .flash { z-index: 2; }
+
+.stage-overlay.quake { animation: quake .5s linear infinite; }
+
+.flash {
+  position: absolute; inset: 0; background: var(--glow); opacity: 0; pointer-events: none;
+}
+.flash.go { animation: flash .6s ease-out; }
+
+.stage-pet {
+  position: absolute; top: 45%; left: 50%; translate: -50% -50%;
+  text-align: center; pointer-events: none; margin-top: -20px;
+  text-shadow: 0 2px 8px rgba(0,0,0,.8);
+}
+.stage-pet .big {
+  font-size: 150px; line-height: 1;
+  filter: drop-shadow(0 0 25px var(--glow));
+  animation: emerge .7s cubic-bezier(.2,1.4,.4,1) backwards;
+}
+.stage-pet .big.float { animation: emerge .7s cubic-bezier(.2,1.4,.4,1) backwards, bob 2.4s .7s ease-in-out infinite; }
+.stage-pet .label {
+  font-size: 1.1rem; font-weight: 800; letter-spacing: .35em; color: var(--glow);
+  margin-top: 14px; animation: slam .5s .35s backwards; text-shadow: 0 0 12px var(--glow);
+}
+.stage-overlay[data-glow="mythic"] .stage-pet .label {
+  background: linear-gradient(90deg, #ff4f8b, #ffb52e, #7dff6a, #4aa8ff, #c063ff, #ff4f8b);
+  background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
+  color: transparent; text-shadow: none; animation: slam .5s .35s backwards, slide 2s linear infinite;
+}
+.stage-pet .pname { font-size: 1.8rem; font-weight: 700; margin-top: 4px; animation: rise .4s .5s backwards; }
+.stage-pet .sub { color: var(--muted); margin-top: 6px; animation: rise .4s .65s backwards; }
+.stage-pet .new {
+  display: inline-block; background: var(--mythic); color: #fff; font-weight: 800; font-size: .8rem;
+  padding: 3px 8px; border-radius: 6px; margin-top: 10px; animation: slam .4s .8s backwards;
+}
+
+.stage-hint {
+  position: absolute; bottom: 28px; left: 0; right: 0; text-align: center;
+  color: rgba(255,255,255,.55); font-size: .85rem; animation: pulse 1.6s ease-in-out infinite;
+}
+
+/* Result cards: face down, then flip */
+.flip { perspective: 600px; }
+.flip-inner {
+  position: relative; transform-style: preserve-3d; height: 100%;
+  transition: transform .5s cubic-bezier(.3,1.4,.5,1);
+}
+.flip.flipped .flip-inner { transform: rotateY(180deg); }
+.flip .pet, .card-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; height: 100%; }
+.flip .pet { transform: rotateY(180deg); }
+.card-back {
+  position: absolute; inset: 0; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; font-size: 34px;
+  background: repeating-linear-gradient(45deg, #3d3166 0 8px, #342a5a 8px 16px);
+  border: 2px solid var(--rc); box-shadow: 0 0 12px color-mix(in srgb, var(--rc) 60%, transparent);
+}
+.flip.deal { animation: deal .35s backwards; }
+.card-back.legendary, .card-back.mythic { animation: throb .8s ease-in-out infinite; }
+.flip.flipped .pet.rare::after,
+.flip.flipped .pet.epic::after,
+.flip.flipped .pet.legendary::after,
+.flip.flipped .pet.mythic::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.55) 50%, transparent 60%) no-repeat;
+  background-size: 250% 100%; background-position: -150% 0;
+  animation: shine 1s .35s ease-out;
+}
+.flip.flipped .pet.legendary, .flip.flipped .pet.mythic { animation: celebrate .6s .3s; }
+
+@keyframes fadeIn  { from { opacity: 0; } }
+@keyframes fadeOut { to { opacity: 0; } }
+@keyframes spin    { to { rotate: 360deg; } }
+@keyframes rainbow { to { filter: hue-rotate(360deg); } }
+@keyframes wobble {
+  0%, 100% { transform: rotate(0) translateY(0); }
+  25% { transform: rotate(calc(var(--amp) * -1.5deg)) translateY(-2px); }
+  75% { transform: rotate(calc(var(--amp) * 1.5deg)) translateY(-2px); }
+}
+@keyframes hop { 40% { transform: translateY(-28px) scale(1.06, .95); } 70% { transform: translateY(0) scale(.95, 1.05); } }
+@keyframes quake {
+  0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(5px, -4px); } 60% { transform: translate(-4px, -3px); } 80% { transform: translate(6px, 4px); }
+}
+@keyframes twinkle { to { opacity: .25; } }
+@keyframes land {
+  0% { transform: scale(.4) translateY(-30px); opacity: 0; }
+  60% { transform: scale(1.12, .88); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes glitch {
+  0% { transform: translate(-8px, 2px) skewX(12deg); filter: hue-rotate(90deg) drop-shadow(6px 0 #ff2a6d) drop-shadow(-6px 0 #05d9e8); }
+  50% { transform: translate(7px, -3px) skewX(-10deg); filter: invert(1) drop-shadow(-6px 0 #ff2a6d) drop-shadow(6px 0 #05d9e8); }
+  100% { transform: translate(-3px, 0); filter: hue-rotate(200deg); }
+}
+@keyframes glitchBg {
+  0% { filter: invert(1) hue-rotate(90deg); }
+  100% { filter: hue-rotate(250deg) saturate(3); }
+}
+@keyframes flash { 0% { opacity: 0; } 15% { opacity: .95; } 100% { opacity: 0; } }
+@keyframes emerge {
+  0% { transform: translateY(60px) scale(0); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes bob { 50% { transform: translateY(-10px); } }
+@keyframes slam { 0% { transform: scale(2.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes rise { from { transform: translateY(14px); opacity: 0; } }
+@keyframes slide { to { background-position: 200% 0; } }
+@keyframes pulse { 50% { opacity: .25; } }
+@keyframes deal { from { transform: translateY(40px) scale(.6); opacity: 0; } }
+@keyframes throb { 50% { box-shadow: 0 0 26px var(--rc); } }
+@keyframes shine { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+@keyframes celebrate { 30% { transform: rotateY(180deg) scale(1.15); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-overlay *, .flip * { animation-duration: .01s !important; transition-duration: .01s !important; }
+  .stage-bg::after {
+  content: ""; position: absolute; inset: 0; opacity: .7;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 28% 72%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 44% 10%, #fff, transparent),
+    radial-gradient(1px 1px at 63% 84%, #fff, transparent),
+    radial-gradient(2px 2px at 78% 26%, #fff, transparent),
+    radial-gradient(1px 1px at 90% 62%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 6% 88%, #fff, transparent),
+    radial-gradient(1px 1px at 52% 46%, #fff, transparent);
+  background-size: 320px 320px;
+  animation: twinkle 3s ease-in-out infinite alternate;
+}
+
+.stage-overlay.pre .stage-egg { opacity: 0; transform: scale(.4); }
+.stage-overlay.landed .stage-egg { animation: land .45s cubic-bezier(.3,1.6,.5,1); }
+
+.stage-overlay.glitch .stage-egg { animation: glitch .14s steps(2) infinite; }
+.stage-overlay.glitch .stage-bg { animation: glitchBg .2s steps(2) infinite; }
+
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 11; pointer-events: none; }
+.stage-overlay #fx { z-index: 0; }
+.stage-overlay .stage-pet, .stage-overlay .stage-hint { z-index: 1; }
+.stage-overlay .flash { z-index: 2; }
+
+.stage-overlay.quake { animation: none; }
+}
+
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--card); padding: 10px 16px; border-radius: 10px; z-index: 20;
+  transition: transform .25s; pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.float-coin {
+  position: fixed; pointer-events: none; color: var(--gold); font-weight: 700;
+  animation: floatUp .8s forwards; z-index: 15;
+}
+@keyframes floatUp { to { transform: translateY(-60px); opacity: 0; } }
+
+@media (max-width: 480px) {
+  .topbar h1 { font-size: 1.05rem; }
+  .egg { font-size: 90px; }
+}
+  </style>
 </head>
 <body>
   <header class="topbar">
@@ -77,7 +462,888 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="fx.js"></script>
-  <script src="game.js"></script>
+  <script>
+// Canvas particle effects used by the hatch animation.
+const FX = (() => {
+  const canvas = document.createElement('canvas');
+  canvas.id = 'fx';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const MAX = 1800;
+  let parts = [];
+  let rings = [];
+  let bolts = [];
+  let emitters = [];
+  let running = false;
+  let last = 0;
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+  // A color can be a string or 'rainbow'
+  const pick = (c) => (c === 'rainbow' ? `hsl(${Math.floor(rand(0, 360))},100%,65%)` : c);
+
+  function add(p) {
+    if (parts.length >= MAX) parts.shift();
+    parts.push({ age: 0, drag: 0.98, gravity: 0, size: 2, alpha: 1, kind: 'spark', ...p });
+  }
+
+  function start() {
+    if (running) return;
+    running = true;
+    last = performance.now();
+    requestAnimationFrame(frame);
+  }
+
+  function frame(now) {
+    const dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+
+    emitters.forEach((e) => e.tick(dt));
+
+    // Particles
+    parts = parts.filter((p) => {
+      p.age += dt;
+      if (p.age >= p.life) return false;
+      const k = 1 - p.age / p.life;
+
+      if (p.kind === 'orb') {
+        // spiral inward toward a target
+        p.angle += p.spin * dt;
+        p.radius *= Math.pow(0.08, dt / p.life);
+        p.x = p.tx + Math.cos(p.angle) * p.radius;
+        p.y = p.ty + Math.sin(p.angle) * p.radius;
+      } else {
+        p.vx *= Math.pow(p.drag, dt * 60);
+        p.vy = p.vy * Math.pow(p.drag, dt * 60) + p.gravity * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+      }
+
+      if (p.kind === 'confetti') {
+        p.rot += p.vr * dt;
+        p.x += Math.sin(p.age * 4 + p.phase) * 30 * dt;
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.scale(1, Math.cos(p.age * 8 + p.phase));
+        ctx.globalAlpha = Math.min(1, k * 3);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size, -p.size / 2, p.size * 2, p.size);
+        ctx.restore();
+        ctx.globalCompositeOperation = 'lighter';
+        return true;
+      }
+
+      let a = p.alpha * k;
+      let size = p.size;
+      if (p.kind === 'glitter') {
+        a *= 0.5 + 0.5 * Math.sin(p.age * p.twinkle + p.phase);
+        size *= 0.6 + 0.4 * k;
+      }
+      ctx.globalAlpha = Math.max(0, a);
+
+      if (p.trail) {
+        // streak from where it was a moment ago
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = size;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p.x - p.vx * p.trail, p.y - p.vy * p.trail);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      } else {
+        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size * 3);
+        g.addColorStop(0, '#fff');
+        g.addColorStop(0.25, p.color);
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, size * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      return true;
+    });
+
+    // Shockwave rings
+    rings = rings.filter((r) => {
+      r.age += dt;
+      if (r.age >= r.life) return false;
+      const t = r.age / r.life;
+      const ease = 1 - Math.pow(1 - t, 3);
+      ctx.globalAlpha = (1 - t) * 0.9;
+      ctx.strokeStyle = pick(r.color);
+      ctx.lineWidth = r.width * (1 - t) + 1;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.r0 + (r.maxR - r.r0) * ease, 0, Math.PI * 2);
+      ctx.stroke();
+      return true;
+    });
+
+    // Lightning
+    bolts = bolts.filter((b) => {
+      b.age += dt;
+      if (b.age >= b.life) return false;
+      ctx.globalAlpha = (1 - b.age / b.life) * (Math.random() < 0.3 ? 0.4 : 1);
+      ctx.strokeStyle = b.color;
+      ctx.shadowColor = b.color;
+      ctx.shadowBlur = 18;
+      [3, 1].forEach((w, i) => {
+        ctx.lineWidth = w;
+        ctx.strokeStyle = i ? '#fff' : b.color;
+        ctx.beginPath();
+        b.points.forEach(([x, y], j) => (j ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.stroke();
+      });
+      ctx.shadowBlur = 0;
+      return true;
+    });
+
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
+    if (parts.length || rings.length || bolts.length || emitters.length) {
+      requestAnimationFrame(frame);
+    } else {
+      running = false;
+      ctx.clearRect(0, 0, W, H);
+    }
+  }
+
+  // ---------- Public effects ----------
+  function burst(x, y, { color = '#fff', count = 60, speed = 420, gravity = 260, trail = 0.05, size = 2.5, life = 1.4 } = {}) {
+    for (let i = 0; i < count; i++) {
+      const ang = rand(0, Math.PI * 2);
+      const v = speed * (0.3 + 0.7 * Math.sqrt(Math.random()));
+      add({
+        x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v,
+        color: pick(color), gravity, trail, size: rand(size * 0.5, size * 1.3),
+        life: rand(life * 0.5, life), drag: 0.96,
+      });
+    }
+    start();
+  }
+
+  function glitter(x, y, { color = '#fff', count = 30, spread = 200, life = 2 } = {}) {
+    for (let i = 0; i < count; i++) {
+      const ang = rand(0, Math.PI * 2);
+      const v = rand(20, spread);
+      add({
+        kind: 'glitter', x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v - 40,
+        gravity: 40, drag: 0.94, color: pick(color), size: rand(1.5, 3.5),
+        life: rand(life * 0.6, life), twinkle: rand(10, 25), phase: rand(0, 6),
+      });
+    }
+    start();
+  }
+
+  function confetti(count = 120) {
+    const colors = ['#ff4f8b', '#ffb52e', '#7dff6a', '#4aa8ff', '#c063ff', '#ffffff'];
+    for (let i = 0; i < count; i++) {
+      add({
+        kind: 'confetti', x: rand(0, W), y: rand(-H * 0.5, -10),
+        vx: rand(-30, 30), vy: rand(80, 220), gravity: 30, drag: 0.995,
+        color: colors[i % colors.length], size: rand(4, 8), life: rand(3, 5),
+        rot: rand(0, 6), vr: rand(-6, 6), phase: rand(0, 6),
+      });
+    }
+    start();
+  }
+
+  function ring(x, y, { color = '#fff', maxR = 260, width = 10, life = 0.7, r0 = 10 } = {}) {
+    rings.push({ x, y, color, maxR, width, life, r0, age: 0 });
+    start();
+  }
+
+  function firework(x, y, color) {
+    burst(x, y, { color, count: 70, speed: 260, gravity: 120, trail: 0.06, size: 2, life: 1.3 });
+    glitter(x, y, { color, count: 20, spread: 120, life: 1.6 });
+  }
+
+  function lightning(x1, y1, x2, y2, color = '#cfe3ff') {
+    const points = [[x1, y1]];
+    const segs = 9;
+    for (let i = 1; i < segs; i++) {
+      const t = i / segs;
+      const off = (1 - Math.abs(t - 0.5) * 2) * 40;
+      points.push([x1 + (x2 - x1) * t + rand(-off, off), y1 + (y2 - y1) * t + rand(-off, off)]);
+    }
+    points.push([x2, y2]);
+    bolts.push({ points, color, age: 0, life: 0.35 });
+    start();
+  }
+
+  // A shooting star from (x1,y1) to (x2,y2); resolves when it lands
+  function meteor(x1, y1, x2, y2, color, dur = 0.8) {
+    return new Promise((resolve) => {
+      let t = 0;
+      const em = emitter((dt) => {
+        t += dt / dur;
+        const e = Math.min(1, t * t);
+        const x = x1 + (x2 - x1) * e;
+        const y = y1 + (y2 - y1) * e;
+        add({ x, y, vx: 0, vy: 0, color: '#fff', size: 7, life: 0.08 });
+        for (let i = 0; i < 4; i++) {
+          add({ x: x + rand(-4, 4), y: y + rand(-4, 4), vx: rand(-40, 40), vy: rand(-40, 40),
+            color: pick(color), size: rand(2, 4.5), life: rand(0.3, 0.7), drag: 0.9 });
+        }
+        if (t >= 1) { em.stop(); resolve(); }
+      });
+    });
+  }
+
+  // Calls fn(dt) every frame until stopped
+  function emitter(fn) {
+    const e = { tick: fn, stop: () => { emitters = emitters.filter((x) => x !== e); } };
+    emitters.push(e);
+    start();
+    return e;
+  }
+
+  // Energy orbs that spiral into (x, y)
+  function orb(x, y, color) {
+    const angle = rand(0, Math.PI * 2);
+    add({
+      kind: 'orb', tx: x, ty: y, angle, radius: rand(140, 260), spin: rand(2, 4) * (Math.random() < 0.5 ? -1 : 1),
+      x, y, vx: 0, vy: 0, color: pick(color), size: rand(1.5, 3.2), life: rand(0.6, 1), alpha: 0.9,
+    });
+    start();
+  }
+
+  function clear() {
+    parts = []; rings = []; bolts = []; emitters = [];
+  }
+
+  // Move the canvas into a container (e.g. the hatch stage) so its layers can sit above it
+  function mount(parent = document.body, before = null) {
+    parent.insertBefore(canvas, before);
+  }
+
+  return { mount, burst, glitter, confetti, ring, firework, lightning, meteor, emitter, orb, clear, rand, size: () => ({ W, H }) };
+})();
+  </script>
+  <script>
+// ---------- Data ----------
+const RARITIES = {
+  common:    { label: 'Common',    weight: 60, income: 0.2 },
+  rare:      { label: 'Rare',      weight: 26, income: 1 },
+  epic:      { label: 'Epic',      weight: 10, income: 4 },
+  legendary: { label: 'Legendary', weight: 3.5, income: 15 },
+  mythic:    { label: 'Mythic',    weight: 0.5, income: 60 },
+};
+const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary', 'mythic'];
+
+const PETS = [
+  // common
+  { id: 'mouse',    name: 'Mouse',     emoji: '🐭', rarity: 'common' },
+  { id: 'hamster',  name: 'Hamster',   emoji: '🐹', rarity: 'common' },
+  { id: 'chick',    name: 'Chick',     emoji: '🐤', rarity: 'common' },
+  { id: 'frog',     name: 'Frog',      emoji: '🐸', rarity: 'common' },
+  { id: 'snail',    name: 'Snail',     emoji: '🐌', rarity: 'common' },
+  { id: 'pig',      name: 'Piglet',    emoji: '🐷', rarity: 'common' },
+  { id: 'bunny',    name: 'Bunny',     emoji: '🐰', rarity: 'common' },
+  { id: 'turtle',   name: 'Turtle',    emoji: '🐢', rarity: 'common' },
+  // rare
+  { id: 'cat',      name: 'Cat',       emoji: '🐱', rarity: 'rare' },
+  { id: 'dog',      name: 'Puppy',     emoji: '🐶', rarity: 'rare' },
+  { id: 'fox',      name: 'Fox',       emoji: '🦊', rarity: 'rare' },
+  { id: 'penguin',  name: 'Penguin',   emoji: '🐧', rarity: 'rare' },
+  { id: 'koala',    name: 'Koala',     emoji: '🐨', rarity: 'rare' },
+  { id: 'owl',      name: 'Owl',       emoji: '🦉', rarity: 'rare' },
+  // epic
+  { id: 'panda',    name: 'Panda',     emoji: '🐼', rarity: 'epic' },
+  { id: 'tiger',    name: 'Tiger',     emoji: '🐯', rarity: 'epic' },
+  { id: 'octopus',  name: 'Octopus',   emoji: '🐙', rarity: 'epic' },
+  { id: 'peacock',  name: 'Peacock',   emoji: '🦚', rarity: 'epic' },
+  { id: 'shark',    name: 'Shark',     emoji: '🦈', rarity: 'epic' },
+  // legendary
+  { id: 'lion',     name: 'Lion King', emoji: '🦁', rarity: 'legendary' },
+  { id: 'unicorn',  name: 'Unicorn',   emoji: '🦄', rarity: 'legendary' },
+  { id: 'phoenix',  name: 'Phoenix',   emoji: '🐦‍🔥', rarity: 'legendary' },
+  // mythic
+  { id: 'dragon',   name: 'Dragon',    emoji: '🐉', rarity: 'mythic' },
+  { id: 'trex',     name: 'Ancient Rex', emoji: '🦖', rarity: 'mythic' },
+];
+
+const COST_1 = 100;
+const COST_10 = 900;
+const PITY_LIMIT = 50;
+const MAX_LEVEL = 10;
+const DAILY_GIFT = 500;
+const OFFLINE_CAP_SEC = 2 * 60 * 60;
+const SAVE_KEY = 'petGachaSave_v1';
+
+// ---------- State ----------
+const defaultState = () => ({
+  coins: 1000,
+  owned: {},        // petId -> { level, copies }
+  pity: 0,          // hatches since last legendary/mythic
+  totalHatches: 0,
+  lastDaily: null,  // 'YYYY-MM-DD'
+  lastSeen: Date.now(),
+  sound: true,
+});
+
+let state = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) return { ...defaultState(), ...JSON.parse(raw) };
+  } catch (e) { /* ignore broken save */ }
+  return defaultState();
+}
+
+function save() {
+  state.lastSeen = Date.now();
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
+}
+
+// ---------- Helpers ----------
+const $ = (sel) => document.querySelector(sel);
+const petById = Object.fromEntries(PETS.map((p) => [p.id, p]));
+const fmt = (n) => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M'
+  : n >= 1e4 ? (n / 1e3).toFixed(1) + 'K'
+  : Math.floor(n).toLocaleString();
+const today = () => new Date().toISOString().slice(0, 10);
+
+function petIncome(petId) {
+  const own = state.owned[petId];
+  if (!own) return 0;
+  return RARITIES[petById[petId].rarity].income * (1 + 0.5 * (own.level - 1));
+}
+
+function coinsPerSecond() {
+  return Object.keys(state.owned).reduce((sum, id) => sum + petIncome(id), 0);
+}
+
+function tapValue() {
+  return 1 + Math.floor(coinsPerSecond() * 0.2);
+}
+
+// ---------- Gacha ----------
+function rollRarity(minRarity = 'common') {
+  const minIdx = RARITY_ORDER.indexOf(minRarity);
+  const pool = RARITY_ORDER.slice(minIdx);
+  const total = pool.reduce((s, r) => s + RARITIES[r].weight, 0);
+  let roll = Math.random() * total;
+  for (const r of pool) {
+    roll -= RARITIES[r].weight;
+    if (roll < 0) return r;
+  }
+  return pool[pool.length - 1];
+}
+
+function rollPet(minRarity) {
+  let rarity;
+  if (state.pity + 1 >= PITY_LIMIT) rarity = rollRarity('legendary');
+  else rarity = rollRarity(minRarity);
+
+  if (RARITY_ORDER.indexOf(rarity) >= RARITY_ORDER.indexOf('legendary')) state.pity = 0;
+  else state.pity++;
+  state.totalHatches++;
+
+  const choices = PETS.filter((p) => p.rarity === rarity);
+  return choices[Math.floor(Math.random() * choices.length)];
+}
+
+function addPet(pet) {
+  const own = state.owned[pet.id];
+  if (!own) {
+    state.owned[pet.id] = { level: 1, copies: 1 };
+    return { pet, isNew: true, levelUp: false, level: 1 };
+  }
+  own.copies++;
+  if (own.level < MAX_LEVEL) {
+    own.level++;
+    return { pet, isNew: false, levelUp: true, level: own.level };
+  }
+  // Max level duplicates refund some coins
+  const refund = Math.round(COST_1 * 0.5 * (RARITY_ORDER.indexOf(pet.rarity) + 1));
+  state.coins += refund;
+  return { pet, isNew: false, levelUp: false, refund, level: own.level };
+}
+
+function hatch(count) {
+  const cost = count === 10 ? COST_10 : COST_1 * count;
+  if (state.coins < cost || hatching) return;
+  state.coins -= cost;
+
+  const pets = [];
+  for (let i = 0; i < count; i++) pets.push(rollPet());
+  // 10x guarantee: at least one Rare+
+  if (count === 10 && pets.every((p) => p.rarity === 'common')) {
+    const choices = PETS.filter((p) => p.rarity === 'rare');
+    pets[pets.length - 1] = choices[Math.floor(Math.random() * choices.length)];
+  }
+
+  const results = pets.map(addPet);
+  save();
+  playHatch(results);
+}
+
+// ---------- Rendering ----------
+let hatching = false;
+
+function petCard(pet, { level, extra, locked } = {}) {
+  const div = document.createElement('div');
+  div.className = `pet ${pet.rarity}${locked ? ' locked' : ''}`;
+  div.innerHTML = `
+    <div class="emoji">${pet.emoji}</div>
+    <div class="name">${locked ? '???' : pet.name}</div>
+    <div class="rarity">${RARITIES[pet.rarity].label}</div>
+    ${level ? `<div class="lvl">Lv ${level}${level >= MAX_LEVEL ? ' (MAX)' : ''}</div>` : ''}
+    ${extra ? `<div class="tag">${extra}</div>` : ''}
+  `;
+  return div;
+}
+
+// ---------- Sound (tiny WebAudio synth) ----------
+let audio;
+function tone(freq, { dur = 0.15, type = 'sine', vol = 0.15, delay = 0, slide = 0 } = {}) {
+  if (!state.sound) return;
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const t = audio.currentTime + delay;
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    if (slide) osc.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(gain).connect(audio.destination);
+    osc.start(t);
+    osc.stop(t + dur);
+  } catch (e) { /* audio unavailable */ }
+}
+const sfx = {
+  charge: (step) => tone(260 * Math.pow(1.26, step), { dur: 0.25, type: 'triangle', slide: 1.2 }),
+  crack: () => tone(900, { dur: 0.08, type: 'square', vol: 0.06 }),
+  pop: () => tone(180, { dur: 0.35, type: 'sawtooth', vol: 0.12, slide: 0.3 }),
+  reveal: (tier) => [0, 4, 7, 12, 16].slice(0, 2 + tier).forEach((semi, i) =>
+    tone(523 * Math.pow(2, semi / 12), { dur: 0.5, type: 'triangle', vol: 0.12, delay: i * 0.09 })),
+  flip: (tier) => tone(600 + tier * 180, { dur: 0.1, type: 'sine', vol: 0.08 }),
+  whoosh: () => tone(1400, { dur: 0.7, type: 'sawtooth', vol: 0.05, slide: 0.12 }),
+  thud: () => tone(140, { dur: 0.4, type: 'sine', vol: 0.25, slide: 0.4 }),
+  zap: () => tone(1800 + Math.random() * 800, { dur: 0.05, type: 'square', vol: 0.03 }),
+  glitch: () => [0, 1, 2, 3, 4, 5].forEach((i) =>
+    tone(200 + Math.random() * 1500, { dur: 0.07, type: 'square', vol: 0.05, delay: i * 0.1 })),
+  boom: () => tone(110, { dur: 0.5, type: 'triangle', vol: 0.15, slide: 0.35 }),
+};
+
+// ---------- Pull animation ----------
+const stage = $('#stage');
+let skipping = false;
+let wakeUp = null;
+
+function wait(ms) {
+  if (skipping) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => { clearTimeout(timer); wakeUp = null; resolve(); };
+    const timer = setTimeout(done, ms);
+    wakeUp = done;
+  });
+}
+
+function waitTap(autoMs) {
+  return new Promise((resolve) => {
+    let timer;
+    const done = () => { clearTimeout(timer); stage.onclick = null; resolve(); };
+    // brief delay so the tap that skipped the intro doesn't also dismiss the reveal
+    setTimeout(() => { stage.onclick = done; }, 250);
+    if (autoMs) timer = setTimeout(done, autoMs);
+  });
+}
+
+const FX_COLORS = { common: '#ffffff', rare: '#4aa8ff', epic: '#c063ff', legendary: '#ffb52e', mythic: 'rainbow' };
+const rainbowColor = () => `hsl(${Math.floor(Math.random() * 360)},100%,70%)`;
+
+function eggCenter() {
+  const r = stage.querySelector('.stage-egg').getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+function resetStage() {
+  stage.className = 'stage-overlay';
+  stage.dataset.glow = 'common';
+  stage.style.setProperty('--amp', 3);
+  stage.querySelector('.stage-pet').innerHTML = '';
+  stage.querySelector('.flash').classList.remove('go');
+  stage.querySelector('.stage-hint').textContent = 'Tap to skip';
+}
+
+async function playStage(best, count) {
+  const tier = RARITY_ORDER.indexOf(best.pet.rarity);
+  // A Mythic pretends to be a Legendary until the very end
+  const tease = tier === 4 ? 3 : tier;
+  const effects = [];
+  const stopEffects = () => { effects.forEach((e) => e.stop()); effects.length = 0; };
+
+  skipping = false;
+  FX.clear();
+  FX.mount(stage, stage.querySelector('.stage-pet'));
+  resetStage();
+  stage.onclick = () => { skipping = true; if (wakeUp) wakeUp(); };
+
+  // 1. A shooting star crashes in and drops the egg
+  stage.classList.add('pre');
+  await new Promise((r) => setTimeout(r, 30));
+  const c = eggCenter();
+  const starColor = FX_COLORS[RARITY_ORDER[Math.min(tease, 2)]];
+  if (!skipping) {
+    sfx.whoosh();
+    await Promise.race([FX.meteor(FX.size().W + 60, -80, c.x, c.y, starColor, 0.75), wait(900)]);
+    FX.ring(c.x, c.y, { color: starColor, maxR: 200, width: 8 });
+    FX.burst(c.x, c.y, { color: starColor, count: 45, speed: 320, gravity: 400 });
+    sfx.thud();
+  }
+  stage.classList.remove('pre');
+  stage.classList.add('landed');
+  await wait(450);
+  stage.classList.remove('landed');
+
+  // 2. Charge up: energy spirals in, and the glow climbs one rarity at a time
+  let orbRate = 0;
+  let orbColor = '#ffffff';
+  let acc = 0;
+  effects.push(FX.emitter((dt) => {
+    acc += dt * orbRate;
+    while (acc > 1) { acc--; FX.orb(c.x, c.y, orbColor); }
+  }));
+
+  stage.classList.add('charging');
+  for (let step = 0; step <= Math.max(tease, 1); step++) {
+    const shown = Math.min(step, tease);
+    stage.dataset.glow = RARITY_ORDER[shown];
+    stage.style.setProperty('--amp', 3 + step * 3);
+    stage.classList.toggle('rays-on', shown >= 2);
+    orbColor = FX_COLORS[RARITY_ORDER[shown]];
+    orbRate = 25 + step * 35;
+    if (!skipping) {
+      sfx.charge(step);
+      stage.classList.remove('hop'); void stage.offsetWidth;
+      if (step > 0 && shown === step) {
+        stage.classList.add('hop');
+        FX.ring(c.x, c.y, { color: orbColor, maxR: 230, width: 6, life: 0.6 });
+        FX.glitter(c.x, c.y, { color: orbColor, count: 12 + step * 6, spread: 160 });
+      }
+    }
+    await wait(step === 0 ? 650 : 560);
+    stage.classList.remove('hop');
+  }
+
+  // 3. Crack, with lightning and a quake for Legendary/Mythic
+  stage.classList.add('cracking');
+  if (!skipping) sfx.crack();
+  if (tease >= 3) {
+    stage.classList.add('quake');
+    let boltColor = () => (Math.random() < 0.5 ? '#ffe08a' : '#fff6d8');
+    let next = 0;
+    effects.push(FX.emitter((dt) => {
+      next -= dt;
+      if (next > 0) return;
+      next = FX.rand(0.06, 0.18);
+      const a = FX.rand(0, Math.PI * 2);
+      const r = FX.rand(160, 340);
+      FX.lightning(c.x, c.y, c.x + Math.cos(a) * r, c.y + Math.sin(a) * r, boltColor());
+      if (Math.random() < 0.4) sfx.zap();
+    }));
+    await wait(900);
+
+    // 3b. Mythic fake-out: the gold egg glitches... and turns rainbow
+    if (tier === 4) {
+      orbRate = 0;
+      stage.classList.add('glitch');
+      if (!skipping) sfx.glitch();
+      await wait(750);
+      stage.classList.remove('glitch');
+      stage.dataset.glow = 'mythic';
+      boltColor = rainbowColor;
+      orbColor = 'rainbow';
+      orbRate = 160;
+      FX.ring(c.x, c.y, { color: 'rainbow', maxR: 420, width: 16, life: 0.9 });
+      if (!skipping) { sfx.charge(5); sfx.charge(6); }
+      await wait(900);
+    }
+  } else {
+    await wait(450);
+  }
+  stopEffects();
+
+  // 4. Burst open
+  stage.classList.remove('charging', 'quake');
+  stage.classList.add('open');
+  const flash = stage.querySelector('.flash');
+  flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+  const col = FX_COLORS[best.pet.rarity];
+  FX.burst(c.x, c.y, { color: col, count: 80 + tier * 70, speed: 380 + tier * 110, size: 2.5 + tier * 0.4 });
+  FX.glitter(c.x, c.y, { color: col, count: 30 + tier * 25, spread: 260 + tier * 60, life: 2.5 });
+  FX.ring(c.x, c.y, { color: col, maxR: 320 + tier * 90, width: 14 });
+  if (tier >= 2) setTimeout(() => FX.ring(c.x, c.y, { color: col, maxR: 260 + tier * 70, width: 8, life: 0.9 }), 160);
+  if (tier >= 3) FX.confetti(tier === 4 ? 240 : 130);
+  sfx.pop();
+  sfx.reveal(tier);
+
+  // Keep the party going behind the reveal
+  if (tier >= 3) {
+    let next = 0.5;
+    effects.push(FX.emitter((dt) => {
+      next -= dt;
+      if (next > 0) return;
+      next = FX.rand(0.35, 0.7);
+      const { W, H } = FX.size();
+      FX.firework(FX.rand(W * 0.12, W * 0.88), FX.rand(H * 0.08, H * 0.45), col);
+      sfx.boom();
+    }));
+  } else if (tier === 2) {
+    let next = 0.3;
+    effects.push(FX.emitter((dt) => {
+      next -= dt;
+      if (next > 0) return;
+      next = 0.35;
+      FX.glitter(c.x + FX.rand(-80, 80), c.y + FX.rand(-60, 60), { color: col, count: 6, spread: 90 });
+    }));
+  }
+
+  // 5. Show the best pet
+  const { pet } = best;
+  stage.querySelector('.stage-pet').innerHTML = `
+    <div class="big ${tier >= 3 ? 'float' : ''}">${pet.emoji}</div>
+    <div class="label">${RARITIES[pet.rarity].label.toUpperCase()}${tier >= 3 ? '!' : ''}</div>
+    <div class="pname">${pet.name}</div>
+    <div class="sub">${count > 1 ? `Best of ${count} · ` : ''}Lv ${best.level}</div>
+    ${best.isNew ? '<div class="new">NEW!</div>' : ''}
+  `;
+  stage.querySelector('.stage-hint').textContent = count > 1 ? 'Tap to see all pets' : 'Tap to continue';
+  await waitTap(tier <= 1 ? 1800 : null);
+
+  stopEffects();
+  stage.classList.add('closing');
+  await new Promise((r) => setTimeout(r, 250));
+  stage.classList.add('hidden');
+  FX.clear();
+  FX.mount(document.body);
+}
+
+function dealCards(results, fast) {
+  const box = $('#results');
+  box.innerHTML = '';
+  const cards = results.map((r, i) => {
+    const extra = r.isNew ? 'NEW' : r.levelUp ? 'LV UP' : r.refund ? `+${r.refund}🪙` : '';
+    const wrap = document.createElement('div');
+    wrap.className = 'flip deal';
+    wrap.style.animationDelay = `${i * 0.04}s`;
+    const inner = document.createElement('div');
+    inner.className = 'flip-inner';
+    const back = document.createElement('div');
+    back.className = `card-back ${r.pet.rarity}`;
+    back.textContent = '🥚';
+    inner.append(back, petCard(r.pet, { level: r.level, extra }));
+    wrap.appendChild(inner);
+    box.appendChild(wrap);
+    return wrap;
+  });
+
+  // Flip one by one; save the rarest for last so the row ends on a high note
+  const order = cards.map((c, i) => i)
+    .sort((a, b) => RARITY_ORDER.indexOf(results[a].pet.rarity) - RARITY_ORDER.indexOf(results[b].pet.rarity));
+  const step = fast ? 60 : 170;
+  order.forEach((idx, n) => {
+    setTimeout(() => {
+      const card = cards[idx];
+      const tier = RARITY_ORDER.indexOf(results[idx].pet.rarity);
+      card.classList.add('flipped');
+      sfx.flip(tier);
+      if (tier >= 1) {
+        const r = card.getBoundingClientRect();
+        const x = r.left + r.width / 2;
+        const y = r.top + r.height / 2;
+        const col = FX_COLORS[results[idx].pet.rarity];
+        FX.burst(x, y, { color: col, count: 10 + tier * 14, speed: 120 + tier * 70, gravity: 300, size: 2 });
+        if (tier >= 2) FX.glitter(x, y, { color: col, count: 8 + tier * 6, spread: 100 });
+        if (tier >= 3) FX.ring(x, y, { color: col, maxR: 120, width: 6 });
+      }
+    }, 400 + n * step);
+  });
+  return 400 + order.length * step;
+}
+
+async function playHatch(results) {
+  hatching = true;
+  updateHud();
+  $('#results').innerHTML = '';
+
+  const best = results.reduce((a, b) =>
+    RARITY_ORDER.indexOf(b.pet.rarity) > RARITY_ORDER.indexOf(a.pet.rarity) ? b : a);
+  await playStage(best, results.length);
+
+  const dealTime = results.length > 1 ? dealCards(results, skipping) : (dealCards(results, true), 0);
+  setTimeout(() => {
+    hatching = false;
+    renderAll();
+  }, dealTime);
+}
+
+let filter = 'all';
+
+function renderDex() {
+  const dex = $('#dex');
+  dex.innerHTML = '';
+  PETS.filter((p) => filter === 'all' || p.rarity === filter).forEach((pet) => {
+    const own = state.owned[pet.id];
+    dex.appendChild(petCard(pet, own ? { level: own.level } : { locked: true }));
+  });
+  $('#dex-count').textContent = `${Object.keys(state.owned).length}/${PETS.length}`;
+}
+
+function renderFilters() {
+  const box = $('#filters');
+  box.innerHTML = '';
+  ['all', ...RARITY_ORDER].forEach((r) => {
+    const b = document.createElement('button');
+    b.textContent = r === 'all' ? 'All' : RARITIES[r].label;
+    b.classList.toggle('active', filter === r);
+    b.onclick = () => { filter = r; renderFilters(); renderDex(); };
+    box.appendChild(b);
+  });
+}
+
+function renderRates() {
+  const total = RARITY_ORDER.reduce((s, r) => s + RARITIES[r].weight, 0);
+  $('#rates-table').innerHTML = `
+    <tr><th>Rarity</th><th>Chance</th><th>Pets</th><th>Income / pet</th></tr>
+    ${RARITY_ORDER.map((r) => `
+      <tr class="${r}">
+        <td>${RARITIES[r].label}</td>
+        <td>${(RARITIES[r].weight / total * 100).toFixed(1)}%</td>
+        <td>${PETS.filter((p) => p.rarity === r).map((p) => p.emoji).join(' ')}</td>
+        <td>${RARITIES[r].income}/s</td>
+      </tr>`).join('')}
+  `;
+}
+
+function updateHud() {
+  $('#coins').textContent = fmt(state.coins);
+  $('#cps').textContent = coinsPerSecond().toFixed(1);
+  $('#pity').textContent = PITY_LIMIT - state.pity;
+  $('#pull1').disabled = hatching || state.coins < COST_1;
+  $('#pull10').disabled = hatching || state.coins < COST_10;
+  const claimed = state.lastDaily === today();
+  $('#daily').disabled = claimed;
+  $('#daily').textContent = claimed ? '🎁 Come back tomorrow' : `🎁 Claim daily gift (+${DAILY_GIFT})`;
+}
+
+function renderAll() {
+  updateHud();
+  renderDex();
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function floatCoin(x, y, amount) {
+  const el = document.createElement('div');
+  el.className = 'float-coin';
+  el.textContent = `+${amount}`;
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+// ---------- Events ----------
+document.querySelectorAll('.tab').forEach((tab) => {
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
+    document.querySelectorAll('.panel').forEach((p) =>
+      p.classList.toggle('active', p.id === `tab-${tab.dataset.tab}`));
+  };
+});
+
+$('#egg').addEventListener('click', (e) => {
+  if (hatching) return;
+  const v = tapValue();
+  state.coins += v;
+  floatCoin(e.clientX || window.innerWidth / 2, e.clientY || 150, v);
+  updateHud();
+});
+
+$('#pull1').onclick = () => hatch(1);
+$('#pull10').onclick = () => hatch(10);
+
+$('#daily').onclick = () => {
+  if (state.lastDaily === today()) return;
+  state.lastDaily = today();
+  state.coins += DAILY_GIFT;
+  save();
+  updateHud();
+  toast(`🎁 You got ${DAILY_GIFT} coins!`);
+};
+
+$('#sound').onclick = () => {
+  state.sound = !state.sound;
+  $('#sound').textContent = state.sound ? '🔊' : '🔇';
+  save();
+};
+$('#sound').textContent = state.sound ? '🔊' : '🔇';
+
+$('#reset').onclick = () => {
+  if (!confirm('Erase all pets and coins and start over?')) return;
+  state = defaultState();
+  save();
+  $('#results').innerHTML = '';
+  renderAll();
+  toast('Save reset.');
+};
+
+// ---------- Game loop ----------
+let last = performance.now();
+function tick(now) {
+  const dt = (now - last) / 1000;
+  last = now;
+  state.coins += coinsPerSecond() * dt;
+  updateHud();
+  requestAnimationFrame(tick);
+}
+
+setInterval(save, 5000);
+window.addEventListener('beforeunload', save);
+
+// Offline earnings
+(function offline() {
+  const secs = Math.min((Date.now() - state.lastSeen) / 1000, OFFLINE_CAP_SEC);
+  const earned = Math.floor(coinsPerSecond() * secs);
+  if (earned > 0) {
+    state.coins += earned;
+    setTimeout(() => toast(`🐾 Your pets earned ${fmt(earned)} coins while you were away!`), 300);
+  }
+})();
+
+renderFilters();
+renderRates();
+renderAll();
+requestAnimationFrame(tick);
+  </script>
 </body>
 </html>
