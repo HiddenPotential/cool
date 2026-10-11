@@ -197,6 +197,32 @@ main { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; }
 .stage-overlay.open .top    { transform: translate(-60px, -110px) rotate(-35deg); opacity: 0; }
 .stage-overlay.open .bottom { transform: translate(40px, 90px) rotate(20deg); opacity: 0; }
 
+.stage-bg::after {
+  content: ""; position: absolute; inset: 0; opacity: .7;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 28% 72%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 44% 10%, #fff, transparent),
+    radial-gradient(1px 1px at 63% 84%, #fff, transparent),
+    radial-gradient(2px 2px at 78% 26%, #fff, transparent),
+    radial-gradient(1px 1px at 90% 62%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 6% 88%, #fff, transparent),
+    radial-gradient(1px 1px at 52% 46%, #fff, transparent);
+  background-size: 320px 320px;
+  animation: twinkle 3s ease-in-out infinite alternate;
+}
+
+.stage-overlay.pre .stage-egg { opacity: 0; transform: scale(.4); }
+.stage-overlay.landed .stage-egg { animation: land .45s cubic-bezier(.3,1.6,.5,1); }
+
+.stage-overlay.glitch .stage-egg { animation: glitch .14s steps(2) infinite; }
+.stage-overlay.glitch .stage-bg { animation: glitchBg .2s steps(2) infinite; }
+
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 11; pointer-events: none; }
+.stage-overlay #fx { z-index: 0; }
+.stage-overlay .stage-pet, .stage-overlay .stage-hint { z-index: 1; }
+.stage-overlay .flash { z-index: 2; }
+
 .stage-overlay.quake { animation: quake .5s linear infinite; }
 
 .flash {
@@ -204,20 +230,10 @@ main { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; }
 }
 .flash.go { animation: flash .6s ease-out; }
 
-.particles { position: absolute; left: 50%; top: calc(45% - 20px); width: 0; height: 0; }
-.particle {
-  position: absolute; left: 0; top: 0; translate: -50% -50%;
-  font-size: var(--size); color: var(--glow);
-  animation: burst var(--dur) cubic-bezier(.1,.8,.3,1) forwards;
-}
-.particle.dot {
-  width: var(--size); height: var(--size); border-radius: 50%;
-  background: var(--c, var(--glow)); box-shadow: 0 0 8px var(--c, var(--glow));
-}
-
 .stage-pet {
   position: absolute; top: 45%; left: 50%; translate: -50% -50%;
   text-align: center; pointer-events: none; margin-top: -20px;
+  text-shadow: 0 2px 8px rgba(0,0,0,.8);
 }
 .stage-pet .big {
   font-size: 150px; line-height: 1;
@@ -288,12 +304,22 @@ main { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; }
   0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-6px, 3px); }
   40% { transform: translate(5px, -4px); } 60% { transform: translate(-4px, -3px); } 80% { transform: translate(6px, 4px); }
 }
-@keyframes flash { 0% { opacity: 0; } 15% { opacity: .95; } 100% { opacity: 0; } }
-@keyframes burst {
-  0% { transform: translate(0, 0) scale(.3) rotate(0); opacity: 1; }
-  70% { opacity: 1; }
-  100% { transform: translate(var(--dx), var(--dy)) scale(1) rotate(var(--rot)); opacity: 0; }
+@keyframes twinkle { to { opacity: .25; } }
+@keyframes land {
+  0% { transform: scale(.4) translateY(-30px); opacity: 0; }
+  60% { transform: scale(1.12, .88); opacity: 1; }
+  100% { transform: scale(1); }
 }
+@keyframes glitch {
+  0% { transform: translate(-8px, 2px) skewX(12deg); filter: hue-rotate(90deg) drop-shadow(6px 0 #ff2a6d) drop-shadow(-6px 0 #05d9e8); }
+  50% { transform: translate(7px, -3px) skewX(-10deg); filter: invert(1) drop-shadow(-6px 0 #ff2a6d) drop-shadow(6px 0 #05d9e8); }
+  100% { transform: translate(-3px, 0); filter: hue-rotate(200deg); }
+}
+@keyframes glitchBg {
+  0% { filter: invert(1) hue-rotate(90deg); }
+  100% { filter: hue-rotate(250deg) saturate(3); }
+}
+@keyframes flash { 0% { opacity: 0; } 15% { opacity: .95; } 100% { opacity: 0; } }
 @keyframes emerge {
   0% { transform: translateY(60px) scale(0); opacity: 0; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
@@ -310,7 +336,33 @@ main { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; }
 
 @media (prefers-reduced-motion: reduce) {
   .stage-overlay *, .flip * { animation-duration: .01s !important; transition-duration: .01s !important; }
-  .stage-overlay.quake { animation: none; }
+  .stage-bg::after {
+  content: ""; position: absolute; inset: 0; opacity: .7;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 28% 72%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 44% 10%, #fff, transparent),
+    radial-gradient(1px 1px at 63% 84%, #fff, transparent),
+    radial-gradient(2px 2px at 78% 26%, #fff, transparent),
+    radial-gradient(1px 1px at 90% 62%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 6% 88%, #fff, transparent),
+    radial-gradient(1px 1px at 52% 46%, #fff, transparent);
+  background-size: 320px 320px;
+  animation: twinkle 3s ease-in-out infinite alternate;
+}
+
+.stage-overlay.pre .stage-egg { opacity: 0; transform: scale(.4); }
+.stage-overlay.landed .stage-egg { animation: land .45s cubic-bezier(.3,1.6,.5,1); }
+
+.stage-overlay.glitch .stage-egg { animation: glitch .14s steps(2) infinite; }
+.stage-overlay.glitch .stage-bg { animation: glitchBg .2s steps(2) infinite; }
+
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 11; pointer-events: none; }
+.stage-overlay #fx { z-index: 0; }
+.stage-overlay .stage-pet, .stage-overlay .stage-hint { z-index: 1; }
+.stage-overlay .flash { z-index: 2; }
+
+.stage-overlay.quake { animation: none; }
 }
 
 .toast {

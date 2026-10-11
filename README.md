@@ -23,7 +23,7 @@ To host it for free, turn on **GitHub Pages** (Settings → Pages → Deploy fro
 - **Pity:** if you go 50 hatches without a Legendary or Mythic, the next one is a Legendary.
 - **Duplicates** level a pet up (max Lv 10). Higher levels earn more. Duplicates after max level give coins back.
 - **Daily gift:** 500 free coins once a day.
-- **Hatch animation:** the egg's glow climbs through the rarity colors to hint at your best pet, then it cracks and bursts open. Legendary and Mythic pulls get a longer build-up, a screen quake, light rays and extra sparkles (Mythic is rainbow). Results are dealt face-down and flip one by one, rarest last. Tap at any time to skip.
+- **Hatch animation:** a shooting star crashes in and drops the egg. Energy spirals into it while its glow climbs through the rarity colors, hinting at your best pet, then it cracks and bursts in a shower of sparks and shockwaves. Legendary pulls add lightning, a screen quake, confetti and fireworks. Mythic pulls disguise themselves as Legendary, then glitch and turn rainbow. Results are dealt face-down and flip one by one, rarest last, with sparks on rare cards. Tap at any time to skip.
 - **Sound:** short synth sound effects, toggled with the 🔊 button.
 - Progress saves in your browser's `localStorage`.
 
@@ -39,4 +39,5 @@ To host it for free, turn on **GitHub Pages** (Settings → Pages → Deploy fro
 
 - `index.html`: page layout
 - `style.css`: styles and animations
+- `fx.js`: canvas particle effects (sparks, shockwaves, lightning, fireworks, confetti)
 - `game.js`: game logic (pets, drop rates, saving). To add pets or change the odds, edit the `PETS` and `RARITIES` lists at the top.

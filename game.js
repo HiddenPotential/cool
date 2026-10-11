@@ -199,6 +199,12 @@ const sfx = {
   reveal: (tier) => [0, 4, 7, 12, 16].slice(0, 2 + tier).forEach((semi, i) =>
     tone(523 * Math.pow(2, semi / 12), { dur: 0.5, type: 'triangle', vol: 0.12, delay: i * 0.09 })),
   flip: (tier) => tone(600 + tier * 180, { dur: 0.1, type: 'sine', vol: 0.08 }),
+  whoosh: () => tone(1400, { dur: 0.7, type: 'sawtooth', vol: 0.05, slide: 0.12 }),
+  thud: () => tone(140, { dur: 0.4, type: 'sine', vol: 0.25, slide: 0.4 }),
+  zap: () => tone(1800 + Math.random() * 800, { dur: 0.05, type: 'square', vol: 0.03 }),
+  glitch: () => [0, 1, 2, 3, 4, 5].forEach((i) =>
+    tone(200 + Math.random() * 1500, { dur: 0.07, type: 'square', vol: 0.05, delay: i * 0.1 })),
+  boom: () => tone(110, { dur: 0.5, type: 'triangle', vol: 0.15, slide: 0.35 }),
 };
 
 // ---------- Pull animation ----------
@@ -225,34 +231,18 @@ function waitTap(autoMs) {
   });
 }
 
-function burst(tier) {
-  const box = stage.querySelector('.particles');
-  box.innerHTML = '';
-  const count = 18 + tier * 16;
-  const symbols = ['✨', '⭐', '💫', '🌟'];
-  const confetti = ['#ff4f8b', '#ffb52e', '#7dff6a', '#4aa8ff', '#c063ff'];
-  for (let i = 0; i < count; i++) {
-    const p = document.createElement('span');
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 120 + Math.random() * (160 + tier * 70);
-    const isStar = tier >= 2 && Math.random() < 0.45;
-    p.className = isStar ? 'particle' : 'particle dot';
-    if (isStar) p.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-    if (!isStar && tier === 4) p.style.setProperty('--c', confetti[i % confetti.length]);
-    p.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
-    p.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
-    p.style.setProperty('--rot', `${Math.random() * 720 - 360}deg`);
-    p.style.setProperty('--size', isStar ? `${16 + Math.random() * 18}px` : `${5 + Math.random() * 7}px`);
-    p.style.setProperty('--dur', `${0.7 + Math.random() * 0.7}s`);
-    box.appendChild(p);
-  }
+const FX_COLORS = { common: '#ffffff', rare: '#4aa8ff', epic: '#c063ff', legendary: '#ffb52e', mythic: 'rainbow' };
+const rainbowColor = () => `hsl(${Math.floor(Math.random() * 360)},100%,70%)`;
+
+function eggCenter() {
+  const r = stage.querySelector('.stage-egg').getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
 }
 
 function resetStage() {
   stage.className = 'stage-overlay';
   stage.dataset.glow = 'common';
   stage.style.setProperty('--amp', 3);
-  stage.querySelector('.particles').innerHTML = '';
   stage.querySelector('.stage-pet').innerHTML = '';
   stage.querySelector('.flash').classList.remove('go');
   stage.querySelector('.stage-hint').textContent = 'Tap to skip';
@@ -260,47 +250,138 @@ function resetStage() {
 
 async function playStage(best, count) {
   const tier = RARITY_ORDER.indexOf(best.pet.rarity);
+  // A Mythic pretends to be a Legendary until the very end
+  const tease = tier === 4 ? 3 : tier;
+  const effects = [];
+  const stopEffects = () => { effects.forEach((e) => e.stop()); effects.length = 0; };
+
   skipping = false;
+  FX.clear();
+  FX.mount(stage, stage.querySelector('.stage-pet'));
   resetStage();
   stage.onclick = () => { skipping = true; if (wakeUp) wakeUp(); };
 
-  // 1. Charge up: the glow climbs one rarity at a time until it reaches the best pull
+  // 1. A shooting star crashes in and drops the egg
+  stage.classList.add('pre');
+  await new Promise((r) => setTimeout(r, 30));
+  const c = eggCenter();
+  const starColor = FX_COLORS[RARITY_ORDER[Math.min(tease, 2)]];
+  if (!skipping) {
+    sfx.whoosh();
+    await Promise.race([FX.meteor(FX.size().W + 60, -80, c.x, c.y, starColor, 0.75), wait(900)]);
+    FX.ring(c.x, c.y, { color: starColor, maxR: 200, width: 8 });
+    FX.burst(c.x, c.y, { color: starColor, count: 45, speed: 320, gravity: 400 });
+    sfx.thud();
+  }
+  stage.classList.remove('pre');
+  stage.classList.add('landed');
+  await wait(450);
+  stage.classList.remove('landed');
+
+  // 2. Charge up: energy spirals in, and the glow climbs one rarity at a time
+  let orbRate = 0;
+  let orbColor = '#ffffff';
+  let acc = 0;
+  effects.push(FX.emitter((dt) => {
+    acc += dt * orbRate;
+    while (acc > 1) { acc--; FX.orb(c.x, c.y, orbColor); }
+  }));
+
   stage.classList.add('charging');
-  for (let step = 0; step <= Math.max(tier, 1); step++) {
-    const shown = Math.min(step, tier);
+  for (let step = 0; step <= Math.max(tease, 1); step++) {
+    const shown = Math.min(step, tease);
     stage.dataset.glow = RARITY_ORDER[shown];
     stage.style.setProperty('--amp', 3 + step * 3);
     stage.classList.toggle('rays-on', shown >= 2);
+    orbColor = FX_COLORS[RARITY_ORDER[shown]];
+    orbRate = 25 + step * 35;
     if (!skipping) {
       sfx.charge(step);
-      // little hop each time the egg "upgrades"
       stage.classList.remove('hop'); void stage.offsetWidth;
-      if (step > 0 && shown === step) stage.classList.add('hop');
+      if (step > 0 && shown === step) {
+        stage.classList.add('hop');
+        FX.ring(c.x, c.y, { color: orbColor, maxR: 230, width: 6, life: 0.6 });
+        FX.glitter(c.x, c.y, { color: orbColor, count: 12 + step * 6, spread: 160 });
+      }
     }
-    await wait(step === 0 ? 650 : 520);
+    await wait(step === 0 ? 650 : 560);
     stage.classList.remove('hop');
   }
 
-  // 2. Crack (with a dramatic hold + quake for Legendary/Mythic)
+  // 3. Crack, with lightning and a quake for Legendary/Mythic
   stage.classList.add('cracking');
   if (!skipping) sfx.crack();
-  if (tier >= 3) {
+  if (tease >= 3) {
     stage.classList.add('quake');
-    await wait(tier === 4 ? 1100 : 700);
+    let boltColor = () => (Math.random() < 0.5 ? '#ffe08a' : '#fff6d8');
+    let next = 0;
+    effects.push(FX.emitter((dt) => {
+      next -= dt;
+      if (next > 0) return;
+      next = FX.rand(0.06, 0.18);
+      const a = FX.rand(0, Math.PI * 2);
+      const r = FX.rand(160, 340);
+      FX.lightning(c.x, c.y, c.x + Math.cos(a) * r, c.y + Math.sin(a) * r, boltColor());
+      if (Math.random() < 0.4) sfx.zap();
+    }));
+    await wait(900);
+
+    // 3b. Mythic fake-out: the gold egg glitches... and turns rainbow
+    if (tier === 4) {
+      orbRate = 0;
+      stage.classList.add('glitch');
+      if (!skipping) sfx.glitch();
+      await wait(750);
+      stage.classList.remove('glitch');
+      stage.dataset.glow = 'mythic';
+      boltColor = rainbowColor;
+      orbColor = 'rainbow';
+      orbRate = 160;
+      FX.ring(c.x, c.y, { color: 'rainbow', maxR: 420, width: 16, life: 0.9 });
+      if (!skipping) { sfx.charge(5); sfx.charge(6); }
+      await wait(900);
+    }
   } else {
     await wait(450);
   }
+  stopEffects();
 
-  // 3. Burst open
+  // 4. Burst open
   stage.classList.remove('charging', 'quake');
   stage.classList.add('open');
   const flash = stage.querySelector('.flash');
   flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
-  burst(tier);
+  const col = FX_COLORS[best.pet.rarity];
+  FX.burst(c.x, c.y, { color: col, count: 80 + tier * 70, speed: 380 + tier * 110, size: 2.5 + tier * 0.4 });
+  FX.glitter(c.x, c.y, { color: col, count: 30 + tier * 25, spread: 260 + tier * 60, life: 2.5 });
+  FX.ring(c.x, c.y, { color: col, maxR: 320 + tier * 90, width: 14 });
+  if (tier >= 2) setTimeout(() => FX.ring(c.x, c.y, { color: col, maxR: 260 + tier * 70, width: 8, life: 0.9 }), 160);
+  if (tier >= 3) FX.confetti(tier === 4 ? 240 : 130);
   sfx.pop();
   sfx.reveal(tier);
 
-  // 4. Show the best pet
+  // Keep the party going behind the reveal
+  if (tier >= 3) {
+    let next = 0.5;
+    effects.push(FX.emitter((dt) => {
+      next -= dt;
+      if (next > 0) return;
+      next = FX.rand(0.35, 0.7);
+      const { W, H } = FX.size();
+      FX.firework(FX.rand(W * 0.12, W * 0.88), FX.rand(H * 0.08, H * 0.45), col);
+      sfx.boom();
+    }));
+  } else if (tier === 2) {
+    let next = 0.3;
+    effects.push(FX.emitter((dt) => {
+      next -= dt;
+      if (next > 0) return;
+      next = 0.35;
+      FX.glitter(c.x + FX.rand(-80, 80), c.y + FX.rand(-60, 60), { color: col, count: 6, spread: 90 });
+    }));
+  }
+
+  // 5. Show the best pet
   const { pet } = best;
   stage.querySelector('.stage-pet').innerHTML = `
     <div class="big ${tier >= 3 ? 'float' : ''}">${pet.emoji}</div>
@@ -312,9 +393,12 @@ async function playStage(best, count) {
   stage.querySelector('.stage-hint').textContent = count > 1 ? 'Tap to see all pets' : 'Tap to continue';
   await waitTap(tier <= 1 ? 1800 : null);
 
+  stopEffects();
   stage.classList.add('closing');
   await new Promise((r) => setTimeout(r, 250));
   stage.classList.add('hidden');
+  FX.clear();
+  FX.mount(document.body);
 }
 
 function dealCards(results, fast) {
@@ -342,8 +426,19 @@ function dealCards(results, fast) {
   const step = fast ? 60 : 170;
   order.forEach((idx, n) => {
     setTimeout(() => {
-      cards[idx].classList.add('flipped');
-      sfx.flip(RARITY_ORDER.indexOf(results[idx].pet.rarity));
+      const card = cards[idx];
+      const tier = RARITY_ORDER.indexOf(results[idx].pet.rarity);
+      card.classList.add('flipped');
+      sfx.flip(tier);
+      if (tier >= 1) {
+        const r = card.getBoundingClientRect();
+        const x = r.left + r.width / 2;
+        const y = r.top + r.height / 2;
+        const col = FX_COLORS[results[idx].pet.rarity];
+        FX.burst(x, y, { color: col, count: 10 + tier * 14, speed: 120 + tier * 70, gravity: 300, size: 2 });
+        if (tier >= 2) FX.glitter(x, y, { color: col, count: 8 + tier * 6, spread: 100 });
+        if (tier >= 3) FX.ring(x, y, { color: col, maxR: 120, width: 6 });
+      }
     }, 400 + n * step);
   });
   return 400 + order.length * step;
