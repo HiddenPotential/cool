@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pet Gacha</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>🥚 Pet Gacha</h1>
+    <div class="stats">
+      <span class="coins" title="Coins">🪙 <b id="coins">0</b></span>
+      <span class="income" title="Coins per second from your pets">+<b id="cps">0</b>/s</span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="hatch">Hatch</button>
+    <button class="tab" data-tab="collection">Collection <span id="dex-count">0/0</span></button>
+    <button class="tab" data-tab="rates">Rates</button>
+  </nav>
+
+  <main>
+    <!-- Hatch -->
+    <section id="tab-hatch" class="panel active">
+      <div class="stage">
+        <button id="egg" class="egg" aria-label="Tap the egg for coins">🥚</button>
+        <p class="hint">Tap the egg to earn coins. Your pets earn coins while you play.</p>
+      </div>
+
+      <div class="pull-buttons">
+        <button id="pull1" class="btn">Hatch ×1<small>🪙 100</small></button>
+        <button id="pull10" class="btn btn-gold">Hatch ×10<small>🪙 900 · Rare+ guaranteed</small></button>
+      </div>
+      <p class="pity">Legendary guaranteed in <b id="pity">50</b> hatches</p>
+      <button id="daily" class="btn btn-small">🎁 Claim daily gift</button>
+
+      <div id="results" class="results"></div>
+    </section>
+
+    <!-- Collection -->
+    <section id="tab-collection" class="panel">
+      <div class="filters" id="filters"></div>
+      <div id="dex" class="dex"></div>
+    </section>
+
+    <!-- Rates -->
+    <section id="tab-rates" class="panel">
+      <h2>Drop rates</h2>
+      <table class="rates" id="rates-table"></table>
+      <ul class="rules">
+        <li>Every 10× hatch includes at least one Rare or better.</li>
+        <li>If you go 50 hatches without a Legendary or Mythic, the next one is a Legendary.</li>
+        <li>Duplicates level up your pet (max level 10). Higher levels earn more coins.</li>
+        <li>Progress saves automatically in this browser.</li>
+      </ul>
+      <button id="reset" class="btn btn-danger btn-small">Reset save</button>
+    </section>
+  </main>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div id="modal-body"></div>
+      <button id="modal-close" class="btn">Nice!</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="game.js"></script>
+</body>
+</html>
