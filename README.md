@@ -1,40 +1,35 @@
-# 🥚 Pet Gacha
+# 🪙 Coin Pusher
 
-A small browser gacha game: hatch eggs, collect 24 pets across 5 rarities, and level them up.
+An arcade coin pusher for the browser. Drop coins onto a sliding shelf, let the pusher shove them toward the edge, and collect everything that falls off the front.
 
 ## Play
 
 **Play online:** https://hiddenpotential.github.io/cool/
 
-Open `index.html` in a browser. The whole game is that one file, so you can download just it and double-click it. No install or build step.
-
-You can also run a local server:
-
-```bash
-python3 -m http.server 8000
-```
-
-Then visit http://localhost:8000.
+Or download `index.html` and double-click it. The whole game is that one file, with no install or build step.
 
 ## How it works
 
-- **Tap the egg** to earn coins. Each pet you own also earns coins every second, even while you're away (up to 2 hours).
-- **Hatch ×1** costs 100 coins. **Hatch ×10** costs 900 and always includes at least one Rare or better.
-- **Pity:** if you go 50 hatches without a Legendary or Mythic, the next one is a Legendary.
-- **Duplicates** level a pet up (max Lv 10). Higher levels earn more. Duplicates after max level give coins back.
-- **Daily gift:** 500 free coins once a day.
-- **Hatch animation:** a shooting star crashes in and drops the egg. Energy spirals into it while its glow climbs through the rarity colors, hinting at your best pet, then it cracks and bursts in a shower of sparks and shockwaves. Legendary pulls add lightning, a screen quake, confetti and fireworks. Mythic pulls disguise themselves as Legendary, then glitch and turn rainbow. Results are dealt face-down and flip one by one, rarest last, with sparks on rare cards. Tap at any time to skip.
-- **Sound:** short synth sound effects, toggled with the 🔊 button.
-- Progress saves in your browser's `localStorage`.
+- **Drop coins:** tap the playfield to drop a coin at that spot, or press **DROP** (or Space) to drop from the moving chute. Hold to keep dropping. Each drop costs 1 credit.
+- **The pusher:** the shelf slides back and forth. The back wall scrapes coins off the shelf onto the table, and the shelf's front face pushes the table coins forward.
+- **Winning:** coins pushed off the **front edge** pay out. Near the front, the sides are open, and coins that fall off there go to the house.
+- **Lucky slot:** drop a coin through the moving **LUCKY** gate on the back wall to earn a spin.
 
-| Rarity    | Chance | Income / pet |
-|-----------|--------|--------------|
-| Common    | 60%    | 0.2/s        |
-| Rare      | 26%    | 1/s          |
-| Epic      | 10%    | 4/s          |
-| Legendary | 3.5%   | 15/s         |
-| Mythic    | 0.5%   | 60/s         |
+| Reels | Prize |
+|-------|-------|
+| 7 7 7 | Jackpot: 25-coin shower and a 💎 gem |
+| 💎 💎 💎 | A 10-credit big coin and 8 coins |
+| ⭐ ⭐ ⭐ | A ★ bonus token |
+| 🍒 🍒 🍒 | 6 coins |
+| 🔔 🔔 🔔 | 4 coins |
+| 🪙 🪙 🪙 | 2 coins |
 
-## Files
+- **Special pieces:** push a big coin off for 10 credits, a ★ token for 3 free spins, or a 💎 gem for 50 credits.
+- **Free credits:** you start with 30. While you have fewer than 5, you get 1 free credit every 15 seconds.
+- **Saving:** your credits, winnings and every coin on the table save in your browser.
 
-Everything is in `index.html`: the styles in the `<style>` tag, the particle effects (sparks, shockwaves, lightning, fireworks, confetti) in the first `<script>`, and the game logic in the second. To add pets or change the odds, edit the `PETS` and `RARITIES` lists at the top of the game script.
+Without the slot bonuses, the table returns about 83% of the coins you drop. The bonuses bring it close to even.
+
+## Code
+
+Everything is in `index.html`. The physics is the `Machine` class between the `SIM-START` and `SIM-END` markers, which has no browser dependencies. To change how generous the machine is, adjust `SIDE_WALL_END` (longer side walls lose fewer coins) or the slot `OUTCOMES` weights.

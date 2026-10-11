@@ -2,1011 +2,371 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pet Gacha</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Coin Pusher</title>
   <style>
 :root {
-  --bg: #1b1530;
-  --bg2: #2a2148;
-  --card: #342a5a;
-  --text: #f3efff;
-  --muted: #b3a9d6;
-  --accent: #8b6cff;
-  --gold: #ffc94a;
-  --common: #a9b4c2;
-  --rare: #4aa8ff;
-  --epic: #c063ff;
-  --legendary: #ffb52e;
-  --mythic: #ff4f8b;
+  --bg: #0b0716;
+  --cab: #1a1030;
+  --cab2: #2a1748;
+  --neon-pink: #ff3ea5;
+  --neon-cyan: #2ef2ff;
+  --neon-yellow: #ffd23e;
+  --led: #ff4d2e;
+  --text: #f4eeff;
+  --muted: #a89cc8;
 }
 
 * { box-sizing: border-box; }
-
+html, body { height: 100%; }
 body {
-  margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: radial-gradient(circle at 50% 0%, var(--bg2), var(--bg) 70%) fixed;
-  color: var(--text);
-  min-height: 100vh;
+  margin: 0; background: radial-gradient(ellipse at 50% 0%, #241443, var(--bg) 60%) fixed;
+  color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  display: flex; justify-content: center; align-items: flex-start;
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
-
 button { font: inherit; color: inherit; cursor: pointer; }
 
-.topbar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 16px; position: sticky; top: 0; z-index: 5;
-  background: rgba(27, 21, 48, .9); backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(255,255,255,.08);
-}
-.topbar h1 { font-size: 1.3rem; margin: 0; }
-.stats { display: flex; gap: 12px; align-items: baseline; }
-.coins { font-size: 1.2rem; color: var(--gold); }
-.income { color: var(--muted); font-size: .9rem; }
-
-.tabs { display: flex; gap: 6px; padding: 10px 16px; max-width: 900px; margin: 0 auto; }
-.tab {
-  flex: 1; padding: 10px; border: 0; border-radius: 10px;
-  background: var(--card); color: var(--muted);
-}
-.tab.active { background: var(--accent); color: #fff; }
-.tab span { font-size: .8rem; opacity: .8; }
-
-main { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; }
-.panel { display: none; }
-.panel.active { display: block; }
-
-/* Hatch */
-.stage { text-align: center; padding: 20px 0 10px; }
-.egg {
-  font-size: 110px; line-height: 1; background: none; border: 0;
-  filter: drop-shadow(0 8px 20px rgba(139,108,255,.5));
-  transition: transform .08s; user-select: none; -webkit-tap-highlight-color: transparent;
-}
-.egg:active { transform: scale(.92); }
-.egg.shake { animation: shake .5s ease-in-out infinite; }
-.hint { color: var(--muted); font-size: .9rem; margin: 6px 0 0; }
-
-@keyframes shake {
-  0%, 100% { transform: rotate(0); }
-  25% { transform: rotate(-12deg); }
-  75% { transform: rotate(12deg); }
+.cabinet {
+  width: 100%; max-width: 480px; margin: 12px 16px 24px; padding: 12px 12px 16px;
+  background: linear-gradient(180deg, var(--cab2), var(--cab) 30%, #120a24);
+  border-radius: 22px; position: relative;
+  box-shadow: 0 0 0 3px #3a2366, 0 0 0 6px #120a24, 0 0 40px rgba(255, 62, 165, .25), 0 20px 50px rgba(0,0,0,.6);
 }
 
-.pull-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
-.btn {
-  border: 0; border-radius: 12px; padding: 12px 20px;
-  background: var(--accent); color: #fff; font-weight: 600;
-  display: inline-flex; flex-direction: column; align-items: center;
-  box-shadow: 0 4px 0 rgba(0,0,0,.3); transition: transform .08s, opacity .2s;
+/* Marquee */
+.marquee {
+  position: relative; text-align: center; padding: 12px 8px 10px; border-radius: 14px;
+  background: linear-gradient(180deg, #2b0f3f, #170a26);
+  box-shadow: inset 0 0 0 2px #4a2a7a, inset 0 0 24px rgba(255,62,165,.25);
+  overflow: hidden;
 }
-.btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.3); }
-.btn:disabled { opacity: .45; cursor: not-allowed; }
-.btn small { font-weight: 400; font-size: .75rem; opacity: .9; }
-.btn-gold { background: linear-gradient(135deg, #ffb52e, #ff7b2e); }
-.btn-small { padding: 8px 14px; font-size: .9rem; }
-.btn-danger { background: #c9384f; }
-#daily { display: flex; margin: 10px auto 0; }
+.marquee h1 {
+  margin: 0; font-size: clamp(1.6rem, 7vw, 2.3rem); letter-spacing: .08em; font-weight: 900;
+  color: #fff; text-shadow: 0 0 6px var(--neon-pink), 0 0 16px var(--neon-pink), 0 0 32px var(--neon-pink);
+  animation: neonFlicker 6s infinite;
+}
+.marquee h1 span { color: #fff; text-shadow: 0 0 6px var(--neon-cyan), 0 0 16px var(--neon-cyan), 0 0 32px var(--neon-cyan); }
+.bulbs { display: flex; justify-content: space-between; padding: 0 4px; }
+.bulbs i {
+  width: 8px; height: 8px; border-radius: 50%; background: #5a3d1a; display: block;
+  animation: chase 1.2s infinite;
+}
+.bulbs i:nth-child(3n+2) { animation-delay: .4s; }
+.bulbs i:nth-child(3n+3) { animation-delay: .8s; }
+.marquee.party .bulbs i { animation-duration: .3s; }
+@keyframes chase {
+  0%, 30% { background: var(--neon-yellow); box-shadow: 0 0 8px var(--neon-yellow); }
+  31%, 100% { background: #5a3d1a; box-shadow: none; }
+}
+@keyframes neonFlicker { 0%, 92%, 96%, 100% { opacity: 1; } 94% { opacity: .55; } }
 
-.pity { text-align: center; color: var(--muted); font-size: .85rem; margin: 10px 0 0; }
-
-.results {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 10px; margin-top: 24px;
+/* Slot reels */
+.slot {
+  display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0 8px;
 }
-
-/* Pet cards */
-.pet {
-  background: var(--card); border-radius: 14px; padding: 10px 6px; text-align: center;
-  border: 2px solid var(--rc, var(--common)); position: relative;
-  box-shadow: 0 0 0 0 var(--rc);
+.reel {
+  width: 58px; height: 58px; border-radius: 10px; display: grid; place-items: center;
+  background: linear-gradient(180deg, #ddd 0%, #fff 30%, #fff 70%, #ccc 100%);
+  box-shadow: inset 0 0 0 2px #000, 0 0 0 3px #b38a1f, 0 0 12px rgba(255,210,62,.35);
+  font-size: 32px; overflow: hidden; color: #c4121a; font-weight: 900;
 }
-.pet .emoji { font-size: 42px; line-height: 1.2; }
-.pet .name { font-size: .85rem; font-weight: 600; margin-top: 4px; }
-.pet .rarity { font-size: .7rem; color: var(--rc); text-transform: uppercase; letter-spacing: .05em; }
-.pet .lvl { font-size: .7rem; color: var(--muted); }
-.pet .tag {
-  position: absolute; top: -8px; right: -6px; font-size: .65rem; font-weight: 700;
-  background: var(--mythic); color: #fff; border-radius: 6px; padding: 2px 5px;
+.reel.spin span { animation: blurSpin .08s linear infinite; }
+.reel.hit { animation: hit .5s ease-in-out 3; }
+@keyframes blurSpin { 0% { transform: translateY(-40%); filter: blur(1.5px); } 100% { transform: translateY(40%); filter: blur(1.5px); } }
+@keyframes hit { 50% { box-shadow: inset 0 0 0 2px #000, 0 0 0 3px var(--neon-yellow), 0 0 26px var(--neon-yellow); } }
+.spins {
+  margin-left: 6px; text-align: center; font-size: .65rem; letter-spacing: .12em; color: var(--muted);
 }
-.pet.reveal { animation: pop .4s backwards; }
-.pet.legendary, .pet.mythic { box-shadow: 0 0 18px var(--rc); }
-.pet.locked { border-color: rgba(255,255,255,.1); }
-.pet.locked .emoji { filter: brightness(0) opacity(.35); }
-.pet.locked .name { color: var(--muted); }
-
-@keyframes pop {
-  from { transform: scale(.3) rotate(-10deg); opacity: 0; }
-  70% { transform: scale(1.1); }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.common    { --rc: var(--common); }
-.rare      { --rc: var(--rare); }
-.epic      { --rc: var(--epic); }
-.legendary { --rc: var(--legendary); }
-.mythic    { --rc: var(--mythic); }
-
-/* Collection */
-.filters { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 14px; }
-.filters button {
-  border: 1px solid rgba(255,255,255,.15); background: transparent;
-  border-radius: 999px; padding: 4px 12px; font-size: .8rem; color: var(--muted);
-}
-.filters button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-.dex { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-
-/* Rates */
-.rates { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-.rates td, .rates th { padding: 8px; border-bottom: 1px solid rgba(255,255,255,.08); text-align: left; }
-.rates td:first-child { color: var(--rc); font-weight: 600; }
-.rules { color: var(--muted); line-height: 1.6; padding-left: 20px; }
-
-.icon-btn { background: none; border: 0; font-size: 1.1rem; padding: 0 2px; }
-
-/* ---------- Pull stage ---------- */
-/* Registered so the glow color and shake strength animate smoothly between rarities */
-@property --glow { syntax: '<color>'; inherits: true; initial-value: #ffffff; }
-@property --amp  { syntax: '<number>'; inherits: true; initial-value: 3; }
-
-.stage-overlay {
-  position: fixed; inset: 0; z-index: 10; overflow: hidden;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  --glow: #ffffff; --amp: 3; user-select: none; -webkit-tap-highlight-color: transparent;
-  transition: --glow .5s ease, --amp .5s ease;
-  animation: stageIn .35s ease-out;
-}
-.stage-overlay.hidden { display: none; }
-.stage-overlay.closing { animation: stageOut .35s ease-in forwards; }
-.stage-overlay[data-glow="rare"]      { --glow: var(--rare); }
-.stage-overlay[data-glow="epic"]      { --glow: var(--epic); }
-.stage-overlay[data-glow="legendary"] { --glow: var(--legendary); }
-.stage-overlay[data-glow="mythic"]    { --glow: var(--mythic); }
-
-.stage-bg {
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--glow) 30%, transparent), transparent 55%),
-    radial-gradient(ellipse at 50% 120%, #1c1238, transparent 60%),
-    #07050f;
-}
-.stage-bg::before { /* vignette */
-  content: ""; position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.65));
-}
-.stage-bg::after { /* starfield */
-  content: ""; position: absolute; inset: -320px 0 0; opacity: .7;
-  background-image:
-    radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent),
-    radial-gradient(1px 1px at 28% 72%, #fff, transparent),
-    radial-gradient(1.5px 1.5px at 44% 10%, #fff, transparent),
-    radial-gradient(1px 1px at 63% 84%, #fff, transparent),
-    radial-gradient(2px 2px at 78% 26%, #fff, transparent),
-    radial-gradient(1px 1px at 90% 62%, #fff, transparent),
-    radial-gradient(1.5px 1.5px at 6% 88%, #fff, transparent),
-    radial-gradient(1px 1px at 52% 46%, #fff, transparent);
-  background-size: 320px 320px;
-  animation: twinkle 3s ease-in-out infinite alternate, drift 40s linear infinite;
-}
-.stage-overlay[data-glow="mythic"] .stage-bg { animation: rainbow 2.4s linear infinite; }
-
-.rays {
-  position: absolute; width: 180vmax; height: 180vmax; left: 50%; top: 45%;
-  translate: -50% -50%; opacity: 0; scale: .6;
-  transition: opacity .8s ease, scale 1.2s cubic-bezier(.2,.8,.3,1);
-  background:
-    repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--glow) 40%, transparent) 0deg 6deg, transparent 6deg 20deg),
-    repeating-conic-gradient(from 10deg, color-mix(in srgb, var(--glow) 18%, transparent) 0deg 3deg, transparent 3deg 13deg);
-  -webkit-mask: radial-gradient(circle, #000 3%, transparent 40%);
-          mask: radial-gradient(circle, #000 3%, transparent 40%);
-  animation: spin 18s linear infinite;
-}
-.stage-overlay.rays-on .rays { opacity: 1; scale: 1; }
-.stage-overlay[data-glow="mythic"] .rays { animation: spin 8s linear infinite, rainbow 2.4s linear infinite; }
-
-/* Egg */
-.stage-egg {
-  position: relative; width: 1em; height: 1.2em; font-size: 170px; margin-top: -40px;
-  filter: brightness(1) drop-shadow(0 0 calc(8px + var(--amp) * 2.5px) var(--glow)) drop-shadow(0 0 0 transparent);
-}
-.stage-egg::before { /* halo */
-  content: ""; position: absolute; left: 50%; top: 50%; width: 1.6em; height: 1.6em;
-  translate: -50% -50%; border-radius: 50%; z-index: -1;
-  background: radial-gradient(circle, color-mix(in srgb, var(--glow) 55%, transparent), transparent 65%);
-  opacity: calc(.25 + var(--amp) * .04); animation: breathe 1.6s ease-in-out infinite;
-}
-.stage-egg::after { /* ground shadow */
-  content: ""; position: absolute; left: 50%; bottom: -.02em; width: .62em; height: .1em;
-  translate: -50% 0; border-radius: 50%; background: rgba(0,0,0,.55); filter: blur(6px); z-index: -1;
-}
-.stage-egg .half {
-  position: absolute; inset: 0; line-height: 1.2em; text-align: center;
-  transition: transform .8s cubic-bezier(.15,.85,.3,1), opacity .6s ease-out .15s;
-}
-.stage-egg .top    { clip-path: polygon(0 0,100% 0,100% 50%,76% 50%,68% 56%,60% 44%,52% 58%,44% 44%,36% 58%,28% 50%,0 50%); }
-.stage-egg .bottom { clip-path: polygon(0 50%,28% 50%,36% 58%,44% 44%,52% 58%,60% 44%,68% 56%,76% 50%,100% 50%,100% 100%,0 100%); }
-
-.stage-overlay.pre .stage-egg { opacity: 0; transform: scale(.4); }
-.stage-overlay.landed .stage-egg { animation: land .55s cubic-bezier(.3,1.5,.5,1); }
-.stage-overlay.charging .stage-egg { animation: wobble calc(.55s - var(--amp) * .025s) ease-in-out infinite; }
-.stage-overlay.hop .stage-egg { animation: hop .42s cubic-bezier(.3,.7,.4,1); }
-.stage-overlay.glitch .stage-egg { animation: glitch .14s steps(2) infinite; }
-.stage-overlay.glitch .stage-bg { animation: glitchBg .2s steps(2) infinite; }
-.stage-overlay.whiteout .stage-egg {
-  animation: none; transform: scale(1.12);
-  filter: brightness(2.6) drop-shadow(0 0 40px var(--glow)) drop-shadow(0 0 80px var(--glow));
-  transition: transform .14s ease-in, filter .14s ease-in;
+.spins b {
+  display: block; font-family: "Courier New", monospace; font-size: 1.4rem; color: var(--neon-yellow);
+  text-shadow: 0 0 8px var(--neon-yellow);
 }
 
-.crack { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.crack polyline {
-  fill: none; stroke: #2a1c08; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round;
-  stroke-dasharray: 100; stroke-dashoffset: 100;
+/* Playfield */
+.playfield {
+  position: relative; border-radius: 14px; overflow: hidden;
+  box-shadow: inset 0 0 0 2px #4a2a7a, 0 0 0 4px #0c0618;
+  background: #07040e;
 }
-.crack .glow-line { stroke: var(--glow); stroke-width: 5; opacity: .8; filter: blur(2px); }
-.stage-overlay.cracking .crack polyline { transition: stroke-dashoffset .45s cubic-bezier(.6,0,.4,1); stroke-dashoffset: 0; }
-
-.stage-overlay.open .stage-egg { animation: none; transform: none; filter: none; }
-.stage-overlay.open .stage-egg::before, .stage-overlay.open .stage-egg::after { opacity: 0; transition: opacity .3s; }
-.stage-overlay.open .crack { opacity: 0; }
-.stage-overlay.open .top    { transform: translate(-70px, -150px) rotate(-50deg); opacity: 0; }
-.stage-overlay.open .bottom { transform: translate(50px, 120px) rotate(28deg); opacity: 0; }
-
-.stage-overlay.quake { animation: quake .45s linear infinite; }
-.stage-overlay.punch { animation: punch .45s cubic-bezier(.2,.9,.3,1); }
-.stage-overlay.bump  { animation: bump .3s ease-out; }
-
-.flash {
-  position: absolute; inset: 0; opacity: 0; pointer-events: none;
-  background: radial-gradient(circle at 50% 45%, #fff 0%, color-mix(in srgb, var(--glow) 70%, #fff) 30%, transparent 75%);
+canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
+.banner {
+  position: absolute; left: 0; right: 0; top: 34%; text-align: center; pointer-events: none;
+  font-weight: 900; font-size: clamp(1.6rem, 9vw, 2.6rem); letter-spacing: .06em; opacity: 0;
+  color: #fff; text-shadow: 0 0 8px var(--c, var(--neon-yellow)), 0 0 24px var(--c, var(--neon-yellow)), 0 3px 0 #000;
 }
-.flash.go { animation: flash .7s ease-out; }
-
-#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 11; pointer-events: none; }
-.stage-overlay #fx { z-index: 0; }
-.stage-overlay .stage-pet, .stage-overlay .stage-hint { z-index: 1; }
-.stage-overlay .flash { z-index: 2; }
-
-/* Reveal */
-.stage-pet {
-  position: absolute; top: 45%; left: 50%; translate: -50% -50%;
-  text-align: center; pointer-events: none; margin-top: -20px; width: min(90vw, 420px);
-}
-.stage-pet::before { /* light behind the pet */
-  content: ""; position: absolute; left: 50%; top: 75px; width: 300px; height: 300px;
-  translate: -50% -50%; border-radius: 50%; z-index: -1;
-  background: radial-gradient(circle, color-mix(in srgb, var(--glow) 45%, transparent), transparent 65%);
-  animation: haloIn .8s ease-out backwards, breathe 2.4s .8s ease-in-out infinite;
-}
-.stage-pet .big {
-  font-size: 150px; line-height: 1;
-  filter: blur(0) brightness(1) drop-shadow(0 0 22px var(--glow)) drop-shadow(0 6px 10px rgba(0,0,0,.5));
-  animation: emerge .8s cubic-bezier(.2,1.3,.4,1) .05s backwards;
-}
-.stage-pet .big.float { animation: emerge .8s cubic-bezier(.2,1.3,.4,1) .05s backwards, bob 2.8s .85s ease-in-out infinite; }
-.stage-pet .label {
-  display: inline-block; position: relative; overflow: hidden;
-  font-size: 1.05rem; font-weight: 800; letter-spacing: .4em; padding: 4px 6px 4px calc(6px + .4em);
-  color: #fff; margin-top: 16px; border-radius: 6px;
-  background: color-mix(in srgb, var(--glow) 28%, rgba(0,0,0,.55));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--glow) 70%, transparent), 0 0 18px color-mix(in srgb, var(--glow) 50%, transparent);
-  animation: labelIn .55s .55s cubic-bezier(.2,1.2,.4,1) backwards;
-}
-.stage-pet .label::after { /* shine sweep */
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.7) 50%, transparent 65%) no-repeat;
-  background-size: 250% 100%; background-position: 150% 0;
-  animation: shine 1.1s 1s ease-out backwards;
-}
-.stage-overlay[data-glow="mythic"] .stage-pet .label {
-  background: linear-gradient(90deg, #ff4f8b, #ffb52e, #7dff6a, #4aa8ff, #c063ff, #ff4f8b);
-  background-size: 200% 100%; text-shadow: 0 1px 3px rgba(0,0,0,.6);
-  animation: labelIn .55s .55s cubic-bezier(.2,1.2,.4,1) backwards, slide 3s linear infinite;
-}
-.stage-pet .pname {
-  font-size: 1.9rem; font-weight: 800; margin-top: 8px; text-shadow: 0 2px 12px rgba(0,0,0,.9);
-  animation: rise .5s .75s ease-out backwards;
-}
-.stage-pet .sub { color: #d6cff2; margin-top: 4px; text-shadow: 0 1px 6px rgba(0,0,0,.9); animation: rise .5s .9s ease-out backwards; }
-.stage-pet .new {
-  display: inline-block; background: var(--mythic); color: #fff; font-weight: 800; font-size: .8rem;
-  padding: 3px 9px; border-radius: 6px; margin-top: 10px; box-shadow: 0 0 14px var(--mythic);
-  animation: stamp .45s 1.05s cubic-bezier(.3,1.6,.5,1) backwards;
+.banner small { display: block; font-size: .45em; letter-spacing: .15em; margin-top: 4px; }
+.banner.show { animation: banner 2.2s ease-out forwards; }
+@keyframes banner {
+  0% { opacity: 0; transform: scale(2.4); }
+  12% { opacity: 1; transform: scale(.95); }
+  18% { transform: scale(1.03); }
+  24%, 80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1) translateY(-20px); }
 }
 
-.stage-hint {
-  position: absolute; bottom: 28px; left: 0; right: 0; text-align: center;
-  color: rgba(255,255,255,.55); font-size: .85rem; animation: pulse 1.8s ease-in-out infinite;
+/* Control panel */
+.panel {
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; margin-top: 12px;
 }
+.led {
+  background: #0a0405; border-radius: 10px; padding: 6px 8px 8px; text-align: center;
+  box-shadow: inset 0 0 0 2px #2b1630, inset 0 4px 12px rgba(0,0,0,.8);
+}
+.led label { display: block; font-size: .62rem; letter-spacing: .2em; color: var(--muted); }
+.led span {
+  font-family: "Courier New", monospace; font-weight: 900; font-size: clamp(1.4rem, 6.5vw, 1.9rem);
+  color: var(--led); text-shadow: 0 0 6px var(--led), 0 0 14px rgba(255,77,46,.6); letter-spacing: .08em;
+}
+.led.won span { color: var(--neon-cyan); text-shadow: 0 0 6px var(--neon-cyan), 0 0 14px rgba(46,242,255,.5); }
+.led.bump span { animation: ledBump .35s; }
+@keyframes ledBump { 40% { filter: brightness(1.8); } }
 
-/* Result cards: face down, then flip */
-.flip { perspective: 700px; }
-.flip-inner { position: relative; transform-style: preserve-3d; height: 100%; }
-.flip.flipped .flip-inner { transform: rotateY(180deg); animation: flipLift .6s cubic-bezier(.3,1.2,.5,1); }
-.flip .pet, .card-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; height: 100%; }
-.flip .pet { transform: rotateY(180deg); }
-.card-back {
-  position: absolute; inset: 0; border-radius: 14px;
-  display: flex; align-items: center; justify-content: center; font-size: 34px;
-  background: repeating-linear-gradient(45deg, #3d3166 0 8px, #342a5a 8px 16px);
-  border: 2px solid var(--rc); box-shadow: 0 0 12px color-mix(in srgb, var(--rc) 60%, transparent);
+.drop-btn {
+  width: 104px; height: 104px; border-radius: 50%; border: 0; position: relative;
+  background: radial-gradient(circle at 50% 35%, #ff7ac4, var(--neon-pink) 45%, #a3125f 100%);
+  box-shadow: 0 8px 0 #6d0b3f, 0 10px 18px rgba(0,0,0,.6), 0 0 26px rgba(255,62,165,.55), inset 0 -6px 12px rgba(0,0,0,.25);
+  font-weight: 900; font-size: 1.35rem; letter-spacing: .06em; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.35);
+  transition: transform .06s, box-shadow .06s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1;
 }
-.flip.deal { animation: deal .45s cubic-bezier(.2,1.2,.4,1) backwards; }
-.card-back.legendary, .card-back.mythic { animation: throb .8s ease-in-out infinite; }
-.card-back.legendary::after, .card-back.mythic::after { content: "✦"; position: absolute; top: 6px; right: 8px; font-size: 14px; color: var(--rc); }
-.flip.flipped .pet.rare::after,
-.flip.flipped .pet.epic::after,
-.flip.flipped .pet.legendary::after,
-.flip.flipped .pet.mythic::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.55) 50%, transparent 60%) no-repeat;
-  background-size: 250% 100%; background-position: -150% 0;
-  animation: shine 1s .35s ease-out;
+.drop-btn small { font-size: .55rem; letter-spacing: .14em; font-weight: 700; opacity: .9; }
+.drop-btn:active, .drop-btn.pressed {
+  transform: translateY(6px);
+  box-shadow: 0 2px 0 #6d0b3f, 0 4px 10px rgba(0,0,0,.6), 0 0 34px rgba(255,62,165,.8), inset 0 -6px 12px rgba(0,0,0,.25);
 }
+.drop-btn:disabled { filter: grayscale(.8) brightness(.7); cursor: not-allowed; }
 
-@keyframes stageIn  { from { opacity: 0; } }
-@keyframes stageOut { to { opacity: 0; transform: scale(1.06); } }
-@keyframes spin     { to { rotate: 360deg; } }
-@keyframes rainbow  { to { filter: hue-rotate(360deg); } }
-@keyframes twinkle  { to { opacity: .3; } }
-@keyframes drift    { to { transform: translateY(320px); } }
-@keyframes breathe  { 50% { scale: 1.12; } }
-@keyframes wobble {
-  0%, 100% { transform: rotate(0) translateY(0); }
-  25% { transform: rotate(calc(var(--amp) * -1.4deg)) translateY(-2px); }
-  75% { transform: rotate(calc(var(--amp) * 1.4deg)) translateY(-2px); }
+.footer {
+  display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 8px;
+  font-size: .8rem; color: var(--muted);
 }
-@keyframes hop {
-  0% { transform: scale(1); } 20% { transform: scale(1.08, .9); }
-  50% { transform: translateY(-30px) scale(.95, 1.06); } 80% { transform: translateY(0) scale(1.06, .94); }
-  100% { transform: scale(1); }
+.footer button {
+  background: #24143e; border: 1px solid #4a2a7a; border-radius: 8px; padding: 6px 10px; font-size: .8rem;
 }
-@keyframes land {
-  0% { transform: translateY(-40px) scale(.5); opacity: 0; }
-  55% { transform: translateY(0) scale(1.14, .86); opacity: 1; }
-  80% { transform: scale(.96, 1.04); }
-  100% { transform: scale(1); }
+#refill { color: var(--neon-yellow); }
+
+.help {
+  margin-top: 10px; font-size: .82rem; color: var(--muted); line-height: 1.5;
+  background: #140b26; border-radius: 10px; padding: 8px 12px;
 }
-@keyframes quake {
-  0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-5px, 3px); }
-  40% { transform: translate(4px, -4px); } 60% { transform: translate(-4px, -2px); } 80% { transform: translate(5px, 3px); }
-}
-@keyframes punch { 0% { transform: scale(1); } 25% { transform: scale(1.07); } 100% { transform: scale(1); } }
-@keyframes bump  { 30% { transform: translateY(6px); } 100% { transform: none; } }
-@keyframes glitch {
-  0% { transform: translate(-8px, 2px) skewX(12deg); filter: hue-rotate(90deg) drop-shadow(6px 0 #ff2a6d) drop-shadow(-6px 0 #05d9e8); }
-  50% { transform: translate(7px, -3px) skewX(-10deg); filter: invert(1) drop-shadow(-6px 0 #ff2a6d) drop-shadow(6px 0 #05d9e8); }
-  100% { transform: translate(-3px, 0); filter: hue-rotate(200deg); }
-}
-@keyframes glitchBg { 0% { filter: invert(1) hue-rotate(90deg); } 100% { filter: hue-rotate(250deg) saturate(3); } }
-@keyframes flash { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes emerge {
-  0% { transform: translateY(70px) scale(0); opacity: 0;
-       filter: blur(8px) brightness(3) drop-shadow(0 0 22px var(--glow)) drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
-  60% { filter: blur(0) brightness(1.4) drop-shadow(0 0 30px var(--glow)) drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-@keyframes haloIn { from { scale: 0; opacity: 0; } }
-@keyframes bob { 50% { transform: translateY(-10px); } }
-@keyframes labelIn { 0% { transform: scaleX(0); opacity: 0; } 100% { transform: scaleX(1); opacity: 1; } }
-@keyframes stamp { 0% { transform: scale(2.4) rotate(-12deg); opacity: 0; } 100% { transform: scale(1) rotate(-4deg); opacity: 1; } }
-@keyframes rise { from { transform: translateY(14px); opacity: 0; } }
-@keyframes slide { to { background-position: 200% 0; } }
-@keyframes pulse { 50% { opacity: .25; } }
-@keyframes deal { from { transform: translateY(50px) rotate(-6deg) scale(.6); opacity: 0; } }
-@keyframes throb { 50% { box-shadow: 0 0 26px var(--rc); } }
-@keyframes shine { from { background-position: 150% 0; } to { background-position: -150% 0; } }
-@keyframes flipLift {
-  0% { transform: rotateY(0) translateY(0) scale(1); }
-  50% { transform: rotateY(90deg) translateY(-14px) scale(1.12); }
-  100% { transform: rotateY(180deg) translateY(0) scale(1); }
-}
+.help summary { cursor: pointer; color: var(--text); font-weight: 600; }
+.help ul { padding-left: 18px; margin: 8px 0 4px; }
+.help b { color: var(--text); }
 
 @media (prefers-reduced-motion: reduce) {
-  .stage-overlay *, .flip * { animation-duration: .01s !important; transition-duration: .01s !important; }
-  .stage-overlay.quake, .stage-overlay.punch, .stage-overlay.bump { animation: none; }
-}
-
-.toast {
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px);
-  background: var(--card); padding: 10px 16px; border-radius: 10px; z-index: 20;
-  transition: transform .25s; pointer-events: none;
-}
-.toast.show { transform: translateX(-50%) translateY(0); }
-
-.float-coin {
-  position: fixed; pointer-events: none; color: var(--gold); font-weight: 700;
-  animation: floatUp .8s forwards; z-index: 15;
-}
-@keyframes floatUp { to { transform: translateY(-60px); opacity: 0; } }
-
-@media (max-width: 480px) {
-  .topbar h1 { font-size: 1.05rem; }
-  .egg { font-size: 90px; }
+  .marquee h1, .bulbs i, .reel.hit { animation: none !important; }
 }
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <h1>🥚 Pet Gacha</h1>
-    <div class="stats">
-      <span class="coins" title="Coins">🪙 <b id="coins">0</b></span>
-      <span class="income" title="Coins per second from your pets">+<b id="cps">0</b>/s</span>
-      <button id="sound" class="icon-btn" title="Toggle sound">🔊</button>
+  <div class="cabinet">
+    <header class="marquee" id="marquee">
+      <div class="bulbs"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <h1>COIN <span>PUSHER</span></h1>
+      <div class="bulbs"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </header>
+
+    <div class="slot" aria-label="Lucky slot">
+      <div class="reel" id="reel0"><span>7</span></div>
+      <div class="reel" id="reel1"><span>7</span></div>
+      <div class="reel" id="reel2"><span>7</span></div>
+      <div class="spins">SPINS<b id="spins">0</b></div>
     </div>
-  </header>
 
-  <nav class="tabs">
-    <button class="tab active" data-tab="hatch">Hatch</button>
-    <button class="tab" data-tab="collection">Collection <span id="dex-count">0/0</span></button>
-    <button class="tab" data-tab="rates">Rates</button>
-  </nav>
+    <div class="playfield" id="playfield">
+      <canvas id="game" aria-label="Coin pusher playfield. Tap to drop a coin."></canvas>
+      <div class="banner" id="banner"></div>
+    </div>
 
-  <main>
-    <!-- Hatch -->
-    <section id="tab-hatch" class="panel active">
-      <div class="stage">
-        <button id="egg" class="egg" aria-label="Tap the egg for coins">🥚</button>
-        <p class="hint">Tap the egg to earn coins. Your pets earn coins while you play.</p>
-      </div>
+    <div class="panel">
+      <div class="led"><label>CREDITS</label><span id="credits">000</span></div>
+      <button class="drop-btn" id="drop">DROP<small>1 CREDIT</small></button>
+      <div class="led won" id="wonBox"><label>WON</label><span id="won">000</span></div>
+    </div>
 
-      <div class="pull-buttons">
-        <button id="pull1" class="btn">Hatch ×1<small>🪙 100</small></button>
-        <button id="pull10" class="btn btn-gold">Hatch ×10<small>🪙 900 · Rare+ guaranteed</small></button>
-      </div>
-      <p class="pity">Legendary guaranteed in <b id="pity">50</b> hatches</p>
-      <button id="daily" class="btn btn-small">🎁 Claim daily gift</button>
+    <div class="footer">
+      <span id="refill"></span>
+      <span>
+        <button id="sound" title="Toggle sound">🔊</button>
+        <button id="reset" title="Start over">Reset</button>
+      </span>
+    </div>
 
-      <div id="results" class="results"></div>
-    </section>
-
-    <!-- Collection -->
-    <section id="tab-collection" class="panel">
-      <div class="filters" id="filters"></div>
-      <div id="dex" class="dex"></div>
-    </section>
-
-    <!-- Rates -->
-    <section id="tab-rates" class="panel">
-      <h2>Drop rates</h2>
-      <table class="rates" id="rates-table"></table>
-      <ul class="rules">
-        <li>Every 10× hatch includes at least one Rare or better.</li>
-        <li>If you go 50 hatches without a Legendary or Mythic, the next one is a Legendary.</li>
-        <li>Duplicates level up your pet (max level 10). Higher levels earn more coins.</li>
-        <li>Progress saves automatically in this browser.</li>
+    <details class="help">
+      <summary>How to play</summary>
+      <ul>
+        <li><b>Tap the playfield</b> to drop a coin right there, or press <b>DROP</b> (or Space) to drop from the moving chute. Hold to keep dropping.</li>
+        <li>The shelf slides back and forth. The back wall scrapes coins off the shelf onto the table, and the shelf pushes them forward.</li>
+        <li>Coins pushed off the <b>front edge</b> are yours. Coins that fall off the <b>sides</b> go to the house.</li>
+        <li>Drop a coin through the moving <b>LUCKY</b> gate on the back wall to earn a slot spin. Match 3 for coin showers, a <b>10</b> big coin, a <b>★</b> bonus token or the <b>💎</b> jackpot gem.</li>
+        <li>Push a ★ off the front for 3 free spins. Push a 💎 off for 50 credits.</li>
+        <li>Running low? You get a free credit every 15 seconds while you have fewer than 5.</li>
       </ul>
-      <button id="reset" class="btn btn-danger btn-small">Reset save</button>
-    </section>
-  </main>
-
-  <div id="stage" class="stage-overlay hidden" aria-live="polite">
-    <div class="stage-bg"></div>
-    <div class="rays"></div>
-    <div class="stage-egg">
-      <span class="half top">🥚</span>
-      <span class="half bottom">🥚</span>
-      <svg class="crack" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <polyline class="glow-line" pathLength="100" points="28,50 36,58 44,44 52,58 60,44 68,56 76,50" />
-        <polyline pathLength="100" points="28,50 36,58 44,44 52,58 60,44 68,56 76,50" />
-      </svg>
-    </div>
-    <div class="stage-pet"></div>
-    <div class="flash"></div>
-    <p class="stage-hint">Tap to skip</p>
+    </details>
   </div>
 
-  <div id="toast" class="toast"></div>
-
   <script>
-// Canvas particle effects used by the hatch animation.
-const FX = (() => {
-  const canvas = document.createElement('canvas');
-  canvas.id = 'fx';
-  document.body.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
-  let W = 0, H = 0;
+// ======================= SIM-START =======================
+// The physics runs in "table units": x across (0..W), y from the back wall (0) to the front edge (L).
+const W = 300;
+const L = 360;
+const DECK_H = 16;          // height of the sliding shelf
+const FRONT_MIN = 45;       // shelf front edge, fully retracted
+const FRONT_MAX = 115;      // shelf front edge, fully extended
+const PERIOD = 3.2;         // seconds per push cycle
+const SIDE_WALL_END = 290;  // past this depth the sides are open and coins can fall off
+const ITERATIONS = 6;
 
-  function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+const TYPES = {
+  coin: { r: 13, value: 1 },
+  big:  { r: 19, value: 10 },
+  star: { r: 15, value: 0 },
+  gem:  { r: 15, value: 0 },
+};
+
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+class Machine {
+  constructor() {
+    this.coins = [];
+    this.t = 0;
+    this.front = FRONT_MIN;
   }
-  resize();
-  window.addEventListener('resize', resize);
 
-  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const MAX = 1800;
-  let parts = [];
+  frontAt(t) {
+    return FRONT_MIN + (FRONT_MAX - FRONT_MIN) * (0.5 - 0.5 * Math.cos((2 * Math.PI * t) / PERIOD));
+  }
 
-  // Pre-rendered glow sprites, one per color: much cheaper than a gradient per particle per frame
-  const sprites = new Map();
-  function sprite(color) {
-    let c = sprites.get(color);
-    if (c) return c;
-    c = document.createElement('canvas');
-    c.width = c.height = 64;
-    const g = c.getContext('2d');
-    const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-    grad.addColorStop(0, '#fff');
-    grad.addColorStop(0.18, color);
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 64, 64);
-    sprites.set(color, c);
+  add(x, y, layer, type = 'coin') {
+    const c = { x, y, layer, type, r: TYPES[type].r, elev: layer ? DECK_H : 0 };
+    this.coins.push(c);
     return c;
   }
-  let rings = [];
-  let bolts = [];
-  let emitters = [];
-  let running = false;
-  let last = 0;
 
-  const rand = (a, b) => a + Math.random() * (b - a);
-  // A color can be a string or 'rainbow'
-  // Rainbow hues are quantized so the sprite cache stays small
-  const pick = (c) => (c === 'rainbow' ? `hsl(${Math.floor(rand(0, 12)) * 30},100%,65%)` : c);
-  const amount = (n) => Math.round(reduced ? n * 0.3 : n);
+  // layer 1 = riding on the shelf, layer 0 = on the table
+  step(dt, onOut) {
+    this.t += dt;
+    const next = this.frontAt(this.t);
+    const df = next - this.front;
+    this.front = next;
 
-  function add(p) {
-    if (parts.length >= MAX) parts.shift();
-    parts.push({ age: 0, drag: 0.98, gravity: 0, size: 2, alpha: 1, kind: 'spark', ...p });
+    for (const c of this.coins) if (c.layer === 1) c.y += df;
+
+    for (let i = 0; i < ITERATIONS; i++) {
+      this.constrain();
+      this.collide();
+    }
+    this.constrain();
+
+    const keep = [];
+    for (const c of this.coins) {
+      if (c.layer === 1 && c.y > this.front) {
+        // slid off the front of the shelf onto the table
+        c.layer = 0;
+        c.y = this.front + c.r;
+      }
+      if (c.layer === 0 && c.y > L) { onOut(c, 'win'); continue; }
+      if (c.layer === 0 && (c.x < 0 || c.x > W)) { onOut(c, 'lost'); continue; }
+      keep.push(c);
+    }
+    this.coins = keep;
   }
 
-  function start() {
-    if (running) return;
-    running = true;
-    last = performance.now();
-    requestAnimationFrame(frame);
-  }
-
-  function frame(now) {
-    const dt = Math.min((now - last) / 1000, 0.1);
-    last = now;
-    ctx.clearRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'lighter';
-
-    emitters.forEach((e) => e.tick(dt));
-
-    // Particles
-    parts = parts.filter((p) => {
-      p.age += dt;
-      if (p.age >= p.life) return false;
-      const k = 1 - p.age / p.life;
-
-      if (p.kind === 'orb') {
-        // spiral inward and fade out at the egg's edge
-        const t = p.age / p.life;
-        p.angle += p.spin * dt * (1 + t * 2);
-        const r = p.rEnd + (p.r0 - p.rEnd) * Math.pow(1 - t, 2);
-        p.x = p.tx + Math.cos(p.angle) * r;
-        p.y = p.ty + Math.sin(p.angle) * r * 1.15;
-        p.alpha = 0.9 * Math.min(1, t * 6) * Math.min(1, (1 - t) * 4);
+  constrain() {
+    const f = this.front;
+    for (const c of this.coins) {
+      const r = c.r;
+      if (c.layer === 1) {
+        if (c.y < r) c.y = r;                       // back wall
+        c.x = clamp(c.x, r, W - r);
       } else {
-        p.vx *= Math.pow(p.drag, dt * 60);
-        p.vy = p.vy * Math.pow(p.drag, dt * 60) + p.gravity * dt;
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
+        if (c.y < f + r) c.y = f + r;               // shelf front face
+        if (c.y < SIDE_WALL_END) c.x = clamp(c.x, r, W - r);
       }
-
-      if (p.kind === 'shard') {
-        p.rot += p.vr * dt;
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.globalAlpha = Math.min(1, k * 2.5);
-        ctx.fillStyle = p.color;
-        ctx.strokeStyle = 'rgba(120,100,70,.5)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(p.pts[0], p.pts[1]);
-        ctx.lineTo(p.pts[2], p.pts[3]);
-        ctx.lineTo(p.pts[4], p.pts[5]);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-        ctx.globalCompositeOperation = 'lighter';
-        return true;
-      }
-
-      if (p.kind === 'confetti') {
-        p.rot += p.vr * dt;
-        p.x += Math.sin(p.age * 4 + p.phase) * 30 * dt;
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.scale(1, Math.cos(p.age * 8 + p.phase));
-        ctx.globalAlpha = Math.min(1, k * 3);
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.size, -p.size / 2, p.size * 2, p.size);
-        ctx.restore();
-        ctx.globalCompositeOperation = 'lighter';
-        return true;
-      }
-
-      let a = p.alpha * k;
-      let size = p.size;
-      if (p.kind === 'glitter') {
-        a *= 0.5 + 0.5 * Math.sin(p.age * p.twinkle + p.phase);
-        size *= 0.6 + 0.4 * k;
-      }
-      ctx.globalAlpha = Math.max(0, a);
-
-      if (p.trail) {
-        // streak from where it was a moment ago
-        ctx.strokeStyle = p.color;
-        ctx.lineWidth = size;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(p.x - p.vx * p.trail, p.y - p.vy * p.trail);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
-      } else {
-        const d = size * 6;
-        ctx.drawImage(sprite(p.color), p.x - d / 2, p.y - d / 2, d, d);
-      }
-      return true;
-    });
-
-    // Shockwave rings
-    rings = rings.filter((r) => {
-      r.age += dt;
-      if (r.age >= r.life) return false;
-      const t = r.age / r.life;
-      const ease = 1 - Math.pow(1 - t, 3);
-      ctx.globalAlpha = (1 - t) * 0.9;
-      ctx.strokeStyle = pick(r.color);
-      ctx.lineWidth = r.width * (1 - t) + 1;
-      ctx.beginPath();
-      ctx.arc(r.x, r.y, r.r0 + (r.maxR - r.r0) * ease, 0, Math.PI * 2);
-      ctx.stroke();
-      return true;
-    });
-
-    // Lightning
-    bolts = bolts.filter((b) => {
-      b.age += dt;
-      if (b.age >= b.life) return false;
-      ctx.globalAlpha = (1 - b.age / b.life) * (Math.random() < 0.3 ? 0.4 : 1);
-      ctx.strokeStyle = b.color;
-      ctx.shadowColor = b.color;
-      ctx.shadowBlur = 18;
-      [3, 1].forEach((w, i) => {
-        ctx.lineWidth = w;
-        ctx.strokeStyle = i ? '#fff' : b.color;
-        ctx.beginPath();
-        b.points.forEach(([x, y], j) => (j ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
-        ctx.stroke();
-      });
-      ctx.shadowBlur = 0;
-      return true;
-    });
-
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
-
-    if (parts.length || rings.length || bolts.length || emitters.length) {
-      requestAnimationFrame(frame);
-    } else {
-      running = false;
-      ctx.clearRect(0, 0, W, H);
     }
   }
 
-  // ---------- Public effects ----------
-  function burst(x, y, { color = '#fff', count = 60, speed = 420, gravity = 260, trail = 0.05, size = 2.5, life = 1.4, r0 = 0 } = {}) {
-    for (let i = 0, n = amount(count); i < n; i++) {
-      const ang = rand(0, Math.PI * 2);
-      const v = speed * (0.3 + 0.7 * Math.sqrt(Math.random()));
-      add({
-        x: x + Math.cos(ang) * r0, y: y + Math.sin(ang) * r0, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v,
-        color: pick(color), gravity, trail, size: rand(size * 0.5, size * 1.3),
-        life: rand(life * 0.5, life), drag: 0.96,
-      });
+  collide() {
+    const cell = 40;
+    const grid = new Map();
+    const coins = this.coins;
+    for (let i = 0; i < coins.length; i++) {
+      const c = coins[i];
+      const key = c.layer * 1e6 + (Math.floor(c.x / cell) + 50) * 1000 + (Math.floor(c.y / cell) + 50);
+      let list = grid.get(key);
+      if (!list) grid.set(key, (list = []));
+      list.push(i);
     }
-    start();
-  }
-
-  function glitter(x, y, { color = '#fff', count = 30, spread = 200, life = 2 } = {}) {
-    for (let i = 0, n = amount(count); i < n; i++) {
-      const ang = rand(0, Math.PI * 2);
-      const v = rand(20, spread);
-      add({
-        kind: 'glitter', x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v - 40,
-        gravity: 40, drag: 0.94, color: pick(color), size: rand(1.5, 3.5),
-        life: rand(life * 0.6, life), twinkle: rand(10, 25), phase: rand(0, 6),
-      });
-    }
-    start();
-  }
-
-  function confetti(count = 120) {
-    const colors = ['#ff4f8b', '#ffb52e', '#7dff6a', '#4aa8ff', '#c063ff', '#ffffff'];
-    for (let i = 0, n = amount(count); i < n; i++) {
-      add({
-        kind: 'confetti', x: rand(0, W), y: rand(-H * 0.5, -10),
-        vx: rand(-30, 30), vy: rand(80, 220), gravity: 30, drag: 0.995,
-        color: colors[i % colors.length], size: rand(4, 8), life: rand(3, 5),
-        rot: rand(0, 6), vr: rand(-6, 6), phase: rand(0, 6),
-      });
-    }
-    start();
-  }
-
-  function ring(x, y, { color = '#fff', maxR = 260, width = 10, life = 0.7, r0 = 10 } = {}) {
-    rings.push({ x, y, color, maxR, width, life, r0, age: 0 });
-    start();
-  }
-
-  function firework(x, y, color) {
-    burst(x, y, { color, count: 70, speed: 260, gravity: 120, trail: 0.06, size: 2, life: 1.3 });
-    glitter(x, y, { color, count: 20, spread: 120, life: 1.6 });
-  }
-
-  function lightning(x1, y1, x2, y2, color = '#cfe3ff') {
-    const points = [[x1, y1]];
-    const segs = 9;
-    for (let i = 1; i < segs; i++) {
-      const t = i / segs;
-      const off = (1 - Math.abs(t - 0.5) * 2) * 40;
-      points.push([x1 + (x2 - x1) * t + rand(-off, off), y1 + (y2 - y1) * t + rand(-off, off)]);
-    }
-    points.push([x2, y2]);
-    bolts.push({ points, color, age: 0, life: 0.35 });
-    start();
-  }
-
-  // A shooting star from (x1,y1) to (x2,y2); resolves when it lands
-  function meteor(x1, y1, x2, y2, color, dur = 0.8) {
-    return new Promise((resolve) => {
-      let t = 0;
-      const em = emitter((dt) => {
-        t += dt / dur;
-        const e = Math.min(1, t * t);
-        const x = x1 + (x2 - x1) * e;
-        const y = y1 + (y2 - y1) * e;
-        add({ x, y, vx: 0, vy: 0, color: '#fff', size: 7, life: 0.08 });
-        for (let i = 0; i < 4; i++) {
-          add({ x: x + rand(-4, 4), y: y + rand(-4, 4), vx: rand(-40, 40), vy: rand(-40, 40),
-            color: pick(color), size: rand(2, 4.5), life: rand(0.3, 0.7), drag: 0.9 });
+    for (let i = 0; i < coins.length; i++) {
+      const a = coins[i];
+      const gx = Math.floor(a.x / cell) + 50;
+      const gy = Math.floor(a.y / cell) + 50;
+      for (let ox = -1; ox <= 1; ox++) {
+        for (let oy = -1; oy <= 1; oy++) {
+          const list = grid.get(a.layer * 1e6 + (gx + ox) * 1000 + (gy + oy));
+          if (!list) continue;
+          for (const j of list) {
+            if (j <= i) continue;
+            const b = coins[j];
+            let dx = b.x - a.x;
+            let dy = b.y - a.y;
+            const min = a.r + b.r;
+            let d2 = dx * dx + dy * dy;
+            if (d2 >= min * min) continue;
+            let d = Math.sqrt(d2);
+            if (d < 1e-4) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d = Math.hypot(dx, dy); }
+            const push = Math.min((min - d) * 0.5, 2.5);
+            const nx = dx / d;
+            const ny = dy / d;
+            a.x -= nx * push; a.y -= ny * push;
+            b.x += nx * push; b.y += ny * push;
+          }
         }
-        if (t >= 1) { em.stop(); resolve(); }
-      });
-    });
-  }
-
-  // Calls fn(dt) every frame until stopped
-  function emitter(fn) {
-    const e = { tick: fn, stop: () => { emitters = emitters.filter((x) => x !== e); } };
-    emitters.push(e);
-    start();
-    return e;
-  }
-
-  // Energy orbs that spiral into (x, y)
-  function orb(x, y, color, rEnd = 70) {
-    const angle = rand(0, Math.PI * 2);
-    add({
-      kind: 'orb', tx: x, ty: y, angle, r0: rand(170, 300), rEnd, spin: rand(1.5, 3) * (Math.random() < 0.5 ? -1 : 1),
-      x, y, vx: 0, vy: 0, color: pick(color), size: rand(1.5, 3.4), life: rand(0.7, 1.1), alpha: 0,
-    });
-    start();
-  }
-
-  // Pieces of eggshell flying off
-  function shards(x, y, count = 14) {
-    for (let i = 0; i < count; i++) {
-      const ang = rand(-Math.PI * 0.95, -Math.PI * 0.05) + (Math.random() < 0.35 ? Math.PI : 0);
-      const v = rand(260, 560);
-      const sz = rand(7, 16);
-      add({
-        kind: 'shard', x: x + rand(-40, 40), y: y + rand(-10, 10),
-        vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, gravity: 1100, drag: 0.985,
-        color: Math.random() < 0.5 ? '#fbf7ee' : '#ece4d2', life: rand(0.9, 1.4),
-        rot: rand(0, 6), vr: rand(-12, 12),
-        pts: [rand(-sz, 0), rand(-sz, 0), rand(0, sz), rand(-sz / 2, sz / 2), rand(-sz / 2, sz / 2), rand(0, sz)],
-      });
+      }
     }
-    start();
   }
 
-  function clear() {
-    parts = []; rings = []; bolts = []; emitters = [];
+  // A full table so the pushing starts right away
+  fill() {
+    this.coins = [];
+    const r = TYPES.coin.r;
+    let row = 0;
+    for (let y = FRONT_MAX + r + 2; y < L - r - 4; y += r * 1.8, row++) {
+      for (let x = r + (row % 2 ? r : 2); x < W - r; x += r * 2.05) {
+        this.add(x + (Math.random() - 0.5) * 3, y + (Math.random() - 0.5) * 3, 0);
+      }
+    }
+    for (let i = 0; i < 14; i++) this.add(r + Math.random() * (W - 2 * r), r + Math.random() * 60, 1);
+    // a couple of prizes to aim for
+    this.coins.splice(Math.floor(this.coins.length * 0.5), 1);
+    this.add(W * 0.35, L * 0.62, 0, 'big');
+    this.add(W * 0.68, L * 0.5, 0, 'star');
   }
-
-  // Move the canvas into a container (e.g. the hatch stage) so its layers can sit above it
-  function mount(parent = document.body, before = null) {
-    parent.insertBefore(canvas, before);
-  }
-
-  return { mount, shards, burst, glitter, confetti, ring, firework, lightning, meteor, emitter, orb, clear, rand, size: () => ({ W, H }) };
-})();
-  </script>
-  <script>
-// ---------- Data ----------
-const RARITIES = {
-  common:    { label: 'Common',    weight: 60, income: 0.2 },
-  rare:      { label: 'Rare',      weight: 26, income: 1 },
-  epic:      { label: 'Epic',      weight: 10, income: 4 },
-  legendary: { label: 'Legendary', weight: 3.5, income: 15 },
-  mythic:    { label: 'Mythic',    weight: 0.5, income: 60 },
-};
-const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary', 'mythic'];
-
-const PETS = [
-  // common
-  { id: 'mouse',    name: 'Mouse',     emoji: '🐭', rarity: 'common' },
-  { id: 'hamster',  name: 'Hamster',   emoji: '🐹', rarity: 'common' },
-  { id: 'chick',    name: 'Chick',     emoji: '🐤', rarity: 'common' },
-  { id: 'frog',     name: 'Frog',      emoji: '🐸', rarity: 'common' },
-  { id: 'snail',    name: 'Snail',     emoji: '🐌', rarity: 'common' },
-  { id: 'pig',      name: 'Piglet',    emoji: '🐷', rarity: 'common' },
-  { id: 'bunny',    name: 'Bunny',     emoji: '🐰', rarity: 'common' },
-  { id: 'turtle',   name: 'Turtle',    emoji: '🐢', rarity: 'common' },
-  // rare
-  { id: 'cat',      name: 'Cat',       emoji: '🐱', rarity: 'rare' },
-  { id: 'dog',      name: 'Puppy',     emoji: '🐶', rarity: 'rare' },
-  { id: 'fox',      name: 'Fox',       emoji: '🦊', rarity: 'rare' },
-  { id: 'penguin',  name: 'Penguin',   emoji: '🐧', rarity: 'rare' },
-  { id: 'koala',    name: 'Koala',     emoji: '🐨', rarity: 'rare' },
-  { id: 'owl',      name: 'Owl',       emoji: '🦉', rarity: 'rare' },
-  // epic
-  { id: 'panda',    name: 'Panda',     emoji: '🐼', rarity: 'epic' },
-  { id: 'tiger',    name: 'Tiger',     emoji: '🐯', rarity: 'epic' },
-  { id: 'octopus',  name: 'Octopus',   emoji: '🐙', rarity: 'epic' },
-  { id: 'peacock',  name: 'Peacock',   emoji: '🦚', rarity: 'epic' },
-  { id: 'shark',    name: 'Shark',     emoji: '🦈', rarity: 'epic' },
-  // legendary
-  { id: 'lion',     name: 'Lion King', emoji: '🦁', rarity: 'legendary' },
-  { id: 'unicorn',  name: 'Unicorn',   emoji: '🦄', rarity: 'legendary' },
-  { id: 'phoenix',  name: 'Phoenix',   emoji: '🐦‍🔥', rarity: 'legendary' },
-  // mythic
-  { id: 'dragon',   name: 'Dragon',    emoji: '🐉', rarity: 'mythic' },
-  { id: 'trex',     name: 'Ancient Rex', emoji: '🦖', rarity: 'mythic' },
-];
-
-const COST_1 = 100;
-const COST_10 = 900;
-const PITY_LIMIT = 50;
-const MAX_LEVEL = 10;
-const DAILY_GIFT = 500;
-const OFFLINE_CAP_SEC = 2 * 60 * 60;
-const SAVE_KEY = 'petGachaSave_v1';
-
-// ---------- State ----------
-const defaultState = () => ({
-  coins: 1000,
-  owned: {},        // petId -> { level, copies }
-  pity: 0,          // hatches since last legendary/mythic
-  totalHatches: 0,
-  lastDaily: null,  // 'YYYY-MM-DD'
-  lastSeen: Date.now(),
-  sound: true,
-});
-
-let state = load();
-
-function load() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) return { ...defaultState(), ...JSON.parse(raw) };
-  } catch (e) { /* ignore broken save */ }
-  return defaultState();
 }
+// ======================= SIM-END =======================
 
-function save() {
-  state.lastSeen = Date.now();
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
-}
+// ---------- Setup ----------
+const $ = (id) => document.getElementById(id);
+const canvas = $('game');
+const ctx = canvas.getContext('2d');
+const machine = new Machine();
+const SAVE_KEY = 'coinPusher_v1';
+const START_CREDITS = 30;
+const REFILL_BELOW = 5;
+const REFILL_SECS = 15;
 
-// ---------- Helpers ----------
-const $ = (sel) => document.querySelector(sel);
-const petById = Object.fromEntries(PETS.map((p) => [p.id, p]));
-const fmt = (n) => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M'
-  : n >= 1e4 ? (n / 1e3).toFixed(1) + 'K'
-  : Math.floor(n).toLocaleString();
-const today = () => new Date().toISOString().slice(0, 10);
+let credits = START_CREDITS;
+let won = 0;
+let spins = 0;
+let soundOn = true;
+let refillTimer = REFILL_SECS;
 
-function petIncome(petId) {
-  const own = state.owned[petId];
-  if (!own) return 0;
-  return RARITIES[petById[petId].rarity].income * (1 + 0.5 * (own.level - 1));
-}
-
-function coinsPerSecond() {
-  return Object.keys(state.owned).reduce((sum, id) => sum + petIncome(id), 0);
-}
-
-function tapValue() {
-  return 1 + Math.floor(coinsPerSecond() * 0.2);
-}
-
-// ---------- Gacha ----------
-function rollRarity(minRarity = 'common') {
-  const minIdx = RARITY_ORDER.indexOf(minRarity);
-  const pool = RARITY_ORDER.slice(minIdx);
-  const total = pool.reduce((s, r) => s + RARITIES[r].weight, 0);
-  let roll = Math.random() * total;
-  for (const r of pool) {
-    roll -= RARITIES[r].weight;
-    if (roll < 0) return r;
-  }
-  return pool[pool.length - 1];
-}
-
-function rollPet(minRarity) {
-  let rarity;
-  if (state.pity + 1 >= PITY_LIMIT) rarity = rollRarity('legendary');
-  else rarity = rollRarity(minRarity);
-
-  if (RARITY_ORDER.indexOf(rarity) >= RARITY_ORDER.indexOf('legendary')) state.pity = 0;
-  else state.pity++;
-  state.totalHatches++;
-
-  const choices = PETS.filter((p) => p.rarity === rarity);
-  return choices[Math.floor(Math.random() * choices.length)];
-}
-
-function addPet(pet) {
-  const own = state.owned[pet.id];
-  if (!own) {
-    state.owned[pet.id] = { level: 1, copies: 1 };
-    return { pet, isNew: true, levelUp: false, level: 1 };
-  }
-  own.copies++;
-  if (own.level < MAX_LEVEL) {
-    own.level++;
-    return { pet, isNew: false, levelUp: true, level: own.level };
-  }
-  // Max level duplicates refund some coins
-  const refund = Math.round(COST_1 * 0.5 * (RARITY_ORDER.indexOf(pet.rarity) + 1));
-  state.coins += refund;
-  return { pet, isNew: false, levelUp: false, refund, level: own.level };
-}
-
-function hatch(count) {
-  const cost = count === 10 ? COST_10 : COST_1 * count;
-  if (state.coins < cost || hatching) return;
-  state.coins -= cost;
-
-  const pets = [];
-  for (let i = 0; i < count; i++) pets.push(rollPet());
-  // 10x guarantee: at least one Rare+
-  if (count === 10 && pets.every((p) => p.rarity === 'common')) {
-    const choices = PETS.filter((p) => p.rarity === 'rare');
-    pets[pets.length - 1] = choices[Math.floor(Math.random() * choices.length)];
-  }
-
-  const results = pets.map(addPet);
-  save();
-  playHatch(results);
-}
-
-// ---------- Rendering ----------
-let hatching = false;
-
-function petCard(pet, { level, extra, locked } = {}) {
-  const div = document.createElement('div');
-  div.className = `pet ${pet.rarity}${locked ? ' locked' : ''}`;
-  div.innerHTML = `
-    <div class="emoji">${pet.emoji}</div>
-    <div class="name">${locked ? '???' : pet.name}</div>
-    <div class="rarity">${RARITIES[pet.rarity].label}</div>
-    ${level ? `<div class="lvl">Lv ${level}${level >= MAX_LEVEL ? ' (MAX)' : ''}</div>` : ''}
-    ${extra ? `<div class="tag">${extra}</div>` : ''}
-  `;
-  return div;
-}
-
-// ---------- Sound (tiny WebAudio synth) ----------
+// ---------- Sound ----------
 let audio;
-function tone(freq, { dur = 0.15, type = 'sine', vol = 0.15, delay = 0, slide = 0 } = {}) {
-  if (!state.sound) return;
+function tone(freq, { dur = 0.12, type = 'sine', vol = 0.12, delay = 0, slide = 0 } = {}) {
+  if (!soundOn) return;
   try {
     audio = audio || new (window.AudioContext || window.webkitAudioContext)();
     const t = audio.currentTime + delay;
@@ -1016,440 +376,704 @@ function tone(freq, { dur = 0.15, type = 'sine', vol = 0.15, delay = 0, slide = 
     osc.frequency.setValueAtTime(freq, t);
     if (slide) osc.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
     gain.gain.setValueAtTime(vol, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     osc.connect(gain).connect(audio.destination);
     osc.start(t);
-    osc.stop(t + dur);
+    osc.stop(t + dur + 0.02);
   } catch (e) { /* audio unavailable */ }
 }
 const sfx = {
-  charge: (step) => tone(260 * Math.pow(1.26, step), { dur: 0.25, type: 'triangle', slide: 1.2 }),
-  crack: () => tone(900, { dur: 0.08, type: 'square', vol: 0.06 }),
-  pop: () => tone(180, { dur: 0.35, type: 'sawtooth', vol: 0.12, slide: 0.3 }),
-  reveal: (tier) => [0, 4, 7, 12, 16].slice(0, 2 + tier).forEach((semi, i) =>
-    tone(523 * Math.pow(2, semi / 12), { dur: 0.5, type: 'triangle', vol: 0.12, delay: i * 0.09 })),
-  flip: (tier) => tone(600 + tier * 180, { dur: 0.1, type: 'sine', vol: 0.08 }),
-  whoosh: () => tone(1400, { dur: 0.7, type: 'sawtooth', vol: 0.05, slide: 0.12 }),
-  thud: () => tone(140, { dur: 0.4, type: 'sine', vol: 0.25, slide: 0.4 }),
-  zap: () => tone(1800 + Math.random() * 800, { dur: 0.05, type: 'square', vol: 0.03 }),
-  glitch: () => [0, 1, 2, 3, 4, 5].forEach((i) =>
-    tone(200 + Math.random() * 1500, { dur: 0.07, type: 'square', vol: 0.05, delay: i * 0.1 })),
-  boom: () => tone(110, { dur: 0.5, type: 'triangle', vol: 0.15, slide: 0.35 }),
+  insert: () => { tone(1800, { dur: 0.05, vol: 0.06 }); tone(2600, { dur: 0.08, vol: 0.05, delay: 0.04 }); },
+  land: () => tone(2400 + Math.random() * 900, { dur: 0.06, type: 'triangle', vol: 0.05 }),
+  win: (n = 0) => { tone(1320 + n * 40, { dur: 0.12, type: 'triangle', vol: 0.1 }); tone(1980 + n * 40, { dur: 0.18, type: 'triangle', vol: 0.07, delay: 0.05 }); },
+  lost: () => tone(220, { dur: 0.15, type: 'sine', vol: 0.05, slide: 0.6 }),
+  gate: () => [0, 4, 7, 12].forEach((s, i) => tone(880 * Math.pow(2, s / 12), { dur: 0.12, type: 'square', vol: 0.04, delay: i * 0.06 })),
+  tick: () => tone(900, { dur: 0.02, type: 'square', vol: 0.025 }),
+  stop: () => tone(300, { dur: 0.08, type: 'square', vol: 0.06 }),
+  fanfare: (big) => [0, 4, 7, 12, 16, 19, 24].slice(0, big ? 7 : 4).forEach((s, i) =>
+    tone(523 * Math.pow(2, s / 12), { dur: 0.25, type: 'triangle', vol: 0.1, delay: i * 0.09 })),
+  miss: () => tone(200, { dur: 0.25, type: 'sawtooth', vol: 0.04, slide: 0.7 }),
 };
 
-// ---------- Pull animation ----------
-const stage = $('#stage');
-let skipping = false;
-let wakeUp = null;
-
-function wait(ms) {
-  if (skipping) return Promise.resolve();
-  return new Promise((resolve) => {
-    const done = () => { clearTimeout(timer); wakeUp = null; resolve(); };
-    const timer = setTimeout(done, ms);
-    wakeUp = done;
-  });
+// ---------- Projection (table units -> screen pixels) ----------
+let cw = 0, ch = 0, k = 1, yTop = 0, cx0 = 0;
+const TILT = 0.85;
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cw = canvas.parentElement.clientWidth;
+  ch = Math.round(cw * 1.18);
+  canvas.width = cw * dpr;
+  canvas.height = ch * dpr;
+  canvas.style.height = ch + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  k = (cw * 0.84) / W;
+  cx0 = cw / 2;
+  yTop = cw * 0.25;
 }
-
-function waitTap(autoMs) {
-  return new Promise((resolve) => {
-    let timer;
-    const done = () => { clearTimeout(timer); stage.onclick = null; resolve(); };
-    // brief delay so the tap that skipped the intro doesn't also dismiss the reveal
-    setTimeout(() => { stage.onclick = done; }, 250);
-    if (autoMs) timer = setTimeout(done, autoMs);
-  });
-}
-
-const FX_COLORS = { common: '#ffffff', rare: '#4aa8ff', epic: '#c063ff', legendary: '#ffb52e', mythic: 'rainbow' };
-const rainbowColor = () => `hsl(${Math.floor(Math.random() * 360)},100%,70%)`;
-
-function eggCenter() {
-  const r = stage.querySelector('.stage-egg').getBoundingClientRect();
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-}
-
-function resetStage() {
-  // jump straight back to white instead of fading from the last pull's color
-  stage.style.transition = 'none';
-  stage.className = 'stage-overlay';
-  stage.dataset.glow = 'common';
-  stage.style.setProperty('--amp', 3);
-  void stage.offsetWidth;
-  stage.style.transition = '';
-  stage.querySelector('.stage-pet').innerHTML = '';
-  stage.querySelector('.flash').classList.remove('go');
-  stage.querySelector('.stage-hint').textContent = 'Tap to skip';
-}
-
-async function playStage(best, count) {
-  const tier = RARITY_ORDER.indexOf(best.pet.rarity);
-  // A Mythic pretends to be a Legendary until the very end
-  const tease = tier === 4 ? 3 : tier;
-  const effects = [];
-  const stopEffects = () => { effects.forEach((e) => e.stop()); effects.length = 0; };
-
-  skipping = false;
-  FX.clear();
-  FX.mount(stage, stage.querySelector('.stage-pet'));
-  resetStage();
-  stage.onclick = () => { skipping = true; if (wakeUp) wakeUp(); };
-
-  // 1. A shooting star crashes in and drops the egg
-  stage.classList.add('pre');
-  await new Promise((r) => setTimeout(r, 30));
-  const c = eggCenter();
-  const starColor = FX_COLORS[RARITY_ORDER[Math.min(tease, 2)]];
-  if (!skipping) {
-    sfx.whoosh();
-    await Promise.race([FX.meteor(FX.size().W + 60, -80, c.x, c.y, starColor, 0.75), wait(900)]);
-    FX.ring(c.x, c.y + 60, { color: starColor, maxR: 220, width: 6, r0: 30, life: 0.8 });
-    FX.burst(c.x, c.y + 60, { color: starColor, count: 40, speed: 300, gravity: 700, life: 0.9 });
-    sfx.thud();
-  }
-  stage.classList.remove('pre');
-  stage.classList.add('landed', 'bump');
-  await wait(600);
-  stage.classList.remove('landed', 'bump');
-
-  // 2. Charge up: energy spirals in, and the glow climbs one rarity at a time
-  let orbRate = 0;
-  let orbColor = '#ffffff';
-  let acc = 0;
-  effects.push(FX.emitter((dt) => {
-    acc += dt * orbRate;
-    while (acc > 1) { acc--; FX.orb(c.x, c.y, orbColor); }
-  }));
-
-  stage.classList.add('charging');
-  for (let step = 0; step <= Math.max(tease, 1); step++) {
-    const shown = Math.min(step, tease);
-    stage.dataset.glow = RARITY_ORDER[shown];
-    stage.style.setProperty('--amp', 3 + step * 3);
-    stage.classList.toggle('rays-on', shown >= 2);
-    orbColor = FX_COLORS[RARITY_ORDER[shown]];
-    orbRate = 25 + step * 35;
-    if (!skipping) {
-      sfx.charge(step);
-      stage.classList.remove('hop'); void stage.offsetWidth;
-      if (step > 0 && shown === step) {
-        stage.classList.add('hop');
-        FX.ring(c.x, c.y, { color: orbColor, maxR: 240, width: 6, life: 0.7, r0: 75 });
-        FX.glitter(c.x, c.y, { color: orbColor, count: 12 + step * 6, spread: 160 });
-      }
-    }
-    await wait(step === 0 ? 650 : 560);
-    stage.classList.remove('hop');
-  }
-
-  // 3. Crack, with lightning and a quake for Legendary/Mythic
-  stage.classList.add('cracking');
-  if (!skipping) sfx.crack();
-  if (tease >= 3) {
-    stage.classList.add('quake');
-    let boltColor = () => (Math.random() < 0.5 ? '#ffe08a' : '#fff6d8');
-    let next = 0;
-    effects.push(FX.emitter((dt) => {
-      next -= dt;
-      if (next > 0) return;
-      next = FX.rand(0.06, 0.18);
-      const a = FX.rand(0, Math.PI * 2);
-      const r = FX.rand(160, 340);
-      FX.lightning(c.x, c.y, c.x + Math.cos(a) * r, c.y + Math.sin(a) * r, boltColor());
-      if (Math.random() < 0.4) sfx.zap();
-    }));
-    await wait(900);
-
-    // 3b. Mythic fake-out: the gold egg glitches... and turns rainbow
-    if (tier === 4) {
-      orbRate = 0;
-      stage.classList.add('glitch');
-      if (!skipping) sfx.glitch();
-      await wait(750);
-      stage.classList.remove('glitch');
-      stage.dataset.glow = 'mythic';
-      boltColor = rainbowColor;
-      orbColor = 'rainbow';
-      orbRate = 160;
-      FX.ring(c.x, c.y, { color: 'rainbow', maxR: 420, width: 16, life: 0.9, r0: 80 });
-      FX.glitter(c.x, c.y, { color: 'rainbow', count: 40, spread: 260 });
-      if (!skipping) { sfx.charge(5); sfx.charge(6); }
-      await wait(900);
-    }
-  } else {
-    await wait(450);
-  }
-  stopEffects();
-
-  // 4. A beat of white-hot stillness, then burst open
-  stage.classList.remove('charging', 'quake');
-  if (!skipping) {
-    stage.classList.add('whiteout');
-    tone(300, { dur: 0.18, type: 'sine', vol: 0.12, slide: 3 });
-    await new Promise((r) => setTimeout(r, 170));
-  }
-  stage.classList.remove('whiteout');
-  stage.classList.add('open', 'punch');
-  FX.shards(c.x, c.y, 12 + tier * 3);
-  const flash = stage.querySelector('.flash');
-  flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
-  const col = FX_COLORS[best.pet.rarity];
-  FX.burst(c.x, c.y, { color: col, count: 70 + tier * 50, speed: 420 + tier * 110, size: 2.4 + tier * 0.4, r0: 40, life: 1.2 });
-  FX.glitter(c.x, c.y, { color: col, count: 30 + tier * 25, spread: 260 + tier * 60, life: 2.5 });
-  FX.ring(c.x, c.y, { color: col, maxR: 340 + tier * 90, width: 14, r0: 60 });
-  if (tier >= 2) setTimeout(() => FX.ring(c.x, c.y, { color: col, maxR: 260 + tier * 70, width: 8, life: 0.9, r0: 60 }), 160);
-  if (tier >= 3) FX.confetti(tier === 4 ? 240 : 130);
-  sfx.pop();
-  sfx.reveal(tier);
-
-  // Keep the party going behind the reveal
-  if (tier >= 3) {
-    let next = 0.5;
-    effects.push(FX.emitter((dt) => {
-      next -= dt;
-      if (next > 0) return;
-      next = FX.rand(0.35, 0.7);
-      const { W, H } = FX.size();
-      // keep fireworks out of the middle so the pet stays clear
-      const side = Math.random() < 0.5 ? FX.rand(0.08, 0.3) : FX.rand(0.7, 0.92);
-      FX.firework(W * side, FX.rand(H * 0.08, H * 0.4), col);
-      sfx.boom();
-    }));
-  } else if (tier === 2) {
-    let next = 0.3;
-    effects.push(FX.emitter((dt) => {
-      next -= dt;
-      if (next > 0) return;
-      next = 0.35;
-      const a = FX.rand(0, Math.PI * 2);
-      FX.glitter(c.x + Math.cos(a) * 130, c.y + Math.sin(a) * 110, { color: col, count: 5, spread: 60 });
-    }));
-  }
-
-  // 5. Show the best pet
-  const { pet } = best;
-  stage.querySelector('.stage-pet').innerHTML = `
-    <div class="big ${tier >= 3 ? 'float' : ''}">${pet.emoji}</div>
-    <div class="label">${RARITIES[pet.rarity].label.toUpperCase()}${tier >= 3 ? '!' : ''}</div>
-    <div class="pname">${pet.name}</div>
-    <div class="sub">${count > 1 ? `Best of ${count} · ` : ''}Lv ${best.level}</div>
-    ${best.isNew ? '<div class="new">NEW!</div>' : ''}
-  `;
-  stage.querySelector('.stage-hint').textContent = count > 1 ? 'Tap to see all pets' : 'Tap to continue';
-  await waitTap(tier <= 1 ? 1800 : null);
-
-  stopEffects();
-  stage.classList.add('closing');
-  await new Promise((r) => setTimeout(r, 350));
-  stage.classList.add('hidden');
-  FX.clear();
-  FX.mount(document.body);
-}
-
-function dealCards(results, fast) {
-  const box = $('#results');
-  box.innerHTML = '';
-  const cards = results.map((r, i) => {
-    const extra = r.isNew ? 'NEW' : r.levelUp ? 'LV UP' : r.refund ? `+${r.refund}🪙` : '';
-    const wrap = document.createElement('div');
-    wrap.className = 'flip deal';
-    wrap.style.animationDelay = `${i * 0.04}s`;
-    const inner = document.createElement('div');
-    inner.className = 'flip-inner';
-    const back = document.createElement('div');
-    back.className = `card-back ${r.pet.rarity}`;
-    back.textContent = '🥚';
-    inner.append(back, petCard(r.pet, { level: r.level, extra }));
-    wrap.appendChild(inner);
-    box.appendChild(wrap);
-    return wrap;
-  });
-
-  // Flip one by one; save the rarest for last so the row ends on a high note
-  const order = cards.map((c, i) => i)
-    .sort((a, b) => RARITY_ORDER.indexOf(results[a].pet.rarity) - RARITY_ORDER.indexOf(results[b].pet.rarity));
-  const step = fast ? 60 : 170;
-  order.forEach((idx, n) => {
-    setTimeout(() => {
-      const card = cards[idx];
-      const tier = RARITY_ORDER.indexOf(results[idx].pet.rarity);
-      card.classList.add('flipped');
-      sfx.flip(tier);
-      if (tier >= 1) {
-        const r = card.getBoundingClientRect();
-        const x = r.left + r.width / 2;
-        const y = r.top + r.height / 2;
-        const col = FX_COLORS[results[idx].pet.rarity];
-        FX.burst(x, y, { color: col, count: 10 + tier * 14, speed: 120 + tier * 70, gravity: 300, size: 2 });
-        if (tier >= 2) FX.glitter(x, y, { color: col, count: 8 + tier * 6, spread: 100 });
-        if (tier >= 3) FX.ring(x, y, { color: col, maxR: 120, width: 6 });
-      }
-    }, 400 + n * step);
-  });
-  return 400 + order.length * step;
-}
-
-async function playHatch(results) {
-  hatching = true;
-  updateHud();
-  $('#results').innerHTML = '';
-
-  const best = results.reduce((a, b) =>
-    RARITY_ORDER.indexOf(b.pet.rarity) > RARITY_ORDER.indexOf(a.pet.rarity) ? b : a);
-  await playStage(best, results.length);
-
-  const dealTime = results.length > 1 ? dealCards(results, skipping) : (dealCards(results, true), 0);
-  setTimeout(() => {
-    hatching = false;
-    renderAll();
-  }, dealTime);
-}
-
-let filter = 'all';
-
-function renderDex() {
-  const dex = $('#dex');
-  dex.innerHTML = '';
-  PETS.filter((p) => filter === 'all' || p.rarity === filter).forEach((pet) => {
-    const own = state.owned[pet.id];
-    dex.appendChild(petCard(pet, own ? { level: own.level } : { locked: true }));
-  });
-  $('#dex-count').textContent = `${Object.keys(state.owned).length}/${PETS.length}`;
-}
-
-function renderFilters() {
-  const box = $('#filters');
-  box.innerHTML = '';
-  ['all', ...RARITY_ORDER].forEach((r) => {
-    const b = document.createElement('button');
-    b.textContent = r === 'all' ? 'All' : RARITIES[r].label;
-    b.classList.toggle('active', filter === r);
-    b.onclick = () => { filter = r; renderFilters(); renderDex(); };
-    box.appendChild(b);
-  });
-}
-
-function renderRates() {
-  const total = RARITY_ORDER.reduce((s, r) => s + RARITIES[r].weight, 0);
-  $('#rates-table').innerHTML = `
-    <tr><th>Rarity</th><th>Chance</th><th>Pets</th><th>Income / pet</th></tr>
-    ${RARITY_ORDER.map((r) => `
-      <tr class="${r}">
-        <td>${RARITIES[r].label}</td>
-        <td>${(RARITIES[r].weight / total * 100).toFixed(1)}%</td>
-        <td>${PETS.filter((p) => p.rarity === r).map((p) => p.emoji).join(' ')}</td>
-        <td>${RARITIES[r].income}/s</td>
-      </tr>`).join('')}
-  `;
-}
-
-function updateHud() {
-  $('#coins').textContent = fmt(state.coins);
-  $('#cps').textContent = coinsPerSecond().toFixed(1);
-  $('#pity').textContent = PITY_LIMIT - state.pity;
-  $('#pull1').disabled = hatching || state.coins < COST_1;
-  $('#pull10').disabled = hatching || state.coins < COST_10;
-  const claimed = state.lastDaily === today();
-  $('#daily').disabled = claimed;
-  $('#daily').textContent = claimed ? '🎁 Come back tomorrow' : `🎁 Claim daily gift (+${DAILY_GIFT})`;
-}
-
-function renderAll() {
-  updateHud();
-  renderDex();
-}
-
-let toastTimer;
-function toast(msg) {
-  const t = $('#toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-function floatCoin(x, y, amount) {
-  const el = document.createElement('div');
-  el.className = 'float-coin';
-  el.textContent = `+${amount}`;
-  el.style.left = `${x}px`;
-  el.style.top = `${y}px`;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 800);
-}
-
-// ---------- Events ----------
-document.querySelectorAll('.tab').forEach((tab) => {
-  tab.onclick = () => {
-    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
-    document.querySelectorAll('.panel').forEach((p) =>
-      p.classList.toggle('active', p.id === `tab-${tab.dataset.tab}`));
+function depthScale(y) { return 0.62 + 0.38 * (y / L); }
+function proj(x, y, elev = 0) {
+  const s = depthScale(y);
+  return {
+    x: cx0 + (x - W / 2) * k * s,
+    y: yTop + k * TILT * (0.62 * y + 0.19 * (y * y) / L) - elev * k * s * 0.9,
+    s,
   };
-});
-
-$('#egg').addEventListener('click', (e) => {
-  if (hatching) return;
-  const v = tapValue();
-  state.coins += v;
-  floatCoin(e.clientX || window.innerWidth / 2, e.clientY || 150, v);
-  updateHud();
-});
-
-$('#pull1').onclick = () => hatch(1);
-$('#pull10').onclick = () => hatch(10);
-
-$('#daily').onclick = () => {
-  if (state.lastDaily === today()) return;
-  state.lastDaily = today();
-  state.coins += DAILY_GIFT;
-  save();
-  updateHud();
-  toast(`🎁 You got ${DAILY_GIFT} coins!`);
-};
-
-$('#sound').onclick = () => {
-  state.sound = !state.sound;
-  $('#sound').textContent = state.sound ? '🔊' : '🔇';
-  save();
-};
-$('#sound').textContent = state.sound ? '🔊' : '🔇';
-
-$('#reset').onclick = () => {
-  if (!confirm('Erase all pets and coins and start over?')) return;
-  state = defaultState();
-  save();
-  $('#results').innerHTML = '';
-  renderAll();
-  toast('Save reset.');
-};
-
-// ---------- Game loop ----------
-let last = performance.now();
-function tick(now) {
-  const dt = (now - last) / 1000;
-  last = now;
-  state.coins += coinsPerSecond() * dt;
-  updateHud();
-  requestAnimationFrame(tick);
+}
+function unprojectX(px) {
+  // the chute sits above the back wall (y = 0)
+  return W / 2 + (px - cx0) / (k * depthScale(0));
 }
 
-setInterval(save, 5000);
-window.addEventListener('beforeunload', save);
+// ---------- Coin sprites ----------
+const SPRITE_RX = 44;
+const sprites = {};
+function makeSprite(type) {
+  const c = document.createElement('canvas');
+  c.width = 100; c.height = 70;
+  const g = c.getContext('2d');
+  const cx = 50, cy = 30, rx = SPRITE_RX, ry = 26, rim = 6;
+  const pal = {
+    coin: ['#fff3b0', '#f5c53a', '#b07a12', '#7a4f06'],
+    big:  ['#ffffff', '#d9dde6', '#8b93a6', '#4d5466'],
+    star: ['#d8f7ff', '#39b8ff', '#2160c9', '#173a7a'],
+    gem:  ['#ffe0f3', '#ff58b6', '#b0136b', '#6d0a42'],
+  }[type];
+  // rim
+  g.fillStyle = pal[3];
+  g.beginPath(); g.ellipse(cx, cy + rim, rx, ry, 0, 0, Math.PI * 2); g.fill();
+  g.fillRect(cx - rx, cy, rx * 2, rim);
+  g.fillStyle = pal[2];
+  g.beginPath(); g.ellipse(cx, cy + rim * 0.5, rx, ry, 0, 0, Math.PI * 2); g.fill();
+  // face
+  const grad = g.createRadialGradient(cx - rx * 0.35, cy - ry * 0.5, 2, cx, cy, rx * 1.1);
+  grad.addColorStop(0, pal[0]);
+  grad.addColorStop(0.45, pal[1]);
+  grad.addColorStop(1, pal[2]);
+  g.fillStyle = grad;
+  g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fill();
+  // inner ring
+  g.strokeStyle = 'rgba(0,0,0,.22)';
+  g.lineWidth = 2.5;
+  g.beginPath(); g.ellipse(cx, cy + 1, rx * 0.74, ry * 0.74, 0, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,.45)';
+  g.lineWidth = 1.5;
+  g.beginPath(); g.ellipse(cx, cy - 1, rx * 0.74, ry * 0.74, 0, Math.PI, Math.PI * 2); g.stroke();
+  // emblem
+  g.save();
+  g.translate(cx, cy);
+  g.scale(1, ry / rx);
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.font = '900 34px system-ui, sans-serif';
+  const emblem = { coin: '★', big: '10', star: '★', gem: '◆' }[type];
+  g.fillStyle = 'rgba(0,0,0,.25)';
+  g.fillText(emblem, 0, 3);
+  g.fillStyle = type === 'coin' ? 'rgba(255,240,170,.85)' : '#fff';
+  if (type === 'coin') g.font = '900 26px system-ui, sans-serif';
+  g.fillText(emblem, 0, 0);
+  g.restore();
+  return c;
+}
+['coin', 'big', 'star', 'gem'].forEach((t) => (sprites[t] = makeSprite(t)));
 
-// Offline earnings
-(function offline() {
-  const secs = Math.min((Date.now() - state.lastSeen) / 1000, OFFLINE_CAP_SEC);
-  const earned = Math.floor(coinsPerSecond() * secs);
-  if (earned > 0) {
-    state.coins += earned;
-    setTimeout(() => toast(`🐾 Your pets earned ${fmt(earned)} coins while you were away!`), 300);
+function drawCoin(type, x, y, elev, alpha = 1, extraScale = 1) {
+  const p = proj(x, y, elev);
+  const rx = TYPES[type].r * k * p.s * extraScale;
+  const sc = rx / SPRITE_RX;
+  if (alpha !== 1) ctx.globalAlpha = alpha;
+  ctx.drawImage(sprites[type], p.x - 50 * sc, p.y - 30 * sc, 100 * sc, 70 * sc);
+  if (alpha !== 1) ctx.globalAlpha = 1;
+  if (type !== 'coin') {
+    // special items glow so they're easy to spot
+    const glow = { big: '#e6ecff', star: '#39b8ff', gem: '#ff58b6' }[type];
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.25 + 0.15 * Math.sin(now / 200);
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rx * 1.6);
+    g.addColorStop(0, glow);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(p.x - rx * 1.6, p.y - rx * 1.6, rx * 3.2, rx * 3.2);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
   }
-})();
+}
 
-renderFilters();
-renderRates();
-renderAll();
-requestAnimationFrame(tick);
+// ---------- Moving parts ----------
+let now = 0;
+let chuteX = W / 2;
+let aimX = null;          // where the player is pointing, if anywhere
+let aimUntil = 0;
+const CHUTE_ELEV = 92;
+const GATE_ELEV = 52;
+const GATE_HALF = 12;
+function gateX(t) { return W / 2 + (W / 2 - 40) * Math.sin(t * 1.4); }
+
+const incoming = [];   // coins in the air on their way to the shelf
+const falling = [];    // coins dropping off the table (won or lost)
+const floaters = [];   // "+1" texts
+const sparks = [];
+
+function dropCoin(x, type = 'coin', free = false) {
+  if (!free) {
+    if (credits < 1) { flashRefill(); return false; }
+    credits -= 1;
+    sfx.insert();
+  }
+  x = clamp(x, TYPES[type].r, W - TYPES[type].r);
+  const throughGate = !free && Math.abs(x - gateX(now / 1000)) < GATE_HALF;
+  incoming.push({ x, type, t: 0, dur: 0.42, yLand: 8 + Math.random() * 30, gate: throughGate });
+  updateHud();
+  return true;
+}
+
+function onOut(c, kind) {
+  const p = proj(c.x, Math.min(c.y, L), 0);
+  falling.push({ type: c.type, x: p.x, y: p.y, vx: (c.x < 0 ? -40 : c.x > W ? 40 : 0), vy: 30, s: p.s, kind, t: 0 });
+}
+
+function landFalling(f) {
+  if (f.kind !== 'win') { sfx.lost(); return; }
+  const value = TYPES[f.type].value;
+  if (value) {
+    credits += value;
+    won += value;
+    floaters.push({ text: `+${value}`, x: f.x, y: ch - 40, t: 0, color: value > 1 ? '#fff' : '#ffd23e', big: value > 1 });
+    sfx.win(Math.min(won % 12, 12));
+    bumpLed();
+  }
+  if (f.type === 'big') { banner('+10!', 'BIG COIN', '#e6ecff'); sfx.fanfare(false); burst(f.x, ch - 50, '#e6ecff', 30); }
+  if (f.type === 'star') { addSpins(3); banner('BONUS!', '3 FREE SPINS', '#39b8ff'); sfx.fanfare(false); burst(f.x, ch - 50, '#39b8ff', 40); }
+  if (f.type === 'gem') {
+    credits += 50; won += 50;
+    banner('JACKPOT!', '+50 CREDITS', '#ff58b6'); sfx.fanfare(true); burst(f.x, ch - 50, '#ff58b6', 80);
+    party(3000);
+  }
+  updateHud();
+}
+
+// ---------- Lucky slot ----------
+const SYMBOLS = ['7', '💎', '⭐', '🍒', '🪙', '🔔'];
+const OUTCOMES = [
+  { sym: '7',  weight: 2,  run: () => { banner('JACKPOT!', '7 7 7', '#ff3ea5'); sfx.fanfare(true); shower(25); queueDrop('gem', 1600); party(3500); } },
+  { sym: '💎', weight: 4,  run: () => { banner('SUPER!', 'BIG COIN + 8', '#e6ecff'); sfx.fanfare(true); queueDrop('big', 300); shower(8); } },
+  { sym: '⭐', weight: 7,  run: () => { banner('STAR!', 'BONUS TOKEN', '#39b8ff'); sfx.fanfare(false); queueDrop('star', 300); } },
+  { sym: '🍒', weight: 12, run: () => { banner('WIN!', '6 COINS', '#ff4d6d'); sfx.fanfare(false); shower(6); } },
+  { sym: '🔔', weight: 12, run: () => { banner('WIN!', '4 COINS', '#ffd23e'); sfx.fanfare(false); shower(4); } },
+  { sym: '🪙', weight: 15, run: () => { banner('WIN!', '2 COINS', '#ffd23e'); sfx.fanfare(false); shower(2); } },
+  { sym: null, weight: 55 },
+];
+let spinning = false;
+
+function addSpins(n) {
+  spins = Math.min(spins + n, 20);
+  updateHud();
+  if (!spinning) setTimeout(spinSlot, 300);
+}
+
+function pickOutcome() {
+  const total = OUTCOMES.reduce((s, o) => s + o.weight, 0);
+  let r = Math.random() * total;
+  for (const o of OUTCOMES) { r -= o.weight; if (r < 0) return o; }
+  return OUTCOMES[OUTCOMES.length - 1];
+}
+
+function spinSlot() {
+  if (spinning || spins <= 0) return;
+  spinning = true;
+  spins--;
+  updateHud();
+  const outcome = pickOutcome();
+  let final;
+  if (outcome.sym) final = [outcome.sym, outcome.sym, outcome.sym];
+  else {
+    do { final = [0, 1, 2].map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]); }
+    while (final[0] === final[1] && final[1] === final[2]);
+  }
+  const reels = [0, 1, 2].map((i) => $('reel' + i));
+  reels.forEach((r) => { r.classList.remove('hit'); r.classList.add('spin'); });
+  const ticker = setInterval(() => {
+    reels.forEach((r) => {
+      if (r.classList.contains('spin')) r.firstElementChild.textContent = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+    });
+    sfx.tick();
+  }, 70);
+  reels.forEach((r, i) => setTimeout(() => {
+    r.classList.remove('spin');
+    r.firstElementChild.textContent = final[i];
+    sfx.stop();
+    if (i === 2) {
+      clearInterval(ticker);
+      if (outcome.sym) { reels.forEach((x) => x.classList.add('hit')); outcome.run(); }
+      else sfx.miss();
+      setTimeout(() => { spinning = false; spinSlot(); }, outcome.sym ? 1800 : 500);
+    }
+  }, 700 + i * 350));
+}
+
+function shower(n) {
+  for (let i = 0; i < n; i++) queueDrop('coin', 250 + i * 110);
+}
+function queueDrop(type, delay) {
+  setTimeout(() => dropCoin(TYPES[type].r + Math.random() * (W - 2 * TYPES[type].r), type, true), delay);
+}
+
+// ---------- Effects ----------
+function banner(title, sub, color) {
+  const b = $('banner');
+  b.innerHTML = `${title}<small>${sub}</small>`;
+  b.style.setProperty('--c', color);
+  b.classList.remove('show');
+  void b.offsetWidth;
+  b.classList.add('show');
+}
+function burst(x, y, color, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const v = 80 + Math.random() * 260;
+    sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 120, t: 0, life: 0.6 + Math.random() * 0.6, color });
+  }
+}
+let partyUntil = 0;
+function party(ms) {
+  partyUntil = now + ms;
+  $('marquee').classList.add('party');
+  setTimeout(() => { if (now >= partyUntil - 50) $('marquee').classList.remove('party'); }, ms);
+}
+function bumpLed() {
+  const box = $('wonBox');
+  box.classList.remove('bump');
+  void box.offsetWidth;
+  box.classList.add('bump');
+}
+
+// ---------- Rendering ----------
+function quad(a, b, c, d) {
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y);
+  ctx.closePath();
+}
+
+function drawScene() {
+  const t = now / 1000;
+  ctx.clearRect(0, 0, cw, ch);
+
+  // cabinet interior
+  const bg = ctx.createLinearGradient(0, 0, 0, ch);
+  bg.addColorStop(0, '#1b0d33');
+  bg.addColorStop(1, '#05030a');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, cw, ch);
+
+  // table
+  const t0 = proj(0, 0), t1 = proj(W, 0), t2 = proj(W, L), t3 = proj(0, L);
+  quad(t0, t1, t2, t3);
+  const felt = ctx.createLinearGradient(0, t0.y, 0, t3.y);
+  felt.addColorStop(0, '#0d3b4a');
+  felt.addColorStop(1, '#14607a');
+  ctx.fillStyle = felt;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth = 1;
+  for (let y = 40; y < L; y += 40) {
+    const a = proj(0, y), b = proj(W, y);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+
+  // open side gutters (lost coins) near the front
+  [0, W].forEach((x) => {
+    const dir = x === 0 ? -1 : 1;
+    const a = proj(x, SIDE_WALL_END), b = proj(x, L);
+    ctx.fillStyle = 'rgba(255,40,60,.18)';
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(b.x + dir * 10, b.y); ctx.lineTo(a.x + dir * 8, a.y);
+    ctx.fill();
+    // little warning lights
+    for (let y = SIDE_WALL_END + 12; y < L; y += 26) {
+      const p = proj(x, y);
+      const on = Math.floor(t * 4 + y / 26) % 2 === 0;
+      ctx.fillStyle = on ? '#ff3b4f' : '#55141c';
+      ctx.beginPath(); ctx.arc(p.x + dir * 5 * p.s, p.y, 2.2 * p.s * k / 1.2, 0, Math.PI * 2); ctx.fill();
+    }
+  });
+
+  // back wall
+  const w0 = proj(0, 0, 0), w1 = proj(W, 0, 0), w2 = proj(W, 0, CHUTE_ELEV + 18), w3 = proj(0, 0, CHUTE_ELEV + 18);
+  quad(w0, w1, w2, w3);
+  const wall = ctx.createLinearGradient(0, w3.y, 0, w0.y);
+  wall.addColorStop(0, '#3a1a63');
+  wall.addColorStop(1, '#1c0d33');
+  ctx.fillStyle = wall;
+  ctx.fill();
+  // wall bulbs
+  for (let i = 0; i <= 14; i++) {
+    const p = proj((W / 14) * i, 0, CHUTE_ELEV + 10);
+    const on = (Math.floor(t * (now < partyUntil ? 14 : 5)) + i) % 3 === 0;
+    ctx.fillStyle = on ? '#ffd23e' : '#5a3d1a';
+    if (on) { ctx.shadowColor = '#ffd23e'; ctx.shadowBlur = 8; }
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2.6 * k * 0.62, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  // lucky gate on the back wall
+  const gx = gateX(t);
+  const g0 = proj(gx - GATE_HALF, 0, GATE_ELEV - 14), g1 = proj(gx + GATE_HALF, 0, GATE_ELEV + 14);
+  ctx.fillStyle = '#0a0414';
+  ctx.strokeStyle = '#ffd23e';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#ffd23e';
+  ctx.shadowBlur = 10 + 6 * Math.sin(t * 6);
+  roundRect(g0.x, g1.y, g1.x - g0.x, g0.y - g1.y, 5);
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#ffd23e';
+  ctx.font = `900 ${Math.max(8, 7 * k * 0.62)}px system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('LUCKY', (g0.x + g1.x) / 2, (g0.y + g1.y) / 2);
+
+  // shelf (pusher) top and front face
+  const f = machine.front;
+  const d0 = proj(0, 0, DECK_H), d1 = proj(W, 0, DECK_H), d2 = proj(W, f, DECK_H), d3 = proj(0, f, DECK_H);
+  quad(d0, d1, d2, d3);
+  const deck = ctx.createLinearGradient(0, d0.y, 0, d3.y);
+  deck.addColorStop(0, '#6b7187');
+  deck.addColorStop(1, '#b9c0d4');
+  ctx.fillStyle = deck;
+  ctx.fill();
+  const e0 = proj(0, f, 0), e1 = proj(W, f, 0);
+  quad(d3, d2, e1, e0);
+  const face = ctx.createLinearGradient(0, d3.y, 0, e0.y);
+  face.addColorStop(0, '#ffcf3e');
+  face.addColorStop(1, '#c98a08');
+  ctx.fillStyle = face;
+  ctx.fill();
+  // hazard stripes on the face
+  ctx.save();
+  quad(d3, d2, e1, e0);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(20,10,0,.55)';
+  const stripeW = 14 * k * d3.s;
+  for (let x = d3.x - 40; x < d2.x + 40; x += stripeW * 2) {
+    ctx.beginPath();
+    ctx.moveTo(x, e0.y); ctx.lineTo(x + stripeW, e0.y); ctx.lineTo(x + stripeW + (e0.y - d3.y), d3.y); ctx.lineTo(x + (e0.y - d3.y), d3.y);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // coins on the shelf, then on the table, back to front
+  const deckCoins = machine.coins.filter((c) => c.layer === 1).sort((a, b) => a.y - b.y);
+  for (const c of deckCoins) drawCoin(c.type, c.x, c.y, DECK_H);
+  const tableCoins = machine.coins.filter((c) => c.layer === 0).sort((a, b) => a.y - b.y);
+  for (const c of tableCoins) drawCoin(c.type, c.x, c.y, c.elev);
+
+  // side walls (chrome rails)
+  [0, W].forEach((x) => {
+    const a = proj(x, -2, 0), b = proj(x, SIDE_WALL_END, 0), c = proj(x, SIDE_WALL_END, 14), d = proj(x, -2, 14);
+    quad(a, b, c, d);
+    const rail = ctx.createLinearGradient(0, d.y, 0, b.y);
+    rail.addColorStop(0, '#e9ecf5');
+    rail.addColorStop(1, '#6d7387');
+    ctx.fillStyle = rail;
+    ctx.fill();
+  });
+
+  // front edge: the win line
+  const glow = 0.55 + 0.45 * Math.sin(t * 5);
+  ctx.strokeStyle = `rgba(46,242,255,${0.5 + glow * 0.5})`;
+  ctx.shadowColor = '#2ef2ff';
+  ctx.shadowBlur = 14;
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(t3.x, t3.y + 2); ctx.lineTo(t2.x, t2.y + 2); ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // payout tray
+  const trayTop = t3.y + 12;
+  const tray = ctx.createLinearGradient(0, trayTop, 0, ch);
+  tray.addColorStop(0, '#120a20');
+  tray.addColorStop(1, '#2a1748');
+  ctx.fillStyle = tray;
+  roundRect(cw * 0.06, trayTop, cw * 0.88, ch - trayTop - 8, 12);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(46,242,255,.18)';
+  ctx.font = `900 ${cw * 0.07}px system-ui, sans-serif`;
+  ctx.fillText('WIN', cw / 2, (trayTop + ch) / 2);
+
+  // chute
+  const cp = proj(chuteX, 0, CHUTE_ELEV);
+  const cs = k * 0.62;
+  ctx.fillStyle = '#c9cfdf';
+  ctx.beginPath();
+  ctx.moveTo(cp.x - 22 * cs, cp.y - 14 * cs);
+  ctx.lineTo(cp.x + 22 * cs, cp.y - 14 * cs);
+  ctx.lineTo(cp.x + 10 * cs, cp.y + 4 * cs);
+  ctx.lineTo(cp.x - 10 * cs, cp.y + 4 * cs);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#ff3ea5';
+  ctx.fillRect(cp.x - 22 * cs, cp.y - 17 * cs, 44 * cs, 4 * cs);
+  // aim line
+  ctx.strokeStyle = 'rgba(255,62,165,.35)';
+  ctx.setLineDash([4, 5]);
+  ctx.lineWidth = 1.5;
+  const land = proj(chuteX, 22, DECK_H);
+  ctx.beginPath(); ctx.moveTo(cp.x, cp.y + 4 * cs); ctx.lineTo(land.x, land.y); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // coins in the air
+  for (const d of incoming) {
+    const p = Math.min(d.t / d.dur, 1);
+    const e = p * p;
+    const elev = CHUTE_ELEV + (DECK_H - CHUTE_ELEV) * e;
+    const y = d.yLand * e;
+    drawCoin(d.type, d.x, y, elev, 1, 1 + 0.15 * (1 - p));
+  }
+
+  // coins falling off the table
+  for (const fc of falling) {
+    const rx = TYPES[fc.type].r * k * fc.s;
+    const sc = rx / SPRITE_RX;
+    ctx.globalAlpha = fc.kind === 'win' ? 1 : Math.max(0, 1 - fc.t * 2);
+    ctx.save();
+    ctx.translate(fc.x, fc.y);
+    ctx.rotate(fc.t * (fc.kind === 'win' ? 3 : -4));
+    ctx.drawImage(sprites[fc.type], -50 * sc, -30 * sc, 100 * sc, 70 * sc);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  // sparks
+  ctx.globalCompositeOperation = 'lighter';
+  for (const s of sparks) {
+    ctx.globalAlpha = Math.max(0, 1 - s.t / s.life);
+    ctx.fillStyle = s.color;
+    ctx.beginPath(); ctx.arc(s.x, s.y, 2.2, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+
+  // +1 texts
+  for (const fl of floaters) {
+    ctx.globalAlpha = Math.max(0, 1 - fl.t / 0.9);
+    ctx.fillStyle = fl.color;
+    ctx.font = `900 ${fl.big ? 26 : 18}px system-ui, sans-serif`;
+    ctx.shadowColor = fl.color;
+    ctx.shadowBlur = 8;
+    ctx.fillText(fl.text, fl.x, fl.y - fl.t * 50);
+    ctx.shadowBlur = 0;
+  }
+  ctx.globalAlpha = 1;
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// ---------- Update ----------
+const STEP = 1 / 120;
+let acc = 0;
+let last = performance.now();
+
+function update(dt) {
+  const t = now / 1000;
+  // chute follows the player's aim, otherwise sweeps on its own
+  const target = aimX !== null && now < aimUntil ? aimX : W / 2 + (W / 2 - 25) * Math.sin(t * 1.3);
+  chuteX += (target - chuteX) * Math.min(1, dt * 12);
+
+  acc += dt;
+  let steps = 0;
+  while (acc >= STEP && steps < 12) {
+    machine.step(STEP, onOut);
+    acc -= STEP;
+    steps++;
+  }
+  if (steps === 12) acc = 0;
+
+  for (const c of machine.coins) if (c.elev > 0 && c.layer === 0) c.elev = Math.max(0, c.elev - dt * 90);
+
+  for (let i = incoming.length - 1; i >= 0; i--) {
+    const d = incoming[i];
+    d.t += dt;
+    if (d.t >= d.dur) {
+      incoming.splice(i, 1);
+      machine.add(d.x, d.yLand, 1, d.type);
+      sfx.land();
+      if (d.gate) {
+        const p = proj(d.x, 0, GATE_ELEV);
+        burst(p.x, p.y, '#ffd23e', 24);
+        floaters.push({ text: 'SPIN!', x: p.x, y: p.y, t: 0, color: '#ffd23e', big: true });
+        sfx.gate();
+        addSpins(1);
+      }
+    }
+  }
+
+  const trayY = ch - 30;
+  for (let i = falling.length - 1; i >= 0; i--) {
+    const fc = falling[i];
+    fc.t += dt;
+    fc.vy += 900 * dt;
+    fc.x += fc.vx * dt;
+    fc.y += fc.vy * dt;
+    if ((fc.kind === 'win' && fc.y >= trayY) || fc.t > 0.6) {
+      falling.splice(i, 1);
+      landFalling(fc);
+    }
+  }
+
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.t += dt; s.vy += 400 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
+    if (s.t > s.life) sparks.splice(i, 1);
+  }
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    floaters[i].t += dt;
+    if (floaters[i].t > 0.9) floaters.splice(i, 1);
+  }
+
+  // free credits when running low
+  if (credits < REFILL_BELOW) {
+    refillTimer -= dt;
+    if (refillTimer <= 0) {
+      credits++;
+      refillTimer = REFILL_SECS;
+      updateHud();
+    }
+    $('refill').textContent = `Free credit in ${Math.ceil(refillTimer)}s`;
+  } else {
+    refillTimer = REFILL_SECS;
+    $('refill').textContent = '';
+  }
+}
+
+function frame(ts) {
+  const dt = Math.min((ts - last) / 1000, 0.1);
+  last = ts;
+  now = ts;
+  update(dt);
+  drawScene();
+  requestAnimationFrame(frame);
+}
+
+// ---------- HUD ----------
+const pad = (n) => String(Math.max(0, Math.floor(n))).padStart(3, '0');
+function updateHud() {
+  $('credits').textContent = pad(credits);
+  $('won').textContent = pad(won);
+  $('spins').textContent = spins;
+  $('drop').disabled = credits < 1;
+}
+function flashRefill() {
+  const r = $('refill');
+  r.animate([{ opacity: 1 }, { opacity: 0.2 }, { opacity: 1 }], { duration: 400, iterations: 2 });
+}
+
+// ---------- Input ----------
+let holdTimer = null;
+function startHold(fn) {
+  stopHold();
+  fn();
+  holdTimer = setInterval(fn, 200);
+}
+function stopHold() {
+  clearInterval(holdTimer);
+  holdTimer = null;
+}
+
+function pointerToX(e) {
+  const rect = canvas.getBoundingClientRect();
+  return clamp(unprojectX(e.clientX - rect.left), 14, W - 14);
+}
+canvas.addEventListener('pointermove', (e) => {
+  aimX = pointerToX(e);
+  aimUntil = now + 1500;
+});
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  canvas.setPointerCapture(e.pointerId);
+  aimX = pointerToX(e);
+  aimUntil = now + 2000;
+  chuteX = aimX;
+  startHold(() => { aimUntil = now + 2000; dropCoin(chuteX); });
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => canvas.addEventListener(ev, stopHold));
+
+const dropBtn = $('drop');
+dropBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); startHold(() => dropCoin(chuteX)); });
+['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => dropBtn.addEventListener(ev, stopHold));
+
+let spaceDown = false;
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'Space' || spaceDown) return;
+  e.preventDefault();
+  spaceDown = true;
+  dropBtn.classList.add('pressed');
+  startHold(() => dropCoin(chuteX));
+});
+window.addEventListener('keyup', (e) => {
+  if (e.code !== 'Space') return;
+  spaceDown = false;
+  dropBtn.classList.remove('pressed');
+  stopHold();
+});
+
+$('sound').onclick = () => {
+  soundOn = !soundOn;
+  $('sound').textContent = soundOn ? '🔊' : '🔇';
+  save();
+};
+$('reset').onclick = () => {
+  if (!confirm('Start over with 30 credits and a fresh machine?')) return;
+  credits = START_CREDITS; won = 0; spins = 0;
+  incoming.length = 0; falling.length = 0;
+  machine.fill();
+  save();
+  updateHud();
+};
+
+// ---------- Save / load ----------
+const TYPE_LIST = ['coin', 'big', 'star', 'gem'];
+function save() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      credits, won, spins, soundOn, t: machine.t,
+      coins: machine.coins.map((c) => [Math.round(c.x * 10) / 10, Math.round(c.y * 10) / 10, c.layer, TYPE_LIST.indexOf(c.type)]),
+    }));
+  } catch (e) { /* storage unavailable */ }
+}
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!s || !Array.isArray(s.coins)) return false;
+    credits = Number(s.credits) || 0;
+    won = Number(s.won) || 0;
+    spins = Number(s.spins) || 0;
+    soundOn = s.soundOn !== false;
+    machine.t = Number(s.t) || 0;
+    machine.front = machine.frontAt(machine.t);
+    machine.coins = [];
+    for (const [x, y, layer, ti] of s.coins) machine.add(x, y, layer, TYPE_LIST[ti] || 'coin');
+    return true;
+  } catch (e) { return false; }
+}
+
+// ---------- Start ----------
+if (!load()) machine.fill();
+$('sound').textContent = soundOn ? '🔊' : '🔇';
+resize();
+window.addEventListener('resize', resize);
+updateHud();
+setInterval(save, 3000);
+window.addEventListener('pagehide', save);
+document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+if (spins > 0) setTimeout(spinSlot, 800);
+requestAnimationFrame((ts) => { last = ts; now = ts; requestAnimationFrame(frame); });
   </script>
 </body>
 </html>
