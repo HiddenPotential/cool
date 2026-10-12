@@ -536,10 +536,60 @@ function tone(freq, { dur = 0.12, type = 'sine', vol = 0.12, delay = 0, slide = 
     osc.stop(t + dur + 0.02);
   } catch (e) { /* audio unavailable */ }
 }
+// Metallic coin "tink": a struck disc rings at inharmonic partials, high ones dying first
+const CLINK_PARTIALS = [[1, 1, 1], [2.76, 0.55, 0.6], [5.4, 0.3, 0.35], [8.93, 0.18, 0.2]];
+let noiseBuf;
+let clinkCount = 0, clinkWindow = 0;
+function clink(freq = 3000, { vol = 0.05, delay = 0, decay = 0.25 } = {}) {
+  if (!soundOn) return;
+  // cap the number of overlapping tinks so a big shower stays pretty, not harsh
+  const nowS = performance.now();
+  if (nowS - clinkWindow > 60) { clinkWindow = nowS; clinkCount = 0; }
+  if (++clinkCount > 4) return;
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const t = audio.currentTime + delay;
+    for (const [ratio, amp, life] of CLINK_PARTIALS) {
+      const f = freq * ratio * (1 + (Math.random() - 0.5) * 0.01);
+      if (f > 16000) continue;
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.frequency.setValueAtTime(f, t);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(vol * amp, t + 0.002);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + decay * life);
+      osc.connect(gain).connect(audio.destination);
+      osc.start(t);
+      osc.stop(t + decay * life + 0.02);
+    }
+    // tiny bright tick for the moment of contact
+    if (!noiseBuf) {
+      noiseBuf = audio.createBuffer(1, Math.floor(audio.sampleRate * 0.01), audio.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    }
+    const src = audio.createBufferSource();
+    const hp = audio.createBiquadFilter();
+    const ng = audio.createGain();
+    src.buffer = noiseBuf;
+    hp.type = 'highpass';
+    hp.frequency.value = 5000;
+    ng.gain.value = vol * 0.6;
+    src.connect(hp).connect(ng).connect(audio.destination);
+    src.start(t);
+  } catch (e) { /* audio unavailable */ }
+}
+// a few coins tinkling against each other
+function jingle(n, { base = 2600, spread = 0.12, vol = 0.04 } = {}) {
+  for (let i = 0; i < n; i++) {
+    clink(base * (0.8 + Math.random() * 0.6), { vol: vol * (0.6 + Math.random() * 0.4), delay: i * 0.03 + Math.random() * spread, decay: 0.18 + Math.random() * 0.2 });
+  }
+}
 const sfx = {
-  insert: () => { tone(1800, { dur: 0.05, vol: 0.06 }); tone(2600, { dur: 0.08, vol: 0.05, delay: 0.04 }); },
-  land: () => tone(2400 + Math.random() * 900, { dur: 0.06, type: 'triangle', vol: 0.05 }),
-  win: (n = 0) => { tone(1320 + n * 40, { dur: 0.12, type: 'triangle', vol: 0.1 }); tone(1980 + n * 40, { dur: 0.18, type: 'triangle', vol: 0.07, delay: 0.05 }); },
+  insert: () => { clink(3400, { vol: 0.04, decay: 0.15 }); clink(2300, { vol: 0.05, delay: 0.06, decay: 0.3 }); },
+  land: () => { clink(2600 + Math.random() * 1200, { vol: 0.045, decay: 0.22 }); if (Math.random() < 0.5) clink(3200 + Math.random() * 1500, { vol: 0.025, delay: 0.04 + Math.random() * 0.04, decay: 0.15 }); },
+  shove: () => clink(2200 + Math.random() * 1600, { vol: 0.02 + Math.random() * 0.015, decay: 0.15 + Math.random() * 0.1 }),
+  win: (n = 0) => { tone(1320 + n * 40, { dur: 0.12, type: 'triangle', vol: 0.06 }); jingle(3, { base: 2400 + n * 60, vol: 0.05 }); },
   lost: () => tone(220, { dur: 0.15, type: 'sine', vol: 0.05, slide: 0.6 }),
   gate: () => [0, 4, 7, 12].forEach((s, i) => tone(880 * Math.pow(2, s / 12), { dur: 0.12, type: 'square', vol: 0.04, delay: i * 0.06 })),
   tick: () => tone(900, { dur: 0.02, type: 'square', vol: 0.025 }),
@@ -1353,6 +1403,7 @@ function drawScene() {
 const STEP = 1 / 60;
 let acc = 0;
 let last = performance.now();
+let lastShove = 0;
 
 function update(dt) {
   const t = now / 1000;
@@ -1362,12 +1413,21 @@ function update(dt) {
 
   acc += dt;
   let steps = 0;
+  const onShelf = () => machine.coins.reduce((n, c) => n + c.layer, 0);
+  const shelfBefore = onShelf();
+  let wentOut = 0;
   while (acc >= STEP && steps < 6) {
+    const before = machine.coins.length;
     machine.step(STEP, onOut);
+    wentOut += before - machine.coins.length;
     acc -= STEP;
     steps++;
   }
   if (steps === 6) acc = 0;
+  // coins tumbling off the shelf onto the table tinkle against the pile
+  const tumbled = shelfBefore - onShelf();
+  if (tumbled > 0 && now - lastShove > 70) { lastShove = now; sfx.shove(); }
+  else if (wentOut === 0 && machine.front > machine.frontAt(machine.t - 0.05) && Math.random() < dt * 2.5) sfx.shove();
 
   for (let i = incoming.length - 1; i >= 0; i--) {
     const d = incoming[i];
