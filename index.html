@@ -358,7 +358,7 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
     <details class="help">
       <summary>How to play</summary>
       <ul>
-        <li><b>Tap the playfield</b> to drop a coin right there, or press <b>DROP</b> (or Space) to drop from the moving chute. Hold to keep dropping.</li>
+        <li>The chute slides back and forth on its own. <b>Tap the playfield</b>, press <b>DROP</b> or press Space to drop a coin from wherever it is, so time your drops. Hold to keep dropping.</li>
         <li>The shelf slides back and forth. The back wall scrapes coins off the shelf onto the table, and the shelf pushes them forward.</li>
         <li>The front of the table is a <b>ramp</b> that slopes up to the edge, so loose coins slide back, and a raised <b>lip</b> at the very edge kicks them back again. Coins pushed over the <b>front edge</b> are yours. Coins that fall off the <b>sides</b> go to the house.</li>
         <li>Coins roll down inside the back wall and slide out of the slot onto the shelf. If one rolls past the moving <b>LUCKY</b> window on the way down, you earn a slot spin. Match 3 for coin showers, a <b>10</b> big coin, a <b>★</b> bonus token or the <b>💎</b> jackpot gem.</li>
@@ -437,6 +437,7 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import RAPIER from 'rapier';
 
 const $ = (id) => document.getElementById(id);
@@ -731,8 +732,6 @@ const pusher = {
   scene: null, camera: null, renderer: null, meshes: null, visible: true,
 };
 let chuteX = 0;
-let aimX = null;          // where the player is pointing, if anywhere
-let aimUntil = 0;
 const incoming = [];      // paid coins on their way down the tube
 const floaters = [];      // "+1" texts
 const sparks = [];
@@ -1153,9 +1152,8 @@ function renderPusher() {
 let lastShove = 0;
 function updatePusher(dt) {
   const t = now / 1000;
-  // chute follows the player's aim, otherwise sweeps on its own
-  const target = aimX !== null && now < aimUntil ? aimX : (TW / 2 - 0.25) * Math.sin(t * 1.3);
-  chuteX += (target - chuteX) * Math.min(1, dt * 12);
+  // the chute sweeps back and forth on its own; the player times the drop
+  chuteX = (TW / 2 - 0.25) * Math.sin(t * 1.3);
 
   updateIncoming(dt);
   const before = pusher.front;
@@ -1339,32 +1337,16 @@ function stopHold() {
   holdTimer = null;
 }
 
-// where on the table (or the back wall) the pointer is, as a chute position
+// pointer picking, used by the claw machine
 const raycaster = new THREE.Raycaster();
 const _hit = new THREE.Vector3();
-const TABLE_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.1);
-const WALL_PLANE = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.1);
-function pointerToX(e, canvasEl, camera) {
-  const rect = canvasEl.getBoundingClientRect();
-  raycaster.setFromCamera({ x: ((e.clientX - rect.left) / rect.width) * 2 - 1, y: -((e.clientY - rect.top) / rect.height) * 2 + 1 }, camera);
-  if (raycaster.ray.intersectPlane(TABLE_PLANE, _hit) && _hit.z > 0.1) return clamp(_hit.x, -TW / 2 + 0.15, TW / 2 - 0.15);
-  if (raycaster.ray.intersectPlane(WALL_PLANE, _hit)) return clamp(_hit.x, -TW / 2 + 0.15, TW / 2 - 0.15);
-  return chuteX;
-}
 const canvas = $('game');
-canvas.addEventListener('pointermove', (e) => {
-  if (!pusher.camera) return;
-  aimX = pointerToX(e, canvas, pusher.camera);
-  aimUntil = now + 1500;
-});
+// tapping the playfield drops from wherever the moving chute is right now
 canvas.addEventListener('pointerdown', (e) => {
   e.preventDefault();
-  if (!pusher.camera) return;
+  if (!pusher.world) return;
   canvas.setPointerCapture(e.pointerId);
-  aimX = pointerToX(e, canvas, pusher.camera);
-  aimUntil = now + 2000;
-  chuteX = aimX;
-  startHold(() => { aimUntil = now + 2000; dropCoin(chuteX); });
+  startHold(() => dropCoin(chuteX));
 });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => canvas.addEventListener(ev, stopHold));
 
@@ -1398,6 +1380,8 @@ window.addEventListener('keyup', (e) => {
 $('sound').onclick = () => {
   soundOn = !soundOn;
   $('sound').textContent = soundOn ? '🔊' : '🔇';
+  // turning sound back on mid-round brings the claw music back in
+  if (soundOn && claw.state !== 'idle') startClawMusic();
   save();
 };
 $('reset').onclick = () => {
@@ -1612,156 +1596,323 @@ const PRIZE_BY_ID = Object.fromEntries(PRIZES.map((p) => [p.id, p]));
 const RARITY_GLOW = { common: null, rare: '#c063ff', super: '#ffd23e' };
 
 // ---------- Prize models ----------
-// Plush toys are soft balls with a stitched-on face, ears and other bits; the two super
-// rares are gold.
-const plushMat = (color, map = null) => new THREE.MeshPhysicalMaterial({
-  color: map ? '#ffffff' : color, map, roughness: 0.88, sheen: 1, sheenRoughness: 0.45,
-  sheenColor: new THREE.Color(color).lerp(new THREE.Color('#ffffff'), 0.2),
-});
-const goldMat = new THREE.MeshStandardMaterial({ color: '#ffc93a', metalness: 1, roughness: 0.22 });
-const faceTexCache = {};
-function plushFace(t) {
-  if (faceTexCache[t.id]) return faceTexCache[t.id];
-  // equirectangular: the front of the ball (+z) is a quarter of the way across
-  return (faceTexCache[t.id] = canvasTex(512, 256, (g, w, h) => {
+// Plush toys are built like real ones: a big head on a little sitting body, stubby arms and
+// feet, sewn-on ears, glossy safety eyes, a stitched mouth and a fabric tag. The two super
+// rares are gold. Each kind is built once, its parts merged into one mesh per material, and
+// cloned for every copy in the machine.
+
+// short fibres, used as a bump map so the plush looks fuzzy up close
+const furBump = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#808080'; g.fillRect(0, 0, w, h);
+  g.lineWidth = 1.2;
+  for (let i = 0; i < 5000; i++) {
+    const x = Math.random() * w, y = Math.random() * h, a = Math.random() * Math.PI;
+    const v = Math.floor(80 + Math.random() * 120);
+    g.strokeStyle = `rgb(${v},${v},${v})`;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * 4, y + Math.sin(a) * 4); g.stroke();
+  }
+}, { color: false, repeat: [6, 3] });
+// Solid-coloured parts share three materials (fabric, gloss, metal) and carry their colour
+// per vertex, so a whole toy draws in a handful of calls. Only the printed head and body
+// fabrics are materials of their own.
+const VC_MATS = {
+  fab: new THREE.MeshPhysicalMaterial({ vertexColors: true, bumpMap: furBump, bumpScale: 1.4, roughness: 0.9, sheen: 0.7, sheenRoughness: 0.45, sheenColor: '#bbbbbb' }),
+  gloss: new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.05 }),
+  metal: new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 1, roughness: 0.2, side: THREE.DoubleSide }),
+};
+const vc = (kind, color) => ({ kind, color: new THREE.Color(color) });
+// a printed fabric (its own material), or a plain one (a vertex colour on the shared fabric)
+const plushMat = (color, map = null) => (map ? new THREE.MeshPhysicalMaterial({
+  map, bumpMap: furBump, bumpScale: 1.4, roughness: 0.9, sheen: 0.7, sheenRoughness: 0.45, sheenColor: '#bbbbbb',
+}) : vc('fab', color));
+const goldMat = vc('metal', '#ffc93a');
+const eyeMat = vc('gloss', '#141216');
+const shineMat = vc('gloss', '#ffffff');
+const noseMat = vc('gloss', '#2a1a14');
+const threadMat = vc('fab', '#3a1d22');
+const glossWhite = vc('gloss', '#ffffff');
+
+// the fabric for a head or body: an equirectangular map whose front (+z) is a quarter of the
+// way across, with markings, rosy cheeks and a seam stitched down the back
+function fabricTex(t, part) {
+  return canvasTex(512, 256, (g, w, h) => {
     g.fillStyle = t.color; g.fillRect(0, 0, w, h);
-    for (let i = 0; i < 7000; i++) {
-      g.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '0,0,0'},${Math.random() * 0.06})`;
+    for (let i = 0; i < 6000; i++) {
+      g.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '0,0,0'},${Math.random() * 0.05})`;
       g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
     }
-    const fx = 128, fy = 134;
     const ell = (x, y, rx, ry, col, rot = 0) => { g.fillStyle = col; g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); g.fill(); };
-    const L = t.look;
-    if (L === 'panda') { ell(fx - 26, fy - 2, 16, 21, '#1d1d1f', 0.5); ell(fx + 26, fy - 2, 16, 21, '#1d1d1f', -0.5); }
-    if (L === 'fox') ell(fx, fy + 30, 52, 34, '#fff6ec');
-    if (t.muzzle) ell(fx, fy + 21, 30, 22, t.muzzle);
-    if (L === 'cat') ell(fx, fy + 21, 26, 16, '#fff1dd');
-    if (L === 'octopus') for (let i = 0; i < 14; i++) ell(260 + Math.random() * 230, 30 + Math.random() * 110, 6 + Math.random() * 8, 6 + Math.random() * 8, 'rgba(120,30,150,.35)');
-    if (L === 'dragon') { ell(fx, fy + 62, 48, 30, '#d9f0a8'); }
-    // eyes (the frog's sit on top of its head)
-    if (L !== 'frog') for (const s of [-1, 1]) { ell(fx + s * 26, fy - 3, 9, 11, '#151317'); ell(fx + s * 26 - 3, fy - 7, 3.4, 3.4, '#ffffff'); }
-    // nose
-    if (L === 'bear') ell(fx, fy + 13, 9, 6.5, '#4a2a17');
-    if (L === 'dog' || L === 'fox' || L === 'panda') ell(fx, fy + 13, 8, 6, '#1d1d1f');
-    if (L === 'cat' || L === 'bunny') { g.fillStyle = '#ff8fab'; g.beginPath(); g.moveTo(fx - 6, fy + 11); g.lineTo(fx + 6, fy + 11); g.lineTo(fx, fy + 17); g.fill(); }
-    if (L === 'unicorn' || L === 'dragon') { ell(fx - 7, fy + 16, 2.5, 3.5, '#5a3a4a'); ell(fx + 7, fy + 16, 2.5, 3.5, '#5a3a4a'); }
-    // mouth
-    g.strokeStyle = '#3a1d22'; g.lineWidth = 2.6; g.lineCap = 'round';
-    if (L === 'frog') { g.beginPath(); g.arc(fx, fy - 6, 34, 0.25 * Math.PI, 0.75 * Math.PI); g.stroke(); }
-    else if (L !== 'duck') {
-      g.beginPath(); g.arc(fx - 5, fy + 20, 5, 0.15 * Math.PI, 0.95 * Math.PI); g.stroke();
-      g.beginPath(); g.arc(fx + 5, fy + 20, 5, 0.05 * Math.PI, 0.85 * Math.PI); g.stroke();
+    const fx = 128, L = t.look;
+    if (part === 'head') {
+      if (L === 'cat' || L === 'fox') {
+        // stripes across the forehead
+        g.fillStyle = 'rgba(150,60,10,.35)';
+        for (const dx of [-14, 0, 14]) { g.beginPath(); g.ellipse(fx + dx, 64, 4, 22, dx * 0.02, 0, Math.PI * 2); g.fill(); }
+      }
+      if (L === 'fox') ell(fx, 158, 60, 30, '#fff6ec');
+      if (L === 'panda') { ell(fx - 30, 122, 15, 21, '#1d1d1f', 0.55); ell(fx + 30, 122, 15, 21, '#1d1d1f', -0.55); }
+      if (L === 'dog') ell(fx + 30, 118, 22, 20, 'rgba(155,106,60,.85)', 0.3);
+      if (L === 'octopus') for (let i = 0; i < 18; i++) ell(250 + Math.random() * 240, 20 + Math.random() * 120, 5 + Math.random() * 9, 5 + Math.random() * 9, 'rgba(110,25,140,.35)');
+      if (L === 'cat') {
+        g.strokeStyle = 'rgba(60,30,20,.55)'; g.lineWidth = 1.6;
+        for (const s of [-1, 1]) for (const dy of [-4, 2]) { g.beginPath(); g.moveTo(fx + s * 22, 140 + dy * 0.4); g.lineTo(fx + s * 52, 136 + dy * 2); g.stroke(); }
+      }
+      if (L !== 'crown' && L !== 'trophy') {
+        g.globalAlpha = 0.5;
+        ell(fx - 50, 140, 13, 7, '#ff6f91'); ell(fx + 50, 140, 13, 7, '#ff6f91');
+        g.globalAlpha = 1;
+      }
+    } else {
+      if (t.belly) ell(fx, 150, 72, 64, t.belly);
+      if (L === 'dragon') { g.strokeStyle = 'rgba(120,150,60,.5)'; g.lineWidth = 3; for (let y = 110; y < 210; y += 16) { g.beginPath(); g.moveTo(fx - 55, y); g.lineTo(fx + 55, y); g.stroke(); } }
+      if (L === 'cat') { g.fillStyle = 'rgba(150,60,10,.3)'; for (let x = 230; x < 480; x += 30) g.fillRect(x, 40, 9, 120); }
     }
-    if (L === 'cat') {
-      g.strokeStyle = 'rgba(60,30,20,.6)'; g.lineWidth = 1.6;
-      for (const s of [-1, 1]) for (const dy of [-3, 3]) { g.beginPath(); g.moveTo(fx + s * 16, fy + 18 + dy * 0.4); g.lineTo(fx + s * 40, fy + 15 + dy * 2); g.stroke(); }
-    }
-    // rosy cheeks
-    g.globalAlpha = 0.45;
-    ell(fx - 44, fy + 15, 11, 6, '#ff6f91'); ell(fx + 44, fy + 15, 11, 6, '#ff6f91');
-    g.globalAlpha = 1;
-  }));
-}
-
-const geoCache = {};
-const cachedGeo = (key, make) => geoCache[key] || (geoCache[key] = make());
-function buildPrize(t) {
-  const g = new THREE.Group();
-  const r = t.r;
-  const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => {
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x * r, y * r, z * r);
-    m.rotation.set(rx, ry, rz);
-    m.scale.set(sx, sy, sz);
-    m.castShadow = m.receiveShadow = true;
-    g.add(m);
-    return m;
-  };
-  const sphere = (k) => cachedGeo('s' + k, () => new THREE.SphereGeometry(k, 20, 14));
-  const cone = (rad, hgt) => cachedGeo(`c${rad}:${hgt}`, () => new THREE.ConeGeometry(rad, hgt, 16));
-
-  if (t.look === 'crown') {
-    add(new THREE.CylinderGeometry(r * 0.8, r * 0.72, r * 0.55, 32, 1, true), new THREE.MeshStandardMaterial({ color: '#ffc93a', metalness: 1, roughness: 0.22, side: THREE.DoubleSide }), 0, -0.2, 0);
-    add(sphere(r * 0.66), new THREE.MeshPhysicalMaterial({ color: '#c3122f', roughness: 0.7, sheen: 1, sheenColor: new THREE.Color('#ff6b81') }), 0, -0.12, 0, 0, 0, 0, 1, 0.7, 1);
-    add(new THREE.TorusGeometry(r * 0.73, r * 0.06, 8, 32), goldMat, 0, -0.47, 0, Math.PI / 2);
-    for (let i = 0; i < 5; i++) {
-      const a = (i / 5) * Math.PI * 2;
-      add(cone(r * 0.16, r * 0.45), goldMat, Math.cos(a) * 0.78, 0.28, Math.sin(a) * 0.78);
-      add(sphere(r * 0.07), new THREE.MeshStandardMaterial({ color: '#ff3355', metalness: 0.3, roughness: 0.1 }), Math.cos(a) * 0.78, 0.53, Math.sin(a) * 0.78);
-      add(sphere(r * 0.08), new THREE.MeshStandardMaterial({ color: '#39b8ff', metalness: 0.3, roughness: 0.1 }), Math.cos(a + 0.6) * 0.8, -0.2, Math.sin(a + 0.6) * 0.8, 0, 0, 0, 1, 1, 0.6);
-    }
-  } else if (t.look === 'trophy') {
-    const prof = [[0, -0.95], [0.55, -0.95], [0.55, -0.78], [0.22, -0.74], [0.12, -0.5], [0.12, -0.18], [0.32, -0.08], [0.62, 0.25], [0.72, 0.72], [0.64, 0.74], [0.55, 0.3], [0.0, 0.06]];
-    add(new THREE.LatheGeometry(prof.map(([x, y]) => new THREE.Vector2(x * r, y * r)), 40), new THREE.MeshStandardMaterial({ color: '#ffc93a', metalness: 1, roughness: 0.2, side: THREE.DoubleSide }), 0, 0, 0);
-    for (const s of [-1, 1]) add(new THREE.TorusGeometry(r * 0.24, r * 0.05, 8, 20, Math.PI), goldMat, s * 0.68, 0.38, 0, 0, 0, s * -Math.PI / 2);
-    add(new THREE.BoxGeometry(r * 0.5, r * 0.18, r * 0.04), new THREE.MeshStandardMaterial({ color: '#1d1d1f', metalness: 0.4, roughness: 0.4 }), 0, -0.86, 0.56);
-  } else {
-    const body = add(cachedGeo('body' + r, () => new THREE.SphereGeometry(r, 40, 28)), plushMat(t.color, plushFace(t)), 0, 0, 0);
-    body.position.set(0, 0, 0);
-    body.scale.set(1, 0.94, 0.96);
-    const fur = plushMat(t.color);
-    const dark = (c) => plushMat(new THREE.Color(c).multiplyScalar(0.7));
-    switch (t.look) {
-      case 'bear':
-        for (const s of [-1, 1]) { add(sphere(r * 0.3), fur, s * 0.62, 0.72, -0.05, 0, 0, 0, 1, 1, 0.7); add(sphere(r * 0.16), plushMat(t.muzzle), s * 0.62, 0.72, 0.12, 0, 0, 0, 1, 1, 0.4); }
-        break;
-      case 'bunny':
-        for (const s of [-1, 1]) { add(sphere(r * 0.2), fur, s * 0.34, 1.12, -0.08, 0, 0, s * -0.18, 1, 3, 0.65); add(sphere(r * 0.11), plushMat('#ffb3c7'), s * 0.36, 1.14, 0.03, 0, 0, s * -0.18, 1, 3, 0.3); }
-        add(sphere(r * 0.22), fur, 0, -0.3, -0.98);
-        break;
-      case 'cat':
-        for (const s of [-1, 1]) add(cone(r * 0.26, r * 0.42), fur, s * 0.55, 0.85, 0, 0, 0, s * -0.42);
-        add(new THREE.TorusGeometry(r * 0.45, r * 0.09, 8, 20, Math.PI * 1.2), fur, 0.2, -0.3, -0.85, 0, 0.4, 0.5);
-        break;
-      case 'dog':
-        for (const s of [-1, 1]) add(sphere(r * 0.3), dark(t.color), s * 0.86, 0.3, -0.02, 0, 0, s * 0.35, 0.55, 1.4, 0.85);
-        break;
-      case 'frog':
-        for (const s of [-1, 1]) {
-          add(sphere(r * 0.3), fur, s * 0.38, 0.78, 0.22);
-          add(sphere(r * 0.21), plushMat('#ffffff'), s * 0.38, 0.82, 0.38);
-          add(sphere(r * 0.11), plushMat('#151317'), s * 0.38, 0.84, 0.55);
-        }
-        break;
-      case 'duck':
-        add(sphere(r * 0.3), plushMat('#ff9a1f'), 0, -0.02, 0.96, 0, 0, 0, 1.25, 0.45, 1);
-        add(cone(r * 0.08, r * 0.3), fur, 0, 1.04, 0, 0, 0, 0.3);
-        for (const s of [-1, 1]) add(sphere(r * 0.32), fur, s * 0.9, -0.1, -0.1, 0, 0, s * 0.5, 0.4, 1, 0.8);
-        break;
-      case 'panda':
-        for (const s of [-1, 1]) add(sphere(r * 0.3), plushMat('#1d1d1f'), s * 0.62, 0.72, -0.05, 0, 0, 0, 1, 1, 0.7);
-        break;
-      case 'fox':
-        for (const s of [-1, 1]) { add(cone(r * 0.28, r * 0.5), fur, s * 0.52, 0.86, 0, 0, 0, s * -0.36); add(cone(r * 0.12, r * 0.2), plushMat('#3a2418'), s * 0.62, 1.12, 0, 0, 0, s * -0.36); }
-        add(sphere(r * 0.32), fur, 0.3, -0.35, -1.0, 0, 0, 0, 1, 1, 1.6);
-        add(sphere(r * 0.16), plushMat('#fff6ec'), 0.3, -0.35, -1.48);
-        break;
-      case 'unicorn':
-        add(cone(r * 0.12, r * 0.7), new THREE.MeshStandardMaterial({ color: '#ffd76a', metalness: 0.7, roughness: 0.3 }), 0, 1.12, 0.32, 0.35);
-        for (const s of [-1, 1]) add(cone(r * 0.14, r * 0.3), fur, s * 0.5, 0.86, -0.05, 0, 0, s * -0.4);
-        ['#ff8fd0', '#b48cff', '#7fd7ff', '#ff8fd0'].forEach((c, i) => add(sphere(r * 0.22), plushMat(c), 0, 0.85 - i * 0.38, -0.55 - i * 0.12));
-        break;
-      case 'dragon':
-        for (const s of [-1, 1]) add(cone(r * 0.12, r * 0.42), plushMat('#fff3c4'), s * 0.36, 1.02, -0.1, 0, 0, s * -0.3);
-        for (let i = 0; i < 4; i++) add(cone(r * 0.13, r * 0.3), plushMat('#ffb547'), 0, 0.8 - i * 0.42, -0.62 - i * 0.12, -0.6 - i * 0.35);
-        for (const s of [-1, 1]) add(sphere(r * 0.3), plushMat('#ffb547'), s * 0.92, 0.3, -0.35, 0, s * 0.6, 0, 0.25, 0.9, 1.2);
-        break;
-      case 'octopus':
-        for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; add(sphere(r * 0.22), fur, Math.cos(a) * 0.7, -0.72, Math.sin(a) * 0.7, 0, -a, 0, 1, 0.7, 1.5); }
-        break;
-    }
-  }
-  const glow = RARITY_GLOW[t.rarity];
-  if (glow) { const s = glowSprite(glow, r * 3.4); s.material.opacity = 0.5; g.add(s); g.userData.glow = s; }
-  return g;
-}
-function disposeModel(g) {
-  g.traverse((o) => {
-    if (o.isMesh && o.geometry && !Object.values(geoCache).includes(o.geometry)) o.geometry.dispose();
-    if (o.material && o.material !== goldMat) o.material.dispose();
+    // seam down the back
+    g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 2; g.setLineDash([5, 4]);
+    g.beginPath(); g.moveTo(384, 8); g.lineTo(384, h - 8); g.stroke();
+    g.setLineDash([]);
   });
 }
 
+const PLUSH = {
+  bear:    { belly: '#e8c39a', pad: '#f1d2a8', inner: '#e3a197' },
+  bunny:   { belly: '#ffffff', pad: '#ffc2d2', inner: '#ffb3c7' },
+  cat:     { belly: '#fff1dd', pad: '#ffc2d2', inner: '#ffb3c7' },
+  dog:     { belly: '#fff5e6', pad: '#c99a6a', ear: '#9b6a3c' },
+  frog:    { belly: '#d9f2a0', pad: '#4da843' },
+  duck:    { belly: '#fff2a8', beak: '#ff9a1f' },
+  panda:   { belly: '#ffffff', limb: '#1d1d1f', pad: '#3a3a3e' },
+  fox:     { belly: '#fff6ec', limb: '#3a2418', pad: '#5a3a28', inner: '#fff6ec' },
+  unicorn: { belly: '#ffffff', limb: '#c7b5f2', pad: '#b39ce8', inner: '#ffc2e2' },
+  dragon:  { belly: '#d9f0a8', pad: '#3f9a5b', spike: '#ffb547', horn: '#fff3c4' },
+  octopus: {},
+};
+
+const prizeTemplates = {};
+function buildPrize(t) {
+  if (!prizeTemplates[t.id]) prizeTemplates[t.id] = buildPrizeTemplate(t);
+  const g = prizeTemplates[t.id].clone();
+  // each copy pulses its own glow
+  const glow = g.children.find((o) => o.isSprite);
+  if (glow) { glow.material = glow.material.clone(); g.userData.glow = glow; }
+  return g;
+}
+function disposeModel(g) {
+  if (g.userData.glow) g.userData.glow.material.dispose();
+}
+
+function buildPrizeTemplate(t) {
+  const r = t.r;
+  const buckets = new Map();
+  const m4 = new THREE.Matrix4(), eu = new THREE.Euler(), qt = new THREE.Quaternion(), pv = new THREE.Vector3(), sv = new THREE.Vector3();
+  // place a part, in units of the prize's radius
+  const part = (geo, mat, [x, y, z], rot = [0, 0, 0], [sx, sy, sz] = [1, 1, 1]) => {
+    const q = rot.isQuaternion ? rot : qt.setFromEuler(eu.set(rot[0], rot[1], rot[2]));
+    m4.compose(pv.set(x * r, y * r, z * r), q, sv.set(sx, sy, sz));
+    geo.applyMatrix4(m4);
+    const gg = geo.index ? geo.toNonIndexed() : geo;
+    let key = mat;
+    if (mat.kind) {
+      key = mat.kind;
+      const n = gg.attributes.position.count, col = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) col.set([mat.color.r, mat.color.g, mat.color.b], i * 3);
+      gg.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    }
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(gg);
+  };
+  const S = (k, ws = 18, hs = 12) => new THREE.SphereGeometry(k * r, ws, hs);
+  const C = (k, hgt, seg = 16) => new THREE.ConeGeometry(k * r, hgt * r, seg);
+  const Cap = (k, len) => new THREE.CapsuleGeometry(k * r, len * r, 6, 12);
+  const Arc = (rad, tube, arc) => new THREE.TorusGeometry(rad * r, tube * r, 6, 18, arc);
+  const pair = (fn) => { fn(1); fn(-1); };
+  const smile = (y, z, w = 0.045) => pair((s) => part(Arc(w, 0.012, Math.PI), threadMat, [s * w, y, z], [0, 0, Math.PI]));
+  const eyes = (y = 0.33, z = 0.585, dx = 0.2) => pair((s) => {
+    part(S(0.085, 16, 12), eyeMat, [s * dx, y, z], [0, s * 0.25, 0], [1, 1.15, 0.5]);
+    part(S(0.028, 8, 6), shineMat, [s * dx - 0.025, y + 0.045, z + 0.04]);
+  });
+  const L = t.look, P = PLUSH[L] || {};
+
+  if (L === 'crown') {
+    part(new THREE.CylinderGeometry(r * 0.8, r * 0.72, r * 0.55, 40, 1, true), goldMat, [0, -0.2, 0]);
+    part(S(0.66, 28, 18), vc('fab', '#c3122f'), [0, -0.1, 0], [0, 0, 0], [1, 0.72, 1]);
+    // ermine band round the base, with its black spots
+    const ermine = plushMat('#fbf8f2');
+    part(new THREE.TorusGeometry(r * 0.78, r * 0.12, 10, 40), ermine, [0, -0.48, 0], [Math.PI / 2, 0, 0]);
+    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; part(S(0.035, 8, 6), eyeMat, [Math.cos(a) * 0.86, -0.46, Math.sin(a) * 0.86], [0, 0, 0], [1, 1.6, 1]); }
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 + Math.PI / 2;
+      part(C(0.16, 0.45), goldMat, [Math.cos(a) * 0.78, 0.28, Math.sin(a) * 0.78]);
+      part(S(0.075, 12, 8), vc('gloss', '#ff3355'), [Math.cos(a) * 0.78, 0.53, Math.sin(a) * 0.78]);
+      part(S(0.085, 12, 8), vc('gloss', '#39b8ff'), [Math.cos(a + 0.63) * 0.8, -0.2, Math.sin(a + 0.63) * 0.8], [0, -(a + 0.63), 0], [0.6, 1, 1]);
+    }
+    // a little gold cross on top of the velvet
+    part(new THREE.BoxGeometry(0.06 * r, 0.3 * r, 0.06 * r), goldMat, [0, 0.42, 0]);
+    part(new THREE.BoxGeometry(0.2 * r, 0.06 * r, 0.06 * r), goldMat, [0, 0.48, 0]);
+    part(S(0.06, 10, 8), goldMat, [0, 0.6, 0]);
+  } else if (L === 'trophy') {
+    const cupMat = goldMat;
+    const prof = [[0, -0.95], [0.55, -0.95], [0.55, -0.78], [0.22, -0.74], [0.12, -0.5], [0.12, -0.18], [0.32, -0.08], [0.62, 0.25], [0.72, 0.72], [0.64, 0.74], [0.55, 0.3], [0.0, 0.06]];
+    part(new THREE.LatheGeometry(prof.map(([x, y]) => new THREE.Vector2(x * r, y * r)), 48), cupMat, [0, 0, 0]);
+    part(new THREE.TorusGeometry(r * 0.68, r * 0.045, 8, 40), goldMat, [0, 0.72, 0], [Math.PI / 2, 0, 0]);
+    part(new THREE.TorusGeometry(r * 0.14, r * 0.04, 8, 20), goldMat, [0, -0.36, 0], [Math.PI / 2, 0, 0]);
+    pair((s) => part(new THREE.TorusGeometry(r * 0.24, r * 0.055, 8, 20, Math.PI), goldMat, [s * 0.68, 0.38, 0], [0, 0, -s * Math.PI / 2]));
+    // black plinth with a little brass plate
+    part(new THREE.BoxGeometry(r * 0.9, r * 0.22, r * 0.9), vc('gloss', '#1d1d1f'), [0, -1.0, 0]);
+    part(new THREE.BoxGeometry(r * 0.5, r * 0.12, r * 0.02), goldMat, [0, -1.0, 0.46]);
+    // a star on the cup
+    const star = new THREE.Shape();
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + Math.PI / 2, k = (i % 2 ? 0.08 : 0.19) * r;
+      if (i) star.lineTo(Math.cos(a) * k, Math.sin(a) * k); else star.moveTo(Math.cos(a) * k, Math.sin(a) * k);
+    }
+    part(new THREE.ExtrudeGeometry(star, { depth: 0.03 * r, bevelEnabled: true, bevelSize: 0.01 * r, bevelThickness: 0.01 * r, bevelSegments: 1 }),
+      vc('metal', '#fff3c4'), [0, 0.42, 0.66], [0.2, 0, 0]);
+  } else if (L === 'octopus') {
+    const head = plushMat(t.color, fabricTex(t, 'head'));
+    const fur = plushMat(t.color);
+    part(S(0.72, 36, 24), head, [0, 0.12, 0], [0, 0, 0], [1, 1.05, 1]);
+    eyes(0.14, 0.69, 0.22);
+    part(new THREE.TorusGeometry(r * 0.045, r * 0.014, 6, 16), threadMat, [0, -0.08, 0.7]);
+    // eight curly legs round the bottom
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+      const dir = new THREE.Vector3(Math.cos(a) * 0.8, -0.6, Math.sin(a) * 0.8).normalize();
+      part(Cap(0.11, 0.32), fur, [Math.cos(a) * 0.48, -0.62, Math.sin(a) * 0.48], new THREE.Quaternion().setFromUnitVectors(UP, dir));
+      part(S(0.1, 12, 8), fur, [Math.cos(a) * 0.76, -0.86, Math.sin(a) * 0.76]);
+      part(S(0.045, 8, 6), plushMat('#f0b6ff'), [Math.cos(a) * 0.62, -0.82, Math.sin(a) * 0.62]);
+    }
+  } else {
+    const fur = plushMat(t.color);
+    const head = plushMat(t.color, fabricTex({ ...t, ...P }, 'head'));
+    const body = plushMat(t.color, fabricTex({ ...t, ...P }, 'body'));
+    const limb = P.limb ? plushMat(P.limb) : fur;
+    const pad = plushMat(P.pad || t.color);
+    const inner = P.inner ? plushMat(P.inner) : null;
+    // head on a sitting body
+    part(S(0.6, 40, 28), head, [0, 0.28, 0.04], [0, 0, 0], [1.06, 0.95, 0.95]);
+    part(S(0.52, 32, 20), body, [0, -0.4, 0], [0, 0, 0], [1, 0.95, 0.9]);
+    // stubby arms reaching forward, and feet with paw pads
+    if (L === 'duck') pair((s) => part(S(0.24), fur, [s * 0.5, -0.36, -0.02], [0, 0, s * 0.5], [0.35, 0.8, 1]));
+    else pair((s) => part(Cap(0.13, 0.2), limb, [s * 0.46, -0.34, 0.14], [-0.5, 0, s * 0.7]));
+    if (L === 'duck') pair((s) => part(S(0.2), plushMat(P.beak), [s * 0.22, -0.86, 0.3], [0, 0, 0], [1.2, 0.4, 1.5]));
+    else pair((s) => {
+      part(S(0.19), limb, [s * 0.24, -0.8, 0.24], [0, 0, 0], L === 'frog' ? [1.4, 0.55, 1.5] : [1, 0.7, 1.35]);
+      part(S(0.1, 12, 8), pad, [s * 0.24, -0.82, 0.48], [0, 0, 0], [1, 1, 0.3]);
+    });
+    // a fabric tag sewn into the side, with a red band
+    part(new THREE.BoxGeometry(0.2 * r, 0.13 * r, 0.012 * r), vc('fab', '#f7f4ee'), [0.42, -0.62, -0.26], [0, 2.2, 0.25]);
+    part(new THREE.BoxGeometry(0.2 * r, 0.04 * r, 0.016 * r), vc('fab', '#e8304f'), [0.42, -0.57, -0.26], [0, 2.2, 0.25]);
+    if (L !== 'frog') eyes();
+
+    switch (L) {
+      case 'bear':
+        part(S(0.2), plushMat(t.muzzle), [0, 0.16, 0.5], [0, 0, 0], [1.25, 0.85, 0.6]);
+        part(S(0.065, 12, 8), noseMat, [0, 0.22, 0.63], [0, 0, 0], [1.3, 0.9, 0.6]);
+        smile(0.12, 0.62);
+        pair((s) => { part(S(0.2), fur, [s * 0.42, 0.78, 0], [0, 0, 0], [1, 1, 0.55]); part(S(0.11, 12, 8), inner, [s * 0.42, 0.78, 0.07], [0, 0, 0], [1, 1, 0.3]); });
+        part(S(0.12), fur, [0, -0.55, -0.47]);
+        break;
+      case 'bunny':
+        pair((s) => {
+          part(Cap(0.11, 0.45), fur, [s * 0.17, 1.05, -0.05], [0, 0, -s * 0.15], [1, 1, 0.6]);
+          part(Cap(0.06, 0.38), inner, [s * 0.172, 1.05, 0.02], [0, 0, -s * 0.15], [1, 1, 0.35]);
+        });
+        part(S(0.04, 10, 8), plushMat('#ff8fab'), [0, 0.2, 0.6]);
+        smile(0.13, 0.58, 0.035);
+        part(S(0.17), fur, [0, -0.6, -0.5]);
+        break;
+      case 'cat':
+        pair((s) => {
+          part(C(0.17, 0.28), fur, [s * 0.38, 0.8, 0], [0, 0, -s * 0.4]);
+          part(C(0.1, 0.18), inner, [s * 0.37, 0.79, 0.06], [0, 0, -s * 0.4], [1, 1, 0.5]);
+        });
+        part(S(0.16), plushMat(P.belly), [0, 0.16, 0.52], [0, 0, 0], [1.3, 0.8, 0.6]);
+        part(S(0.035, 10, 8), plushMat('#ff8fab'), [0, 0.22, 0.62]);
+        smile(0.12, 0.61, 0.035);
+        part(Arc(0.32, 0.07, Math.PI * 1.2), fur, [0.2, -0.55, -0.55], [0.3, 0.6, 0.6]);
+        break;
+      case 'dog':
+        pair((s) => part(S(0.2), plushMat(P.ear), [s * 0.58, 0.32, 0], [0, 0, s * 0.35], [0.5, 1.35, 0.85]));
+        part(S(0.2), plushMat(t.muzzle), [0, 0.15, 0.5], [0, 0, 0], [1.3, 0.85, 0.65]);
+        part(S(0.075, 12, 8), noseMat, [0, 0.22, 0.65], [0, 0, 0], [1.3, 0.9, 0.6]);
+        smile(0.1, 0.63);
+        part(S(0.06, 10, 8), plushMat('#ff7a8f'), [0, 0.03, 0.6], [0.3, 0, 0], [1, 0.5, 0.6]);
+        part(C(0.08, 0.3), fur, [0, -0.5, -0.55], [-1, 0, 0]);
+        break;
+      case 'frog':
+        pair((s) => {
+          part(S(0.2), fur, [s * 0.26, 0.78, 0.22]);
+          part(S(0.15, 16, 12), glossWhite, [s * 0.26, 0.8, 0.34]);
+          part(S(0.075, 12, 8), eyeMat, [s * 0.26, 0.81, 0.47], [0, 0, 0], [1, 1, 0.6]);
+          part(S(0.025, 8, 6), shineMat, [s * 0.26 - 0.025, 0.85, 0.51]);
+        });
+        part(Arc(0.24, 0.014, Math.PI), threadMat, [0, 0.28, 0.5], [0.25, 0, Math.PI]);
+        break;
+      case 'duck':
+        part(S(0.2), plushMat(P.beak), [0, 0.17, 0.6], [0, 0, 0], [1.35, 0.45, 1]);
+        part(new THREE.TorusGeometry(r * 0.14, r * 0.012, 6, 16, Math.PI), threadMat, [0, 0.17, 0.66], [Math.PI / 2, 0, 0], [1.2, 1, 1]);
+        part(C(0.05, 0.22), fur, [0.04, 0.9, 0.05], [0, 0, -0.3]);
+        part(C(0.04, 0.18), fur, [-0.05, 0.88, 0.02], [0, 0, 0.35]);
+        part(C(0.14, 0.24), fur, [0, -0.45, -0.5], [-1.9, 0, 0]);
+        break;
+      case 'panda':
+        pair((s) => part(S(0.2), plushMat(P.limb), [s * 0.42, 0.78, 0], [0, 0, 0], [1, 1, 0.55]));
+        part(S(0.06, 12, 8), noseMat, [0, 0.21, 0.62], [0, 0, 0], [1.3, 0.9, 0.6]);
+        smile(0.13, 0.6);
+        part(S(0.1), plushMat(P.limb), [0, -0.55, -0.48]);
+        break;
+      case 'fox':
+        pair((s) => {
+          part(C(0.2, 0.34), fur, [s * 0.36, 0.84, 0], [0, 0, -s * 0.35]);
+          part(C(0.09, 0.14), plushMat(P.limb), [s * 0.4, 0.96, 0], [0, 0, -s * 0.35]);
+          part(C(0.11, 0.2), inner, [s * 0.355, 0.82, 0.05], [0, 0, -s * 0.35], [1, 1, 0.5]);
+        });
+        part(S(0.2), plushMat(P.belly), [0, 0.12, 0.5], [0, 0, 0], [1.3, 0.75, 0.7]);
+        part(S(0.05, 10, 8), noseMat, [0, 0.17, 0.66]);
+        smile(0.08, 0.63, 0.035);
+        part(S(0.22), fur, [0.22, -0.45, -0.62], [0.4, 0.4, 0], [0.8, 0.8, 1.7]);
+        part(S(0.13), plushMat(P.belly), [0.33, -0.33, -0.94]);
+        break;
+      case 'unicorn': {
+        part(C(0.09, 0.48, 20), vc('metal', '#ffd76a'), [0, 0.98, 0.3], [0.35, 0, 0]);
+        for (let i = 0; i < 4; i++) part(new THREE.TorusGeometry(r * (0.07 - i * 0.014), r * 0.012, 6, 16), goldMat, [0, 0.82 + i * 0.1, 0.24 + i * 0.035], [Math.PI / 2 + 0.35, 0, 0]);
+        pair((s) => { part(C(0.11, 0.2), fur, [s * 0.35, 0.82, -0.02], [0, 0, -s * 0.35]); part(C(0.06, 0.13), inner, [s * 0.345, 0.81, 0.02], [0, 0, -s * 0.35], [1, 1, 0.5]); });
+        const mane = ['#ff8fd0', '#b48cff', '#7fd7ff', '#ffd1f0', '#ff8fd0'];
+        [[0, 0.85, -0.2], [0, 0.7, -0.42], [0, 0.48, -0.56], [0, 0.22, -0.6], [-0.13, 0.86, 0.16]].forEach((p, i) => part(S(0.15), plushMat(mane[i]), p));
+        [[0, -0.6, -0.5], [0.05, -0.72, -0.62], [0.1, -0.86, -0.7]].forEach((p, i) => part(S(0.14 - i * 0.02), plushMat(mane[i + 1]), p));
+        smile(0.12, 0.6);
+        break;
+      }
+      case 'dragon':
+        part(S(0.2), plushMat(P.belly), [0, 0.15, 0.5], [0, 0, 0], [1.25, 0.8, 0.65]);
+        pair((s) => part(S(0.022, 8, 6), noseMat, [s * 0.06, 0.2, 0.64]));
+        smile(0.09, 0.62);
+        pair((s) => part(C(0.08, 0.3), plushMat(P.horn), [s * 0.3, 0.92, -0.08], [0, 0, -s * 0.3]));
+        [[0.86, -0.12, -0.4], [0.62, -0.42, -0.8], [0.3, -0.56, -1.2], [-0.1, -0.53, -1.5], [-0.42, -0.53, -1.6]].forEach(([y, z, a]) => part(C(0.09, 0.2), plushMat(P.spike), [0, y, z], [a, 0, 0]));
+        pair((s) => part(S(0.25), plushMat(P.spike), [s * 0.42, -0.12, -0.42], [0, s * 0.6, s * 0.3], [0.2, 0.9, 1.1]));
+        part(C(0.16, 0.5), fur, [0, -0.72, -0.58], [-1.9, 0, 0]);
+        break;
+    }
+  }
+
+  const g = new THREE.Group();
+  // sit the model on the bottom of its physics ball
+  const drop = (L === 'trophy' ? 0.11 : L === 'crown' || L === 'octopus' ? 0 : -0.07) * r;
+  for (const [mat, geos] of buckets) {
+    const merged = mergeGeometries(geos);
+    if (merged) {
+      merged.translate(0, drop, 0);
+      const mesh = new THREE.Mesh(merged, VC_MATS[mat] || mat);
+      mesh.castShadow = mesh.receiveShadow = true;
+      g.add(mesh);
+    }
+    geos.forEach((x) => x.dispose());
+  }
+  const glow = RARITY_GLOW[t.rarity];
+  if (glow) { const s = glowSprite(glow, r * 3.4); s.material.opacity = 0.5; g.add(s); }
+  return g;
+}
 
 // ---------- Claw physics ----------
 const G_PRIZE = 0x0001, G_CLAW = 0x0002, G_WORLD = 0x0004;
@@ -1857,14 +2008,20 @@ function pickPrize() {
 }
 function addPrize(t, pos) {
   // facing roughly toward the player
-  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(rand(-0.3, 0.3), rand(-1.1, 1.1), rand(-0.3, 0.3)));
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(rand(-0.15, 0.15), rand(-0.7, 0.7), rand(-0.15, 0.15)));
   const body = claw.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(pos.x, pos.y, pos.z).setRotation(q)
-    .setLinearDamping(0.3).setAngularDamping(1.6).setCcdEnabled(true));
+    .setLinearDamping(0.3).setAngularDamping(2.5).setCcdEnabled(true));
+  // weighted low, like a beanbag bottom, so a toy settles sitting up
+  const mass = t.weight * (4 / 3) * Math.PI * t.r ** 3, inertia = 0.4 * mass * t.r * t.r;
   const collider = claw.world.createCollider(RAPIER.ColliderDesc.ball(t.r).setFriction(0.9).setRestitution(0.15)
-    .setDensity(t.weight).setCollisionGroups(PRIZE_GROUPS), body);
+    .setMassProperties(mass, { x: 0, y: -0.35 * t.r, z: 0 }, { x: inertia, y: inertia, z: inertia }, { x: 0, y: 0, z: 0, w: 1 })
+    .setCollisionGroups(PRIZE_GROUPS), body);
   const model = buildPrize(t);
   claw.scene.add(model);
-  const p = { id: t.id, t, r: t.r, body, collider, model, out: false, restoreAt: 0 };
+  // it drops into the pile without turning, so it lands facing the player; it's free to
+  // tumble once it has settled
+  body.lockRotations(true, true);
+  const p = { id: t.id, t, r: t.r, body, collider, model, out: false, restoreAt: 0, unlockAt: now + 2500 };
   claw.prizes.push(p);
   return p;
 }
@@ -1887,7 +2044,7 @@ function stockMachine(n, fromTop) {
   for (let i = 0; i < n; i++) {
     const t = pickPrize();
     const s = randomSpot(t.r);
-    addPrize(t, { x: s.x, y: fromTop ? 3.0 + i * 0.25 : t.r + 0.05 + rand(0, 1.4), z: s.z });
+    addPrize(t, { x: s.x, y: fromTop ? 3.0 + i * 0.25 : t.r + 0.05 + rand(0, 0.9), z: s.z });
   }
 }
 
@@ -1911,6 +2068,7 @@ function afterClawStep() {
     const pos = p.body.translation();
     // a released prize gets solid to the prongs again once it's clear of them
     if (p.restoreAt && now > p.restoreAt) { p.restoreAt = 0; p.collider.setCollisionGroups(PRIZE_GROUPS); }
+    if (p.unlockAt && now > p.unlockAt) { p.unlockAt = 0; p.body.lockRotations(false, true); }
     if (!p.out && pos.y < -0.2 && inHole(pos.x, pos.z)) {
       p.out = true;
       if (!claw.settling) winPrize(p);
@@ -1926,6 +2084,7 @@ function fillClaw() {
   claw.settling = true;
   poseRig(claw.x, claw.y, claw.z, claw.angle);
   for (let i = 0; i < 360; i++) { claw.world.step(); afterClawStep(); }
+  for (const p of claw.prizes) { p.unlockAt = 0; p.body.lockRotations(false, true); }
   claw.settling = false;
 }
 function resetClaw() {
@@ -1937,6 +2096,26 @@ function resetClaw() {
 }
 
 // ---------- Playing ----------
+// ---------- Claw machine music ----------
+// "Retro Game Arcade" by moodmode. Loops while a round is in progress and
+// fades in and out, so it doesn't play over the coin pusher the rest of the time.
+const CLAW_MUSIC_VOL = 0.35;
+const clawMusic = new Audio('audio/claw-theme.mp3');
+clawMusic.loop = true;
+clawMusic.preload = 'auto';
+clawMusic.volume = 0;
+function startClawMusic() {
+  // called from the PLAY tap, so the browser allows it to start
+  if (!soundOn) return;
+  clawMusic.play().catch(() => { /* blocked or unavailable: play silently */ });
+}
+function updateClawMusic(dt) {
+  const target = soundOn && claw.state !== 'idle' ? CLAW_MUSIC_VOL : 0;
+  const step = dt * (target > clawMusic.volume ? 0.6 : 0.35);   // ~0.6s fade in, ~1s fade out
+  clawMusic.volume = clamp(clawMusic.volume + clamp(target - clawMusic.volume, -step, step), 0, 1);
+  if (target === 0 && clawMusic.volume === 0 && !clawMusic.paused) clawMusic.pause();
+}
+
 function clawPlay() {
   if (!claw.world) return;
   if (claw.state === 'idle') {
@@ -1944,6 +2123,7 @@ function clawPlay() {
     credits -= CLAW_COST;
     updateHud();
     sfx.insert();
+    startClawMusic();
     claw.state = 'aim';
     claw.timer = CLAW_TIME;
     claw.wonThisPlay = false;
@@ -2044,7 +2224,7 @@ function releaseHeld(silent = false) {
   claw.joint = null;
   claw.held = null;
   pr.body.setLinearDamping(0.3);
-  pr.body.setAngularDamping(1.6);
+  pr.body.setAngularDamping(2.5);
   pr.body.wakeUp();
   pr.restoreAt = now + 700;
   if (silent) pr.collider.setCollisionGroups(PRIZE_GROUPS);
@@ -2070,6 +2250,7 @@ function winPrize(p) {
 function clawUpdate(dt) {
   if (!claw.world) return;
   claw.stateT += dt;
+  updateClawMusic(dt);
 
   switch (claw.state) {
     case 'idle':
