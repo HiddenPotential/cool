@@ -591,65 +591,201 @@ function unprojectX(px) {
 }
 
 // ---------- Coin sprites ----------
-const SPRITE_RX = 44;
-const sprites = {};
-function makeSprite(type) {
+// Coins are drawn as real discs: a face ellipse plus a milled edge, at whatever angle the
+// face is turned to the camera. psi is the angle (degrees) between the visible face and the
+// view: positive tips the face up so the edge shows below it, negative tips it down so the
+// top of the edge shows above it, and ±90 is edge-on. A coin lying flat sits at FLAT_PSI.
+const SPRITE_RX = 44, SPRITE_W = 100, SPRITE_H = 124, SPRITE_CY = 62;
+const COIN_T = 13;          // edge thickness, in sprite units
+const FLAT_PSI = 54;
+const PSI_STEP = 6;
+const COIN_LIFT = 0.24;     // a flat coin's face sits this far (x radius) above what it rests on
+const spriteCache = {};
+function coinSprite(type, psi) {
+  const q = clamp(Math.round(psi / PSI_STEP) * PSI_STEP, -90, 90);
+  const key = type + q;
+  return spriteCache[key] || (spriteCache[key] = makeSprite(type, q));
+}
+function makeSprite(type, psi) {
+  // drawn at 2x and scaled down when used, so the details stay crisp
   const c = document.createElement('canvas');
-  c.width = 100; c.height = 70;
+  c.width = SPRITE_W * 2; c.height = SPRITE_H * 2;
   const g = c.getContext('2d');
-  const cx = 50, cy = 30, rx = SPRITE_RX, ry = 26, rim = 6;
+  g.scale(2, 2);
+  const a = psi * Math.PI / 180;
+  const cx = 50, cy = SPRITE_CY, rx = SPRITE_RX, ry = Math.max(0.01, rx * Math.cos(a));
+  const dy = COIN_T * Math.sin(a);              // where the back face sits relative to the front
+  const top = Math.min(cy, cy + dy), bot = Math.max(cy, cy + dy);
   const pal = {
-    coin: ['#fff3b0', '#f5c53a', '#b07a12', '#7a4f06'],
-    big:  ['#ffffff', '#d9dde6', '#8b93a6', '#4d5466'],
-    star: ['#d8f7ff', '#39b8ff', '#2160c9', '#173a7a'],
-    gem:  ['#ffe0f3', '#ff58b6', '#b0136b', '#6d0a42'],
+    coin: ['#fff6c8', '#f5c53a', '#b07a12', '#6a4204'],
+    big:  ['#ffffff', '#d9dde6', '#8b93a6', '#3f4556'],
+    star: ['#e2f9ff', '#39b8ff', '#2160c9', '#123068'],
+    gem:  ['#ffe6f5', '#ff58b6', '#b0136b', '#5c0837'],
   }[type];
-  // rim
-  g.fillStyle = pal[3];
-  g.beginPath(); g.ellipse(cx, cy + rim, rx, ry, 0, 0, Math.PI * 2); g.fill();
-  g.fillRect(cx - rx, cy, rx * 2, rim);
-  g.fillStyle = pal[2];
-  g.beginPath(); g.ellipse(cx, cy + rim * 0.5, rx, ry, 0, 0, Math.PI * 2); g.fill();
+  const hull = () => {
+    g.beginPath();
+    g.ellipse(cx, bot, rx, ry, 0, 0, Math.PI);
+    g.lineTo(cx - rx, top);
+    g.ellipse(cx, top, rx, ry, 0, Math.PI, Math.PI * 2);
+    g.closePath();
+  };
+
+  // edge: a short cylinder, lit from the upper left
+  const side = g.createLinearGradient(cx - rx, 0, cx + rx, 0);
+  side.addColorStop(0, pal[3]);
+  side.addColorStop(0.18, pal[2]);
+  side.addColorStop(0.32, pal[1]);
+  side.addColorStop(0.42, pal[0]);
+  side.addColorStop(0.55, pal[1]);
+  side.addColorStop(0.8, pal[2]);
+  side.addColorStop(1, pal[3]);
+  g.fillStyle = side;
+  hull();
+  g.fill();
+  // the underside of the edge falls into shade; the top of the edge catches the light
+  const shade = g.createLinearGradient(0, top - ry, 0, bot + ry);
+  if (dy >= 0) {
+    shade.addColorStop(0.5, 'rgba(0,0,0,0)');
+    shade.addColorStop(1, 'rgba(0,0,0,.45)');
+  } else {
+    shade.addColorStop(0, 'rgba(255,255,255,.3)');
+    shade.addColorStop(0.5, 'rgba(255,255,255,0)');
+  }
+  g.fillStyle = shade;
+  hull();
+  g.fill();
+  // milled ridges across the visible part of the edge
+  if (Math.abs(dy) > 1.5) {
+    g.lineWidth = 0.9;
+    const from = dy > 0 ? 0.06 : Math.PI + 0.06;
+    for (let t = from; t < from + Math.PI - 0.1; t += 0.075) {
+      const x = cx + rx * Math.cos(t);
+      const y = cy + ry * Math.sin(t);
+      g.strokeStyle = `rgba(0,0,0,${0.14 + 0.22 * Math.abs(Math.cos(t))})`;
+      g.beginPath(); g.moveTo(x, y + Math.sign(dy) * 0.8); g.lineTo(x, y + dy - Math.sign(dy) * 0.6); g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,.12)';
+      g.beginPath(); g.moveTo(x + 0.9, y + Math.sign(dy) * 0.8); g.lineTo(x + 0.9, y + dy - Math.sign(dy) * 0.6); g.stroke();
+    }
+  }
+  // dark outline round the whole disc, heaviest where it meets the surface below
+  g.lineWidth = 1.2;
+  g.strokeStyle = 'rgba(0,0,0,.35)';
+  hull();
+  g.stroke();
+  if (dy > 0) {
+    g.strokeStyle = 'rgba(0,0,0,.55)';
+    g.lineWidth = 1.4;
+    g.beginPath(); g.ellipse(cx, bot, rx, ry, 0, 0.05, Math.PI - 0.05); g.stroke();
+  }
+
   // face
-  const grad = g.createRadialGradient(cx - rx * 0.35, cy - ry * 0.5, 2, cx, cy, rx * 1.1);
-  grad.addColorStop(0, pal[0]);
-  grad.addColorStop(0.45, pal[1]);
-  grad.addColorStop(1, pal[2]);
-  g.fillStyle = grad;
+  const face = g.createRadialGradient(cx - rx * 0.4, cy - ry * 0.6, 2, cx, cy, rx * 1.15);
+  face.addColorStop(0, pal[0]);
+  face.addColorStop(0.45, pal[1]);
+  face.addColorStop(1, pal[2]);
+  g.fillStyle = face;
   g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fill();
-  // inner ring
-  g.strokeStyle = 'rgba(0,0,0,.22)';
-  g.lineWidth = 2.5;
-  g.beginPath(); g.ellipse(cx, cy + 1, rx * 0.74, ry * 0.74, 0, 0, Math.PI * 2); g.stroke();
-  g.strokeStyle = 'rgba(255,255,255,.45)';
-  g.lineWidth = 1.5;
-  g.beginPath(); g.ellipse(cx, cy - 1, rx * 0.74, ry * 0.74, 0, Math.PI, Math.PI * 2); g.stroke();
-  // emblem
+  // crisp line where the face turns into the edge
+  g.lineWidth = 1;
+  g.strokeStyle = 'rgba(0,0,0,.4)';
+  g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.stroke();
+  if (ry < 3) return c;   // nearly edge-on: no room for the details
+
+  // bevelled lip: bright on the upper left, shaded on the lower right
+  const lip = Math.min(2.2, ry * 0.15);
+  g.lineWidth = 2.2;
+  g.strokeStyle = 'rgba(255,255,255,.6)';
+  g.beginPath(); g.ellipse(cx, cy, rx - lip, ry - lip, 0, Math.PI * 0.6, Math.PI * 1.45); g.stroke();
+  g.strokeStyle = 'rgba(0,0,0,.3)';
+  g.beginPath(); g.ellipse(cx, cy, rx - lip, ry - lip, 0, -Math.PI * 0.4, Math.PI * 0.4); g.stroke();
+
+  // raised border ring: light on top-left, shadow on bottom-right
+  const ringR = 0.78, f = ry / 26;
+  g.lineWidth = 3.2;
+  g.strokeStyle = 'rgba(0,0,0,.32)';
+  g.beginPath(); g.ellipse(cx + 0.7, cy + 1.1 * f, rx * ringR, ry * ringR, 0, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,.6)';
+  g.lineWidth = 1.8;
+  g.beginPath(); g.ellipse(cx - 0.5, cy - 0.9 * f, rx * ringR, ry * ringR, 0, Math.PI * 0.9, Math.PI * 1.9); g.stroke();
+  // recessed field inside the ring
+  const field = g.createRadialGradient(cx + rx * 0.2, cy + ry * 0.3, 1, cx, cy, rx * ringR);
+  field.addColorStop(0, 'rgba(0,0,0,0)');
+  field.addColorStop(1, 'rgba(0,0,0,.2)');
+  g.fillStyle = field;
+  g.beginPath(); g.ellipse(cx, cy, rx * ringR - 1.5, Math.max(0.01, ry * ringR - 1.5 * f), 0, 0, Math.PI * 2); g.fill();
+
+  // embossed emblem
   g.save();
   g.translate(cx, cy);
   g.scale(1, ry / rx);
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.font = '900 34px system-ui, sans-serif';
+  g.font = type === 'coin' ? '900 28px system-ui, sans-serif' : '900 34px system-ui, sans-serif';
   const emblem = { coin: '★', big: '10', star: '★', gem: '◆' }[type];
-  g.fillStyle = 'rgba(0,0,0,.25)';
-  g.fillText(emblem, 0, 3);
-  g.fillStyle = type === 'coin' ? 'rgba(255,240,170,.85)' : '#fff';
-  if (type === 'coin') g.font = '900 26px system-ui, sans-serif';
+  g.fillStyle = 'rgba(0,0,0,.4)';
+  g.fillText(emblem, 1.4, 2.8);
+  g.fillStyle = 'rgba(255,255,255,.75)';
+  g.fillText(emblem, -0.9, -1.4);
+  g.fillStyle = type === 'coin' ? '#f2c84a' : '#fff';
   g.fillText(emblem, 0, 0);
+  g.restore();
+
+  // specular glint
+  g.save();
+  g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.clip();
+  const glint = g.createLinearGradient(cx - rx, cy - ry, cx + rx * 0.2, cy + ry * 0.3);
+  glint.addColorStop(0.25, 'rgba(255,255,255,0)');
+  glint.addColorStop(0.38, 'rgba(255,255,255,.5)');
+  glint.addColorStop(0.46, 'rgba(255,255,255,0)');
+  g.fillStyle = glint;
+  g.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
   g.restore();
   return c;
 }
-['coin', 'big', 'star', 'gem'].forEach((t) => (sprites[t] = makeSprite(t)));
-
-// stand tips the coin up onto its edge (0 = flat, 1 = upright), pivoting on its front edge
-function drawCoin(type, x, y, elev, alpha = 1, extraScale = 1, stand = 0) {
-  const p = proj(x, y, elev);
-  const rx = TYPES[type].r * k * p.s * extraScale;
+// soft contact shadow, drawn under every coin resting on something
+const shadowSprite = (() => {
+  const c = document.createElement('canvas');
+  c.width = 100; c.height = 70;
+  const g = c.getContext('2d');
+  g.translate(50, 36);
+  g.scale(1, 26 / 44);
+  const grad = g.createRadialGradient(0, 0, 20, 0, 0, 50);
+  grad.addColorStop(0, 'rgba(0,0,0,.6)');
+  grad.addColorStop(0.6, 'rgba(0,0,0,.28)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grad;
+  g.beginPath(); g.arc(0, 0, 50, 0, Math.PI * 2); g.fill();
+  return c;
+})();
+function drawCoinShadow(type, x, y, surface, lift = 0) {
+  const p = proj(x, y, surface);
+  const rx = TYPES[type].r * k * p.s;
   const sc = rx / SPRITE_RX;
-  const vs = 1 + stand * (SPRITE_RX / 26 - 1);   // 26 = the sprite face's vertical radius
+  const spread = 1 + Math.min(lift, 60) / 60;          // higher coins cast bigger, fainter shadows
+  ctx.globalAlpha = 0.85 / spread;
+  const w = 100 * sc * spread, h = 70 * sc * spread;
+  ctx.drawImage(shadowSprite, p.x - w / 2 + 3 * sc + lift * 0.15 * sc, p.y - h / 2 + 10 * sc, w, h);
+  ctx.globalAlpha = 1;
+}
+['coin', 'big', 'star', 'gem'].forEach((t) => coinSprite(t, FLAT_PSI));
+
+// draws a coin whose face centre is at (px, py) on screen; any psi works, it wraps round
+// to whichever face is showing
+function drawCoinAt(type, px, py, rx, psi) {
+  psi = (((psi + 90) % 180) + 180) % 180 - 90;
+  const sc = rx / SPRITE_RX;
+  ctx.drawImage(coinSprite(type, psi), px - 50 * sc, py - SPRITE_CY * sc, SPRITE_W * sc, SPRITE_H * sc);
+}
+// y is where the coin's centre ends up once it's lying flat. stand tips it up onto its edge
+// (0 = flat, 1 = upright facing the player), pivoting on its front edge, so as it falls
+// forward the face we see turns away through edge-on and the other face comes up.
+function drawCoin(type, x, y, elev, alpha = 1, extraScale = 1, stand = 0) {
+  const r = TYPES[type].r * extraScale;
+  const th = stand * Math.PI / 2;
+  const p = proj(x, y - r * (1 - Math.cos(th)), elev + r * Math.sin(th) + COIN_LIFT * r * Math.cos(th));
+  const rx = r * k * p.s;
   if (alpha !== 1) ctx.globalAlpha = alpha;
-  ctx.drawImage(sprites[type], p.x - 50 * sc, p.y + 26 * sc - 56 * sc * vs, 100 * sc, 70 * sc * vs);
+  drawCoinAt(type, p.x, p.y, rx, FLAT_PSI + stand * 90);
   if (alpha !== 1) ctx.globalAlpha = 1;
   if (type !== 'coin') {
     // special items glow so they're easy to spot
@@ -677,31 +813,41 @@ const GATE_HALF = 12;
 const MOUTH_ELEV = DECK_H + 16;  // middle of the slot coins come out of onto the shelf
 const MOUTH_TOP = DECK_H + 32;   // tall enough for a coin standing on its edge
 const MOUTH_HALF = 17;
-// Paid coins go into the chute on their edge, roll down inside the back wall (visible
-// through the LUCKY window), roll out of a slot at its foot and fall over flat onto the
+const TUBE_HALF = 15;            // the glass tube the coin falls down
+// Paid coins drop into the chute on their edge, fall down a glass tube in the back wall
+// (and past the LUCKY window), slide out of a slot at its foot and topple forward onto the
 // shelf. Bonus coins rain in from above.
-// stand: 0 = lying flat, 1 = standing on its edge. For a standing coin, elev is its bottom.
-const INTO_CHUTE = 0.1, OUT_OF_WALL = 0.5, ROLLED_OUT = 0.68;   // fractions of the drop
+// y is where the coin will lie once flat; elev is the surface under it (for a standing coin,
+// its bottom edge); stand: 0 = lying flat, 1 = standing on its edge.
+const IN_SLOT = 0.46, SLID_OUT = 0.62, LANDED = 0.88;   // fractions of the drop
+const DROP_FROM = CHUTE_ELEV + 34;
+const IN_TUBE = CHUTE_ELEV - 12;   // below this the coin is out of sight under the funnel
 function incomingPos(d) {
   const p = Math.min(d.t / d.dur, 1);
+  const r = TYPES[d.type].r;
   if (d.free) {
     const e = p * p;
     return { stage: 'air', y: d.yLand * e, elev: CHUTE_ELEV + (DECK_H - CHUTE_ELEV) * e, scale: 1 + 0.15 * (1 - p), stand: 0 };
   }
-  if (p < INTO_CHUTE) return { stage: 'chute', y: 0, elev: CHUTE_ELEV + 20 - 36 * (p / INTO_CHUTE), scale: 1, stand: 1 };
-  if (p < OUT_OF_WALL) {
-    const q = (p - INTO_CHUTE) / (OUT_OF_WALL - INTO_CHUTE);
-    return { stage: 'wall', y: 0, elev: CHUTE_ELEV + (DECK_H + 1 - CHUTE_ELEV) * q * q, scale: 1, stand: 1 };
+  if (p < IN_SLOT) {
+    // one continuous fall, picking up speed, from above the funnel to the floor of the slot
+    const q = p / IN_SLOT;
+    const elev = DROP_FROM + (DECK_H - DROP_FROM) * q * (0.25 + 0.75 * q);
+    return { stage: elev > IN_TUBE ? 'chute' : 'wall', y: r, elev, scale: 1, stand: 1 };
   }
-  const r = TYPES[d.type].r;
-  if (p < ROLLED_OUT) {
-    // roll out of the slot on its edge, slowing down
-    const q = (p - OUT_OF_WALL) / (ROLLED_OUT - OUT_OF_WALL);
-    return { stage: 'out', y: -r + (d.yLand + r) * (1 - (1 - q) * (1 - q)), elev: DECK_H, scale: 1, stand: 1 };
+  if (p < SLID_OUT) {
+    // slides out of the slot on its edge, slowing down
+    const q = (p - IN_SLOT) / (SLID_OUT - IN_SLOT);
+    return { stage: 'out', y: r + (d.yLand - r) * (1 - (1 - q) * (1 - q)), elev: DECK_H, scale: 1, stand: 1 };
   }
-  // then topple over, speeding up as it falls
-  const q = (p - ROLLED_OUT) / (1 - ROLLED_OUT);
-  return { stage: 'out', y: d.yLand, elev: DECK_H, scale: 1, stand: Math.cos(q * q * Math.PI / 2) };
+  if (p < LANDED) {
+    // then topples forward, speeding up as it falls
+    const q = (p - SLID_OUT) / (LANDED - SLID_OUT);
+    return { stage: 'out', y: d.yLand, elev: DECK_H, scale: 1, stand: Math.cos(q * q * Math.PI / 2) };
+  }
+  // and rocks once as it lands
+  const q = (p - LANDED) / (1 - LANDED);
+  return { stage: 'out', y: d.yLand, elev: DECK_H, scale: 1, stand: 0.07 * Math.sin(q * Math.PI) };
 }
 function gateX(t) { return W / 2 + (W / 2 - 40) * Math.sin(t * 1.4); }
 
@@ -724,7 +870,8 @@ function dropCoin(x, type = 'coin', free = false) {
     sfx.insert();
   }
   x = clamp(x, TYPES[type].r, W - TYPES[type].r);
-  incoming.push({ x, type, t: 0, dur: free ? 0.42 : 0.85, yLand: 8 + Math.random() * 30, free, gateChecked: free });
+  const yLand = free ? 8 + Math.random() * 30 : TYPES[type].r + 4 + Math.random() * 24;
+  incoming.push({ x, type, t: 0, dur: free ? 0.42 : 1, yLand, free, gateChecked: free });
   updateHud();
   return true;
 }
@@ -955,19 +1102,49 @@ function drawScene() {
     ctx.shadowBlur = 0;
   }
 
-  // the coin channel down the wall and the slot at its foot
-  const ct = proj(chuteX, 0, CHUTE_ELEV), cb = proj(chuteX, 0, MOUTH_ELEV);
-  ctx.strokeStyle = 'rgba(255,62,165,.18)';
-  ctx.lineWidth = 10 * k * 0.62;
-  ctx.beginPath(); ctx.moveTo(ct.x, ct.y); ctx.lineTo(cb.x, cb.y); ctx.stroke();
+  // the glass coin tube down the wall and the slot at its foot, with any coin falling
+  // through them
+  const u0 = proj(chuteX - TUBE_HALF, 0, CHUTE_ELEV), u1 = proj(chuteX + TUBE_HALF, 0, MOUTH_TOP);
   const m0 = proj(chuteX - MOUTH_HALF, 0, DECK_H + 1), m1 = proj(chuteX + MOUTH_HALF, 0, MOUTH_TOP);
+  const tubeBg = ctx.createLinearGradient(u0.x, 0, u1.x, 0);
+  tubeBg.addColorStop(0, 'rgba(10,4,24,.9)');
+  tubeBg.addColorStop(0.5, 'rgba(40,12,52,.75)');
+  tubeBg.addColorStop(1, 'rgba(10,4,24,.9)');
+  ctx.fillStyle = tubeBg;
+  ctx.fillRect(u0.x, u0.y, u1.x - u0.x, u1.y - u0.y);
   ctx.fillStyle = '#05020c';
+  roundRect(m0.x, m1.y, m1.x - m0.x, m0.y - m1.y, 4);
+  ctx.fill();
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(u0.x, u0.y, u1.x - u0.x, u1.y - u0.y + 2);
+  ctx.rect(m0.x, m1.y, m1.x - m0.x, m0.y - m1.y);
+  ctx.clip();
+  for (const d of incoming) {
+    const ip = incomingPos(d);
+    if (ip.stage === 'wall') drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale, ip.stand);
+  }
+  ctx.restore();
+  // glass: a pink tint, a bright streak down one side and neon edges
+  const tubeGlass = ctx.createLinearGradient(u0.x, 0, u1.x, 0);
+  tubeGlass.addColorStop(0, 'rgba(255,62,165,.28)');
+  tubeGlass.addColorStop(0.18, 'rgba(255,255,255,.22)');
+  tubeGlass.addColorStop(0.3, 'rgba(255,62,165,.06)');
+  tubeGlass.addColorStop(0.8, 'rgba(255,62,165,.06)');
+  tubeGlass.addColorStop(1, 'rgba(255,62,165,.3)');
+  ctx.fillStyle = tubeGlass;
+  ctx.fillRect(u0.x, u0.y, u1.x - u0.x, u1.y - u0.y);
+  ctx.strokeStyle = 'rgba(255,62,165,.55)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(u0.x, u0.y); ctx.lineTo(u0.x, u1.y);
+  ctx.moveTo(u1.x, u0.y); ctx.lineTo(u1.x, u1.y);
+  ctx.stroke();
   ctx.strokeStyle = '#ff3ea5';
   ctx.lineWidth = 2;
   ctx.shadowColor = '#ff3ea5';
   ctx.shadowBlur = 8;
   roundRect(m0.x, m1.y, m1.x - m0.x, m0.y - m1.y, 4);
-  ctx.fill();
   ctx.stroke();
   ctx.shadowBlur = 0;
 
@@ -994,7 +1171,7 @@ function drawScene() {
   ctx.clip();
   for (const d of incoming) {
     const ip = incomingPos(d);
-    if (ip.stage === 'wall') drawCoin(d.type, d.x, 0, ip.elev, 1, ip.scale, ip.stand);
+    if (ip.stage === 'wall') drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale, ip.stand);
   }
   ctx.restore();
 
@@ -1114,7 +1291,7 @@ function drawScene() {
     if (ip.stage === 'air') drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale);
     else if (ip.stage === 'out') {
       // while it's still partly inside the wall, only the bit in the slot shows
-      const inSlot = ip.y + TYPES[d.type].r < 3;
+      const inSlot = ip.stand === 1 && ip.y < TYPES[d.type].r + 3;
       if (inSlot) { ctx.save(); ctx.beginPath(); ctx.rect(slotL.x, slotR.y, slotR.x - slotL.x, ch); ctx.clip(); }
       drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale, ip.stand);
       if (inSlot) ctx.restore();
@@ -1124,12 +1301,11 @@ function drawScene() {
   // coins falling off the table
   for (const fc of falling) {
     const rx = TYPES[fc.type].r * k * fc.s;
-    const sc = rx / SPRITE_RX;
     ctx.globalAlpha = fc.kind === 'win' ? 1 : Math.max(0, 1 - fc.t * 2);
     ctx.save();
     ctx.translate(fc.x, fc.y);
     ctx.rotate(fc.t * (fc.kind === 'win' ? 3 : -4));
-    ctx.drawImage(sprites[fc.type], -50 * sc, -30 * sc, 100 * sc, 70 * sc);
+    drawCoinAt(fc.type, 0, 0, rx, FLAT_PSI + fc.t * (fc.kind === 'win' ? 540 : -720));   // tumbling
     ctx.restore();
     ctx.globalAlpha = 1;
   }
@@ -1215,6 +1391,7 @@ function update(dt) {
         addSpins(1);
       }
     }
+    if (!d.free && !d.inSlot && incomingPos(d).stage === 'out') { d.inSlot = true; clink(2600, { vol: 0.035, decay: 0.15 }); }
     if (d.t >= d.dur) {
       incoming.splice(i, 1);
       machine.add(d.x, d.yLand, 1, d.type);
