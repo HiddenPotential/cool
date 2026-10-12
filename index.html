@@ -385,6 +385,21 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
   background: linear-gradient(180deg, #1d1645, #0d0a24 30%, #07051a);
   box-shadow: 0 0 0 3px #3b2f7a, 0 0 0 6px #05040f, 0 0 40px rgba(178,107,255,.28), 0 20px 50px rgba(0,0,0,.6);
 }
+:root[data-theme="candy"] { --bg: #2a0d26; --cab: #4a1a40; --cab2: #7a2a64; --neon-pink: #ff6fb5; --neon-cyan: #7ee8c8; --muted: #f0b8d8; }
+:root[data-theme="candy"] body {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(255,111,181,.45), transparent 60%),
+    radial-gradient(circle at 20% 30%, rgba(255,210,62,.35) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 80%, rgba(126,232,200,.35) 0 2px, transparent 3px),
+    radial-gradient(circle at 85% 20%, rgba(143,184,255,.35) 0 2px, transparent 3px),
+    repeating-linear-gradient(135deg, transparent 0 26px, rgba(255,255,255,.04) 26px 40px);
+}
+:root[data-theme="candy"] .cabinet, :root[data-theme="candy"] .claw-cab, :root[data-theme="candy"] .shop {
+  background: linear-gradient(180deg, #8a2f72, #4a1a40 30%, #2e0f2a);
+  box-shadow: 0 0 0 3px #c2477f, 0 0 0 6px #2a0d26, 0 0 40px rgba(255,111,181,.35), 0 20px 50px rgba(0,0,0,.6);
+}
+:root[data-theme="candy"] .marquee { background: linear-gradient(180deg, #6e2252, #3a1534); box-shadow: inset 0 0 0 2px #c2477f, inset 0 0 24px rgba(126,232,200,.25); }
+:root[data-theme="candy"] .shelf { background: linear-gradient(180deg, #6e2252, #3a1534); box-shadow: inset 0 0 0 2px #c2477f; }
 :root[data-theme="ocean"] .shelf { background: linear-gradient(180deg, #0d3f5e, #062237); box-shadow: inset 0 0 0 2px #1d6a8a; }
 :root[data-theme="space"] .shelf { background: linear-gradient(180deg, #1b1240, #0a0820); box-shadow: inset 0 0 0 2px #3b2f7a; }
 :root[data-theme="ocean"] .marquee { background: linear-gradient(180deg, #0d3f5e, #062237); box-shadow: inset 0 0 0 2px #1d6a8a, inset 0 0 24px rgba(61,245,214,.25); }
@@ -730,6 +745,12 @@ const THEMES = {
     pusher: { bg: '#03182b', hemi: ['#9fe6ff', '#04263a'], felt: ['#0a4558', '#0f6a74'], ramp: '#1a8a8a', wall: ['#0d4a6e', '#062a44'], side: '#062238', back: '#04182a', tray: '#05263a' },
     claw: { bg: '#04182a', hemi: ['#a8f0ff', '#05304a'], walls: 'bubbles', back: ['#0b4566', 'rgba(170,240,255,.4)'], side: ['#08344f', 'rgba(170,240,255,.22)'], floor: 'sand', floorColor: '#d8c28c', base: '#06263c' },
   },
+  candy: {
+    name: 'Candy Land', blurb: 'Candy-striped walls, a frosting floor, lollipop trees, falling sprinkles, and sweets with faces to win.',
+    price: 500, points: 15, a: '#ff6fb5', b: '#7ee8c8', ambient: 'sprinkles',
+    pusher: { bg: '#2c0d28', hemi: ['#ffd6ee', '#4a1840'], felt: ['#6e2252', '#9a3a72'], ramp: '#c95a96', wall: ['#c2477f', '#6e1d4a'], side: '#4a1840', back: '#2c0d28', tray: '#4a1840' },
+    claw: { bg: '#3a1534', hemi: ['#f2c2dd', '#4a1840'], walls: 'candy', back: ['#c8578f', '#ffd6ea'], side: ['#4fa88a', '#ff9fd0'], floor: 'frosting', floorColor: '#d97aab', base: '#6a2458' },
+  },
   space: {
     name: 'Outer Space', blurb: 'A starfield, a moon-rock floor, ringed planets, and rockets, aliens and robots to win.',
     price: 600, points: 18, a: '#b26bff', b: '#6be3ff', ambient: 'stars',
@@ -737,7 +758,7 @@ const THEMES = {
     claw: { bg: '#05040f', hemi: ['#d2ccff', '#120e30'], walls: 'stars', back: ['#0b0922', '#ffffff'], side: ['#090718', '#ffffff'], floor: 'moon', floorColor: '#8e8ba3', base: '#0d0a22' },
   },
 };
-const THEME_ORDER = ['neon', 'ocean', 'space'];
+const THEME_ORDER = ['neon', 'ocean', 'candy', 'space'];
 let themeId = 'neon';
 let ownedThemes = ['neon'];
 const theme = () => THEMES[themeId];
@@ -771,6 +792,15 @@ function wallPattern(kind, base, mark, repeat) {
         g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke();
         g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(x - r * 0.35, y - r * 0.35, r * 0.25, 0, Math.PI * 2); g.fill();
       }
+    } else if (kind === 'candy') {
+      // candy-cane stripes with little sugar dots
+      g.fillStyle = mark;
+      g.globalAlpha = 0.55;
+      for (let x = -h; x < w; x += 48) { g.beginPath(); g.moveTo(x, h); g.lineTo(x + 20, h); g.lineTo(x + 20 + h, 0); g.lineTo(x + h, 0); g.fill(); }
+      g.globalAlpha = 0.5;
+      g.fillStyle = '#ffffff';
+      for (let i = 0; i < 40; i++) { g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 2.5, 0, Math.PI * 2); g.fill(); }
+      g.globalAlpha = 1;
     } else if (kind === 'stars') {
       for (const [x, y, c] of [[60, 70, 'rgba(178,107,255,.25)'], [190, 180, 'rgba(107,227,255,.18)']]) {
         const grad = g.createRadialGradient(x, y, 0, x, y, 110);
@@ -794,6 +824,15 @@ function floorPattern(kind, color) {
     if (kind === 'sand') {
       g.strokeStyle = 'rgba(120,90,40,.18)'; g.lineWidth = 3;
       for (let y = 10; y < h; y += 22) { g.beginPath(); for (let x = 0; x <= w; x += 8) g.lineTo(x, y + Math.sin(x / 20 + y) * 4); g.stroke(); }
+    } else if (kind === 'frosting') {
+      // swirls of icing scattered with sprinkles
+      g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 6;
+      for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 14 + Math.random() * 20, 0, Math.PI * 1.5); g.stroke(); }
+      const cols = ['#ffd23e', '#7ee8c8', '#8fb8ff', '#ffffff', '#ff6fb5', '#b26bff'];
+      for (let i = 0; i < 160; i++) {
+        g.save(); g.translate(Math.random() * w, Math.random() * h); g.rotate(Math.random() * Math.PI);
+        g.fillStyle = cols[i % cols.length]; g.fillRect(-4, -1.5, 8, 3); g.restore();
+      }
     } else if (kind === 'moon') {
       for (let i = 0; i < 14; i++) {
         const x = Math.random() * w, y = Math.random() * h, r = 6 + Math.random() * 18;
@@ -806,7 +845,7 @@ function floorPattern(kind, color) {
 
 // bubbles rising, or stars twinkling, inside a box
 function ambientParticles(kind, box3) {
-  const n = kind === 'bubbles' ? 70 : 110;
+  const n = kind === 'bubbles' ? 70 : kind === 'sprinkles' ? 90 : 110;
   const pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
     pos[i * 3] = rand(box3.min.x, box3.max.x);
@@ -815,6 +854,15 @@ function ambientParticles(kind, box3) {
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  if (kind === 'sprinkles') {
+    const cols = ['#ffd23e', '#7ee8c8', '#8fb8ff', '#ffffff', '#ff6fb5', '#b26bff'].map((c) => new THREE.Color(c));
+    const col = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const c = cols[i % cols.length]; col.set([c.r, c.g, c.b], i * 3); }
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ map: glowTex, size: 0.08, vertexColors: true, transparent: true, depthWrite: false }));
+    pts.userData = { kind, box3, speed: Array.from({ length: n }, () => rand(0.15, 0.4)) };
+    return pts;
+  }
   const pts = new THREE.Points(geo, new THREE.PointsMaterial({
     map: glowTex, size: kind === 'bubbles' ? 0.09 : 0.06, color: kind === 'bubbles' ? '#bff6ff' : '#ffffff',
     transparent: true, opacity: kind === 'bubbles' ? 0.75 : 0.9, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -825,7 +873,16 @@ function ambientParticles(kind, box3) {
 function animateParticles(pts, dt, t) {
   if (!pts) return;
   const { kind, box3, speed } = pts.userData;
-  if (kind === 'bubbles') {
+  if (kind === 'sprinkles') {
+    const a = pts.geometry.attributes.position;
+    for (let i = 0; i < a.count; i++) {
+      let y = a.getY(i) - speed[i] * dt;
+      if (y < box3.min.y) y = box3.max.y;
+      a.setY(i, y);
+      a.setX(i, a.getX(i) + Math.sin(t * 1.5 + i) * 0.0015);
+    }
+    a.needsUpdate = true;
+  } else if (kind === 'bubbles') {
     const a = pts.geometry.attributes.position;
     for (let i = 0; i < a.count; i++) {
       let y = a.getY(i) + speed[i] * dt;
@@ -845,6 +902,29 @@ function kelp(height, color, seed) {
   const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.035, 6), new THREE.MeshStandardMaterial({ color, roughness: 0.6 }));
   m.castShadow = true;
   m.userData.sway = seed;
+  return m;
+}
+// a lollipop tree: a striped stick with a swirly disc on top
+function lollipopTree(height, color) {
+  const g = new THREE.Group();
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, height, 10), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.4 }));
+  stick.position.y = height / 2;
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.08, 32), new THREE.MeshPhysicalMaterial({ color, roughness: 0.2, clearcoat: 1 }));
+  disc.rotation.x = Math.PI / 2;
+  disc.position.y = height + 0.2;
+  g.add(stick, disc);
+  for (const [k, c] of [[0.2, '#ffffff'], [0.11, '#ffffff']]) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(k, 0.025, 6, 32), new THREE.MeshStandardMaterial({ color: c, roughness: 0.4 }));
+    ring.position.set(0, height + 0.2, 0.045);
+    g.add(ring);
+  }
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+function gumdrop(color, k) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(k, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshPhysicalMaterial({ color, roughness: 0.35, clearcoat: 0.6 }));
+  m.scale.y = 1.3;
+  m.castShadow = true;
   return m;
 }
 function ringedPlanet(radius, color, ringColor) {
@@ -886,12 +966,96 @@ function coinFaceTex(emblem, asBump) {
     g.lineWidth = 7;
     g.beginPath(); g.arc(128, 128, 86, 0, Math.PI * 2); g.stroke();
     g.filter = asBump ? 'blur(2px)' : 'none';
-    g.fillStyle = hi;
+    g.fillStyle = g.strokeStyle = hi;
+    if (EMBLEMS[emblem]) { EMBLEMS[emblem](g, lo, asBump); return; }
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     g.font = `900 ${emblem.length > 1 ? 104 : 132}px system-ui, sans-serif`;
     g.fillText(emblem, 128, 138);
   }, { color: !asBump });
+}
+// emblems drawn by hand, in a 256px face centred on (128, 128), for the themed coins
+const EMBLEMS = {
+  anchor(g) {
+    g.lineWidth = 16; g.lineCap = 'round';
+    g.beginPath(); g.arc(128, 74, 15, 0, Math.PI * 2); g.stroke();
+    g.beginPath(); g.moveTo(128, 90); g.lineTo(128, 196); g.stroke();
+    g.beginPath(); g.moveTo(96, 112); g.lineTo(160, 112); g.stroke();
+    g.beginPath(); g.arc(128, 136, 58, Math.PI * 0.15, Math.PI * 0.85); g.stroke();
+    for (const s of [-1, 1]) { g.beginPath(); g.moveTo(128 + s * 56, 152); g.lineTo(128 + s * 70, 138); g.lineTo(128 + s * 44, 140); g.fill(); }
+  },
+  shell(g, lo) {
+    // a scallop: a fan of ribs over a little hinge
+    g.beginPath(); g.moveTo(128, 190);
+    for (let i = 0; i <= 6; i++) {
+      const a = Math.PI * (1.1 + 0.8 * i / 6), b = Math.PI * (1.1 + 0.8 * (i + 0.5) / 6);
+      if (i === 0) g.lineTo(128 + Math.cos(a) * 82, 150 + Math.sin(a) * 82);
+      if (i < 6) g.quadraticCurveTo(128 + Math.cos(b) * 96, 150 + Math.sin(b) * 96, 128 + Math.cos(a + Math.PI * 0.8 / 6) * 82, 150 + Math.sin(a + Math.PI * 0.8 / 6) * 82);
+    }
+    g.closePath(); g.fill();
+    g.fillRect(104, 182, 48, 16);
+    g.strokeStyle = lo; g.lineWidth = 5;
+    for (let i = 1; i < 6; i++) {
+      const a = Math.PI * (1.1 + 0.8 * i / 6);
+      g.beginPath(); g.moveTo(128, 186); g.lineTo(128 + Math.cos(a) * 76, 150 + Math.sin(a) * 76); g.stroke();
+    }
+  },
+  swirl(g, lo, asBump) {
+    // a peppermint: red stripes turning out from the middle (painted in colour, so the coin
+    // itself stays white)
+    if (!asBump) { g.beginPath(); g.arc(128, 128, 100, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = asBump ? lo : '#ff2d55';
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2, b = a + Math.PI / 8;
+      g.beginPath(); g.moveTo(128, 128);
+      g.quadraticCurveTo(128 + Math.cos(a + 0.6) * 60, 128 + Math.sin(a + 0.6) * 60, 128 + Math.cos(a) * 98, 128 + Math.sin(a) * 98);
+      g.arc(128, 128, 98, a, b);
+      g.quadraticCurveTo(128 + Math.cos(b + 0.6) * 60, 128 + Math.sin(b + 0.6) * 60, 128, 128);
+      g.fill();
+    }
+    g.beginPath(); g.arc(128, 128, 18, 0, Math.PI * 2); g.fill();
+  },
+  heart(g) {
+    g.beginPath(); g.moveTo(128, 196);
+    g.bezierCurveTo(60, 150, 52, 104, 76, 84);
+    g.bezierCurveTo(100, 64, 124, 76, 128, 98);
+    g.bezierCurveTo(132, 76, 156, 64, 180, 84);
+    g.bezierCurveTo(204, 104, 196, 150, 128, 196);
+    g.fill();
+  },
+  planet(g) {
+    g.beginPath(); g.arc(128, 128, 42, 0, Math.PI * 2); g.fill();
+    g.lineWidth = 12;
+    g.beginPath(); g.ellipse(128, 128, 78, 24, -0.4, Math.PI * 0.95, Math.PI * 2.05); g.stroke();
+    g.beginPath(); g.ellipse(128, 128, 78, 24, -0.4, Math.PI * 0.05, Math.PI * 0.95); g.stroke();
+    g.beginPath(); g.arc(196, 76, 7, 0, Math.PI * 2); g.arc(64, 190, 5, 0, Math.PI * 2); g.fill();
+  },
+};
+// each theme strikes its own coins: what changes from the neon set's gold, silver, blue and pink
+const COIN_THEMES = {
+  neon: {},
+  ocean: {
+    coin: { color: '#c9923e', metal: 0.85, rough: 0.42, emblem: 'anchor' },                   // a pirate's doubloon
+    big:  { color: '#f4ede2', metal: 0.25, rough: 0.12 },                                      // mother of pearl
+    star: { color: '#ff7a4d', metal: 0.2, glow: '#ff8a5c' },                                   // a starfish
+    gem:  { color: '#3df5d6', metal: 0.2, rough: 0.15, glow: '#3df5d6', emblem: 'shell' },     // sea glass
+  },
+  candy: {
+    coin: { color: '#fff4f6', metal: 0, rough: 0.2, emblem: 'swirl' },                          // peppermints
+    big:  { color: '#7ee8c8', metal: 0, rough: 0.2 },
+    star: { color: '#ffd23e', metal: 0.05, rough: 0.2, glow: '#ffd23e' },
+    gem:  { color: '#c98bff', metal: 0.05, rough: 0.2, glow: '#c98bff', emblem: 'heart' },
+  },
+  space: {
+    coin: { color: '#d2d9e8', metal: 1, rough: 0.2, emblem: 'planet' },                       // chrome
+    big:  { color: '#f2bf45', metal: 1, rough: 0.25 },                                         // gold
+    star: { color: '#9a5bff', glow: '#b26bff' },
+    gem:  { color: '#6be3ff', metal: 0.3, rough: 0.1, glow: '#6be3ff' },
+  },
+};
+const coinFaces = {};
+function coinFace(emblem) {
+  return coinFaces[emblem] || (coinFaces[emblem] = { map: coinFaceTex(emblem, false), bump: coinFaceTex(emblem, true) });
 }
 // milled ridges round the edge
 const edgeBump = canvasTex(1024, 16, (g) => {
@@ -905,10 +1069,30 @@ function coinLook(type) {
   if (coinLooks[type]) return coinLooks[type];
   const t = TYPES[type];
   const geo = new THREE.CylinderGeometry(t.r, t.r, t.h, 56, 1);
-  const common = { color: t.color, metalness: t.metal, emissive: t.glow || '#000', emissiveIntensity: 0 };
-  const edge = new THREE.MeshStandardMaterial({ ...common, roughness: t.rough + 0.08, bumpMap: edgeBump, bumpScale: 2 });
-  const face = new THREE.MeshStandardMaterial({ ...common, roughness: t.rough, map: coinFaceTex(t.emblem, false), bumpMap: coinFaceTex(t.emblem, true), bumpScale: 3 });
-  return (coinLooks[type] = { geo, mats: [edge, face, face] });
+  const edge = new THREE.MeshStandardMaterial({ emissiveIntensity: 0, bumpMap: edgeBump, bumpScale: 2 });
+  const face = new THREE.MeshStandardMaterial({ emissiveIntensity: 0, bumpScale: 3 });
+  coinLooks[type] = { geo, mats: [edge, face, face] };
+  styleCoin(type);
+  return coinLooks[type];
+}
+// dress a coin type in the current theme's colours and emblem
+function styleCoin(type) {
+  const t = { ...TYPES[type], ...(COIN_THEMES[themeId] || {})[type] };
+  const [edge, face] = coinLooks[type].mats;
+  for (const m of [edge, face]) {
+    m.color.set(t.color);
+    m.metalness = t.metal;
+    m.emissive.set(t.glow || '#000');
+  }
+  edge.roughness = t.rough + 0.08;
+  face.roughness = t.rough;
+  const f = coinFace(t.emblem);
+  face.map = f.map;
+  face.bumpMap = f.bump;
+  face.needsUpdate = true;
+}
+function applyCoinTheme() {
+  for (const type of TYPE_LIST) if (coinLooks[type]) styleCoin(type);
 }
 // one instanced mesh per coin type
 function coinMeshes(scene, capacity) {
@@ -1137,6 +1321,7 @@ function dropCoin(x) {
   credits -= 1;
   lastDropAt = performance.now();
   sfx.insert();
+  pusherMusicWake();
   incoming.push({ type: 'coin', x, y: WALL_TOP + 0.7, vy: -0.6 });
   updateHud();
   return true;
@@ -1370,6 +1555,14 @@ function applyPusherTheme() {
       parts.deco.add(k);
     });
     parts.deco.add(ambientParticles('bubbles', new THREE.Box3(new THREE.Vector3(-TW / 2 - 0.4, -0.5, -0.45), new THREE.Vector3(TW / 2 + 0.4, 2.6, 1.6))));
+  } else if (th.ambient === 'sprinkles') {
+    // lollipop trees beside the table and sprinkles drifting down
+    [[-1, 0.4, 1.7, '#ff6fb5'], [-1, 1.5, 1.3, '#7ee8c8'], [1, 0.7, 1.5, '#ffd23e'], [1, 1.9, 1.8, '#b26bff']].forEach(([s, z, hgt, c]) => {
+      const tree = lollipopTree(hgt, c);
+      tree.position.set(s * (TW / 2 + 0.3), -0.7, z);
+      parts.deco.add(tree);
+    });
+    parts.deco.add(ambientParticles('sprinkles', new THREE.Box3(new THREE.Vector3(-TW / 2 - 0.4, -0.3, -0.45), new THREE.Vector3(TW / 2 + 0.4, 2.6, 1.6))));
   } else if (th.ambient === 'stars') {
     const planet = ringedPlanet(0.32, '#e8a86b', '#f6dcb0');
     planet.position.set(1.0, WALL_TOP + 0.75, -0.5);
@@ -1690,6 +1883,8 @@ $('sound').onclick = () => {
   $('sound').textContent = soundOn ? '🔊' : '🔇';
   // turning sound back on mid-round brings the claw music back in
   if (soundOn && claw.state !== 'idle') startClawMusic();
+  // muting cuts the pusher music at once instead of fading it
+  if (!soundOn) pusherMusicSilence();
   save();
 };
 $('reset').onclick = () => {
@@ -1886,7 +2081,7 @@ const CLAW_COST = 5;
 const CLAW_TIME = 20;
 const CLAW_PITY = 6;         // misses in a row before a guaranteed strong grab
 const CLAW_GRIP = 0.42;      // base chance to hold a centered prize all the way
-const STOCK = 22;            // prizes in a full machine
+const STOCK = 40;            // prizes in a full machine
 const CLAW_SPEED = 1.15;     // steering speed
 
 const PRIZE_SETS = {
@@ -1919,6 +2114,21 @@ const PRIZE_SETS = {
     { id: 'lobster',   emoji: '🦞', name: 'Lobster',    rarity: 'rare',   r: 0.3,  weight: 1.35, chance: 3,   look: 'lobster',   color: '#e2372b' },
     { id: 'clam',      emoji: '🦪', name: 'Pearl Clam', rarity: 'super',  r: 0.26, weight: 1.8,  chance: 0.8, look: 'clam',      color: '#c8b4f0' },
     { id: 'trident',   emoji: '🔱', name: 'Trident',    rarity: 'super',  r: 0.26, weight: 1.8,  chance: 0.8, look: 'trident',   color: '#ffc93a' },
+  ],
+  candy: [
+    { id: 'lollipop',   emoji: '🍭', name: 'Lollipop',     rarity: 'common', r: 0.28, weight: 1,    chance: 12,  look: 'lollipop',   color: '#ff6fb5' },
+    { id: 'cupcake',    emoji: '🧁', name: 'Cupcake',      rarity: 'common', r: 0.28, weight: 1,    chance: 12,  look: 'cupcake',    color: '#ffb3d9' },
+    { id: 'donut',      emoji: '🍩', name: 'Donut',        rarity: 'common', r: 0.28, weight: 1,    chance: 12,  look: 'donut',      color: '#ff8fc8' },
+    { id: 'icecream',   emoji: '🍦', name: 'Ice Cream',    rarity: 'common', r: 0.28, weight: 1,    chance: 12,  look: 'icecream',   color: '#ffc2df' },
+    { id: 'candy',      emoji: '🍬', name: 'Sweetie',      rarity: 'common', r: 0.27, weight: 0.95, chance: 10,  look: 'candy',      color: '#b26bff' },
+    { id: 'cookie',     emoji: '🍪', name: 'Cookie',       rarity: 'common', r: 0.28, weight: 1,    chance: 10,  look: 'cookie',     color: '#d9a066' },
+    { id: 'chocbar',    emoji: '🍫', name: 'Choco Bar',    rarity: 'common', r: 0.28, weight: 1,    chance: 8,   look: 'chocbar',    color: '#5a2e1c' },
+    { id: 'strawberry', emoji: '🍓', name: 'Strawberry',   rarity: 'common', r: 0.27, weight: 1,    chance: 8,   look: 'strawberry', color: '#ff3b5c' },
+    { id: 'gummy',      emoji: '🐻', name: 'Gummy Bear',   rarity: 'rare',   r: 0.3,  weight: 1.35, chance: 3,   look: 'gummy',      color: '#ff3b5c' },
+    { id: 'cake',       emoji: '🎂', name: 'Birthday Cake', rarity: 'rare',  r: 0.3,  weight: 1.35, chance: 3,   look: 'cake',       color: '#ff8fc8' },
+    { id: 'pudding',    emoji: '🍮', name: 'Pudding',      rarity: 'rare',   r: 0.29, weight: 1.3,  chance: 3,   look: 'pudding',    color: '#ffd36b' },
+    { id: 'castle',     emoji: '🏰', name: 'Candy Castle', rarity: 'super',  r: 0.27, weight: 1.8,  chance: 0.8, look: 'castle',     color: '#ffb3d9' },
+    { id: 'rainbow',    emoji: '🌈', name: 'Rainbow',      rarity: 'super',  r: 0.27, weight: 1.8,  chance: 0.8, look: 'rainbow',    color: '#ffffff' },
   ],
   space: [
     { id: 'alien',     emoji: '👽', name: 'Alien',        rarity: 'common', r: 0.29, weight: 1,    chance: 12,  look: 'alien',     color: '#7be36b' },
@@ -1958,19 +2168,66 @@ const furBump = canvasTex(256, 256, (g, w, h) => {
     g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * 4, y + Math.sin(a) * 4); g.stroke();
   }
 }, { color: false, repeat: [6, 3] });
+// Each toy is sewn from one of five fabrics, told apart by their bump maps and how they catch
+// the light: fuzzy fur, chunky knit, ribbed corduroy, bobbly minky and smooth velvet.
+const knitBump = canvasTex(128, 128, (g, w, h) => {
+  g.fillStyle = '#303030'; g.fillRect(0, 0, w, h);
+  // rows of V-shaped stitches, each a pair of slanted loops
+  for (let y = 0; y < h; y += 16) for (let x = 0; x < w; x += 16) {
+    for (const [dx, rot] of [[4.5, 0.55], [11.5, -0.55]]) {
+      const grad = g.createRadialGradient(x + dx, y + 8, 0, x + dx, y + 8, 7);
+      grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, '#404040');
+      g.fillStyle = grad;
+      g.beginPath(); g.ellipse(x + dx, y + 8, 3.2, 7, rot, 0, Math.PI * 2); g.fill();
+    }
+  }
+}, { color: false, repeat: [14, 7] });
+const cordBump = canvasTex(64, 8, (g, w, h) => {
+  // soft ridges running up and down
+  const grad = g.createLinearGradient(0, 0, w / 4, 0);
+  grad.addColorStop(0, '#2a2a2a'); grad.addColorStop(0.5, '#ffffff'); grad.addColorStop(1, '#2a2a2a');
+  g.fillStyle = grad;
+  for (let x = 0; x < w; x += w / 4) { g.save(); g.translate(x, 0); g.fillRect(0, 0, w / 4, h); g.restore(); }
+}, { color: false, repeat: [28, 1] });
+const minkyBump = canvasTex(64, 64, (g, w, h) => {
+  g.fillStyle = '#303030'; g.fillRect(0, 0, w, h);
+  // little raised dots in a staggered grid
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
+    const cx = x * 16 + (y % 2 ? 8 : 0) + 4, cy = y * 16 + 8;
+    for (const ox of [-w, 0, w]) {
+      const grad = g.createRadialGradient(cx + ox, cy, 0, cx + ox, cy, 6);
+      grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, '#303030');
+      g.fillStyle = grad; g.beginPath(); g.arc(cx + ox, cy, 6, 0, Math.PI * 2); g.fill();
+    }
+  }
+}, { color: false, repeat: [18, 9] });
+const FABRICS = {
+  fur:    { bumpMap: furBump, bumpScale: 1.4, roughness: 0.9, sheen: 0.7, sheenRoughness: 0.45, sheenColor: '#bbbbbb' },
+  knit:   { bumpMap: knitBump, bumpScale: 4, roughness: 0.95, sheen: 0.35, sheenRoughness: 0.6, sheenColor: '#999999' },
+  cord:   { bumpMap: cordBump, bumpScale: 3.5, roughness: 0.85, sheen: 0.5, sheenRoughness: 0.4, sheenColor: '#aaaaaa' },
+  minky:  { bumpMap: minkyBump, bumpScale: 3, roughness: 0.8, sheen: 0.9, sheenRoughness: 0.35, sheenColor: '#cccccc' },
+  velvet: { bumpMap: furBump, bumpScale: 0.4, roughness: 0.6, sheen: 1, sheenRoughness: 0.25, sheenColor: '#ffffff' },
+};
+// which fabric each toy is made of (anything not listed is fur)
+const PRIZE_FABRIC = {
+  bunny: 'minky', cat: 'knit', dog: 'cord', frog: 'velvet', duck: 'minky', fox: 'knit', unicorn: 'velvet', dragon: 'cord', octopus: 'minky',
+  clownfish: 'velvet', puffer: 'minky', crab: 'knit', turtle: 'cord', whale: 'minky', dolphin: 'velvet', jelly: 'velvet', shark: 'knit', squid: 'minky', lobster: 'cord',
+  alien: 'velvet', rocket: 'knit', planet: 'cord', moon: 'minky', starplush: 'velvet', sun: 'knit',
+  lollipop: 'velvet', cupcake: 'knit', donut: 'minky', icecream: 'knit', candy: 'velvet', cookie: 'cord', chocbar: 'velvet', strawberry: 'minky', cake: 'knit', rainbow: 'velvet',
+};
+const fabricMats = Object.fromEntries(Object.entries(FABRICS).map(([k, f]) => [k, new THREE.MeshPhysicalMaterial({ vertexColors: true, ...f })]));
+let sewingWith = 'fur';   // the fabric of the toy being built right now
 // Solid-coloured parts share three materials (fabric, gloss, metal) and carry their colour
 // per vertex, so a whole toy draws in a handful of calls. Only the printed head and body
 // fabrics are materials of their own.
 const VC_MATS = {
-  fab: new THREE.MeshPhysicalMaterial({ vertexColors: true, bumpMap: furBump, bumpScale: 1.4, roughness: 0.9, sheen: 0.7, sheenRoughness: 0.45, sheenColor: '#bbbbbb' }),
+  fab: fabricMats.fur,
   gloss: new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.05, side: THREE.DoubleSide }),
   metal: new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 1, roughness: 0.2, side: THREE.DoubleSide }),
 };
 const vc = (kind, color) => ({ kind, color: new THREE.Color(color) });
 // a printed fabric (its own material), or a plain one (a vertex colour on the shared fabric)
-const plushMat = (color, map = null) => (map ? new THREE.MeshPhysicalMaterial({
-  map, bumpMap: furBump, bumpScale: 1.4, roughness: 0.9, sheen: 0.7, sheenRoughness: 0.45, sheenColor: '#bbbbbb',
-}) : vc('fab', color));
+const plushMat = (color, map = null) => (map ? new THREE.MeshPhysicalMaterial({ map, ...FABRICS[sewingWith] }) : vc('fab', color));
 const goldMat = vc('metal', '#ffc93a');
 const eyeMat = vc('gloss', '#141216');
 const shineMat = vc('gloss', '#ffffff');
@@ -2361,6 +2618,180 @@ const CUSTOM_LOOKS = {
     part(g, vc('metal', '#ffc93a'), [0, -0.05, -0.11]);
     part(new THREE.ExtrudeGeometry(starShape(0.4 * t.r, 0.18 * t.r), { depth: 0.1 * t.r, bevelEnabled: false }), vc('metal', '#fff3c4'), [0, -0.05, 0.2]);
   },
+  lollipop({ part, S, Arc, pair, vc, t, eyes, smile, blushAt }) {
+    const cyl = (a, b, h, seg = 24) => new THREE.CylinderGeometry(a * t.r, b * t.r, h * t.r, seg);
+    part(cyl(0.045, 0.045, 1.05, 10), vc('fab', '#ffffff'), [0, -0.45, 0]);
+    part(cyl(0.55, 0.55, 0.18, 40), vc('fab', t.color), [0, 0.38, 0], [Math.PI / 2, 0, 0]);
+    for (const [k, c] of [[0.5, '#ffffff'], [0.36, '#ffd23e'], [0.5, '#ffffff']].slice(0, 2)) part(Arc(k, 0.045, Math.PI * 2), vc('fab', c), [0, 0.38, 0.1]);
+    pair((s) => part(S(0.1, 12, 8), vc('gloss', '#7ee8c8'), [s * 0.1, -0.2, 0.02], [0, 0, 0], [1.3, 0.8, 0.6]));
+    part(S(0.05, 8, 6), vc('gloss', '#7ee8c8'), [0, -0.2, 0.04]);
+    eyes(0.42, 0.11, 0.15);
+    smile(0.29, 0.12, 0.035);
+    blushAt(0.27, 0.33, 0.1);
+  },
+  cupcake({ part, S, Cap, vc, t, eyes, smile, blushAt }) {
+    part(new THREE.CylinderGeometry(t.r * 0.55, t.r * 0.42, t.r * 0.5, 32), vc('fab', '#7ee8c8'), [0, -0.55, 0]);
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      part(new THREE.BoxGeometry(0.03 * t.r, 0.5 * t.r, 0.03 * t.r), vc('fab', '#5cc9a8'), [Math.cos(a) * 0.49, -0.55, Math.sin(a) * 0.49], [Math.cos(a) * 0.12, -a, Math.sin(a) * -0.12]);
+    }
+    const icing = vc('fab', t.color);
+    part(S(0.6, 32, 16), icing, [0, -0.18, 0], [0, 0, 0], [1, 0.5, 1]);
+    part(S(0.44, 28, 14), icing, [0, 0.12, 0], [0, 0, 0], [1, 0.62, 1]);
+    part(S(0.26, 20, 12), icing, [0, 0.36, 0], [0, 0, 0], [1, 0.75, 1]);
+    part(S(0.13, 16, 12), vc('gloss', '#e8203f'), [0, 0.6, 0]);
+    part(new THREE.CylinderGeometry(0.012 * t.r, 0.012 * t.r, 0.2 * t.r, 4), vc('fab', '#4a8a2a'), [0.05, 0.76, 0], [0, 0, -0.4]);
+    const cols = ['#ffd23e', '#7ee8c8', '#8fb8ff', '#ffffff', '#ff6fb5'];
+    for (let i = 0; i < 18; i++) {
+      const a = i * 2.4, y = 0.15 - (i % 3) * 0.12, rad = [0.36, 0.5, 0.58][i % 3];
+      part(Cap(0.018, 0.06), vc('fab', cols[i % 5]), [Math.cos(a) * rad, y - 0.05, Math.sin(a) * rad], [a, a * 2, 0]);
+    }
+    eyes(-0.5, 0.47, 0.16);
+    smile(-0.63, 0.45, 0.035);
+    blushAt(0.3, -0.58, 0.4);
+  },
+  donut({ part, Cap, vc, t, eyes, smile }) {
+    part(new THREE.TorusGeometry(t.r * 0.52, t.r * 0.26, 16, 40), vc('fab', '#e8b46e'), [0, 0, 0]);
+    part(new THREE.TorusGeometry(t.r * 0.52, t.r * 0.27, 16, 40), vc('gloss', t.color), [0, 0, 0.07], [0, 0, 0], [1, 1, 0.6]);
+    const cols = ['#ffd23e', '#7ee8c8', '#8fb8ff', '#ffffff', '#b26bff'];
+    for (let i = 0; i < 26; i++) {
+      const a = i * 0.83, rad = 0.52 + Math.cos(i * 1.7) * 0.15;
+      if (a % (Math.PI * 2) > 1.1 && a % (Math.PI * 2) < 2.05) continue;   // leave room for the face
+      part(Cap(0.018, 0.06), vc('fab', cols[i % 5]), [Math.cos(a) * rad, Math.sin(a) * rad, 0.24], [0, 0, a * 3]);
+    }
+    eyes(0.55, 0.22, 0.15);
+    smile(0.41, 0.23, 0.03);
+  },
+  icecream({ part, S, C, pair, vc, t, eyes, smile, blushAt }) {
+    part(C(0.38, 0.85, 32), vc('fab', '#e0a65a'), [0, -0.5, 0], [Math.PI, 0, 0]);
+    for (const y of [-0.3, -0.5, -0.7]) part(new THREE.TorusGeometry(t.r * (0.38 + (y + 0.075) * 0.45), t.r * 0.015, 4, 32), vc('fab', '#b87c34'), [0, y, 0], [Math.PI / 2, 0, 0]);
+    part(S(0.42, 28, 18), vc('fab', t.color), [0, 0.14, 0]);
+    part(S(0.34, 24, 16), vc('fab', '#7ee8c8'), [0, 0.52, -0.02]);
+    for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; part(S(0.1, 10, 8), vc('fab', t.color), [Math.cos(a) * 0.36, -0.12 - (i % 2) * 0.06, Math.sin(a) * 0.36], [0, 0, 0], [1, 1.4, 1]); }
+    part(S(0.11, 12, 8), vc('gloss', '#e8203f'), [0, 0.88, 0]);
+    eyes(0.17, 0.39, 0.15);
+    smile(0.04, 0.41, 0.03);
+    blushAt(0.27, 0.08, 0.32);
+  },
+  candy({ part, S, C, vc, t, eyes, smile, blushAt }) {
+    const wrap = vc('gloss', t.color);
+    part(S(0.45, 32, 20), wrap, [0, 0, 0], [0, 0, 0], [1.3, 0.92, 0.92]);
+    for (const x of [-0.3, 0, 0.3]) part(new THREE.TorusGeometry(t.r * 0.4 * Math.sqrt(1 - (x / 0.6) ** 2), t.r * 0.04, 6, 32), vc('gloss', '#ffffff'), [x, 0, 0], [0, Math.PI / 2, 0], [1, 1, 1]);
+    for (const s of [-1, 1]) {
+      part(C(0.32, 0.45, 20), wrap, [s * 0.82, 0, 0], [0, 0, s * Math.PI / 2], [1, 1, 0.7]);
+      part(S(0.07, 10, 8), wrap, [s * 0.6, 0, 0], [0, 0, 0], [0.8, 1.4, 1.4]);
+    }
+    eyes(0.07, 0.38, 0.15);
+    smile(-0.08, 0.41, 0.03);
+    blushAt(0.3, -0.04, 0.33);
+  },
+  cookie({ part, S, vc, t, eyes, smile, blushAt }) {
+    part(new THREE.CylinderGeometry(t.r * 0.72, t.r * 0.72, t.r * 0.26, 40), vc('fab', t.color), [0, 0, 0], [Math.PI / 2, 0, 0]);
+    part(new THREE.TorusGeometry(t.r * 0.7, t.r * 0.06, 8, 40), vc('fab', '#c98a4a'), [0, 0, 0]);
+    for (const [x, y] of [[-0.4, 0.35], [0.35, 0.42], [-0.48, -0.25], [0.45, -0.3], [0.05, -0.5], [-0.1, 0.55], [0.55, 0.05]]) {
+      for (const z of [0.13, -0.13]) part(S(0.08, 10, 8), vc('fab', '#4a2414'), [x, y, z], [0, 0, 0], [1, 1, 0.45]);
+    }
+    eyes(0.12, 0.13, 0.2);
+    smile(-0.1, 0.13, 0.04);
+    blushAt(0.36, -0.02, 0.14);
+  },
+  chocbar({ part, vc, t, B, eyes, smile }) {
+    const choc = vc('fab', t.color);
+    part(B(0.82, 1.1, 0.2), choc, [0, 0.12, 0]);
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) part(B(0.32, 0.22, 0.06), vc('fab', '#6e3a24'), [-0.19 + i * 0.38, 0.52 - j * 0.28, 0.12]);
+    part(B(0.86, 0.62, 0.26), vc('gloss', '#e8304f'), [0, -0.45, 0]);
+    part(B(0.87, 0.08, 0.27), vc('metal', '#ffc93a'), [0, -0.22, 0]);
+    part(B(0.87, 0.05, 0.27), vc('metal', '#ffc93a'), [0, -0.72, 0]);
+    eyes(-0.42, 0.15, 0.16);
+    smile(-0.56, 0.14, 0.035);
+  },
+  strawberry({ part, S, C, vc, t, eyes, smile, blushAt }) {
+    const red = vc('fab', t.color);
+    part(S(0.56, 32, 20), red, [0, 0.12, 0], [0, 0, 0], [1, 0.95, 1]);
+    part(C(0.55, 0.62, 32), red, [0, -0.42, 0], [Math.PI, 0, 0]);
+    for (let i = 0; i < 30; i++) {
+      const a = i * 2.4, y = 0.45 - (i / 30) * 1.0, rad = y > 0 ? Math.sqrt(Math.max(0, 0.56 ** 2 - (y - 0.12) ** 2)) : 0.5 * (1 + y / 0.72);
+      const d = new THREE.Vector3(Math.cos(a), 0.2, Math.sin(a)).normalize();
+      if (Math.sin(a) > 0.6 && y > -0.25 && y < 0.45) continue;   // not on the face
+      part(S(0.04, 6, 4), vc('fab', '#ffe680'), [Math.cos(a) * rad, y, Math.sin(a) * rad], new THREE.Quaternion().setFromUnitVectors(UP, d), [1, 0.4, 1.5]);
+    }
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; part(C(0.12, 0.38), vc('fab', '#4fae4a'), [Math.cos(a) * 0.22, 0.62, Math.sin(a) * 0.22], [Math.sin(a) * 1.2, 0, -Math.cos(a) * 1.2], [1, 1, 0.35]); }
+    part(new THREE.CylinderGeometry(0.03 * t.r, 0.03 * t.r, 0.22 * t.r, 6), vc('fab', '#3e8a35'), [0, 0.76, 0]);
+    eyes(0.16, 0.5, 0.17);
+    smile(0.02, 0.53, 0.035);
+    blushAt(0.33, 0.07, 0.43);
+  },
+  gummy({ part, S, pair, vc, t }) {
+    const g = vc('gloss', t.color);
+    part(S(0.42, 28, 18), g, [0, 0.36, 0]);
+    part(S(0.45, 28, 18), g, [0, -0.3, 0], [0, 0, 0], [1, 1.05, 0.95]);
+    pair((s) => {
+      part(S(0.15), g, [s * 0.3, 0.72, 0]);
+      part(S(0.15), g, [s * 0.43, -0.12, 0.12], [0, 0, 0], [0.9, 1.2, 0.9]);
+      part(S(0.17), g, [s * 0.24, -0.72, 0.16], [0, 0, 0], [1, 0.9, 1.2]);
+      part(S(0.055, 10, 8), vc('gloss', '#3a0a14'), [s * 0.14, 0.42, 0.38], [0, 0, 0], [1, 1.15, 0.5]);
+      part(S(0.02, 6, 4), vc('gloss', '#ffffff'), [s * 0.14 - 0.015, 0.45, 0.41]);
+    });
+    part(S(0.14, 14, 10), g, [0, 0.27, 0.36], [0, 0, 0], [1.2, 0.85, 0.7]);
+    part(S(0.04, 8, 6), vc('gloss', '#3a0a14'), [0, 0.31, 0.46]);
+    part(new THREE.TorusGeometry(t.r * 0.03, t.r * 0.01, 6, 12, Math.PI), vc('gloss', '#3a0a14'), [0, 0.22, 0.45], [0, 0, Math.PI]);
+  },
+  cake({ part, S, vc, t, eyes, smile, blushAt }) {
+    const cyl = (a, h, seg = 40) => new THREE.CylinderGeometry(a * t.r, a * t.r, h * t.r, seg);
+    part(cyl(0.7, 0.72), vc('fab', '#fff4f8'), [0, -0.44, 0]);
+    part(cyl(0.71, 0.08), vc('fab', t.color), [0, -0.44, 0]);
+    part(new THREE.TorusGeometry(t.r * 0.66, t.r * 0.08, 10, 40), vc('fab', t.color), [0, -0.08, 0], [Math.PI / 2, 0, 0]);
+    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; part(S(0.08, 10, 8), vc('fab', t.color), [Math.cos(a) * 0.7, -0.18, Math.sin(a) * 0.7], [0, 0, 0], [1, 1.6, 1]); }
+    for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2 + 0.3; part(S(0.09, 12, 8), vc('gloss', '#e8203f'), [Math.cos(a) * 0.5, -0.02, Math.sin(a) * 0.5]); }
+    for (const [x, c] of [[-0.2, '#8fb8ff'], [0, '#ffd23e'], [0.2, '#7ee8c8']]) {
+      part(cyl(0.035, 0.36, 8), vc('fab', c), [x, 0.15, -0.05]);
+      part(S(0.05, 10, 8), vc('gloss', '#ffb52e'), [x, 0.38, -0.05], [0, 0, 0], [1, 1.6, 1]);
+    }
+    eyes(-0.32, 0.67, 0.2);
+    smile(-0.46, 0.69, 0.035);
+    blushAt(0.4, -0.42, 0.56);
+  },
+  pudding({ part, S, vc, t, eyes, smile, blushAt }) {
+    part(new THREE.CylinderGeometry(t.r * 0.8, t.r * 0.8, t.r * 0.05, 40), vc('gloss', '#ffffff'), [0, -0.83, 0]);
+    part(new THREE.CylinderGeometry(t.r * 0.45, t.r * 0.6, t.r * 0.68, 40), vc('gloss', t.color), [0, -0.46, 0]);
+    part(new THREE.CylinderGeometry(t.r * 0.46, t.r * 0.46, t.r * 0.09, 40), vc('gloss', '#8a4a1a'), [0, -0.1, 0]);
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; part(S(0.07, 10, 8), vc('gloss', '#8a4a1a'), [Math.cos(a) * 0.47, -0.2 - (i % 2) * 0.07, Math.sin(a) * 0.47], [0, 0, 0], [1, 1.7, 1]); }
+    part(S(0.22, 16, 12), vc('fab', '#ffffff'), [0, 0.06, 0], [0, 0, 0], [1, 0.75, 1]);
+    part(S(0.1, 12, 8), vc('gloss', '#e8203f'), [0, 0.26, 0]);
+    eyes(-0.42, 0.54, 0.17);
+    smile(-0.57, 0.57, 0.035);
+    blushAt(0.33, -0.5, 0.47);
+  },
+  castle({ part, S, C, pair, vc, t, B }) {
+    const cyl = (a, b, h, seg = 24) => new THREE.CylinderGeometry(a * t.r, b * t.r, h * t.r, seg);
+    part(B(1.0, 0.48, 0.6), vc('fab', '#ffb3d9'), [0, -0.62, 0]);
+    for (let i = 0; i < 5; i++) part(B(0.12, 0.1, 0.6), vc('fab', '#ffb3d9'), [-0.4 + i * 0.2, -0.33, 0]);
+    part(cyl(0.28, 0.3, 0.9), vc('fab', '#d6b3ff'), [0, -0.1, 0]);
+    part(C(0.36, 0.48, 24), vc('fab', '#ff6fb5'), [0, 0.58, 0]);
+    pair((s) => {
+      part(cyl(0.17, 0.17, 0.75), vc('fab', '#b6f0dc'), [s * 0.45, -0.42, 0]);
+      part(C(0.22, 0.32, 20), vc('fab', '#ff6fb5'), [s * 0.45, 0.12, 0]);
+      part(S(0.04, 8, 6), vc('metal', '#ffc93a'), [s * 0.45, 0.3, 0]);
+      part(S(0.05, 10, 8), vc('gloss', '#ffe680'), [s * 0.45, -0.3, 0.16], [0, 0, 0], [1, 1.4, 0.4]);
+    });
+    part(B(0.2, 0.28, 0.05), vc('fab', '#7a3a24'), [0, -0.72, 0.3]);
+    part(S(0.08, 12, 8), vc('gloss', '#ffe680'), [0, 0.0, 0.28], [0, 0, 0], [1, 1.4, 0.4]);
+    part(new THREE.CylinderGeometry(0.012 * t.r, 0.012 * t.r, 0.3 * t.r, 6), vc('metal', '#ffc93a'), [0, 0.95, 0]);
+    part(B(0.18, 0.1, 0.01), vc('metal', '#ffc93a'), [0.09, 1.04, 0]);
+    ['#ff6fb5', '#ffd23e', '#7ee8c8', '#8fb8ff', '#b26bff'].forEach((c, i) => part(S(0.06, 10, 8), vc('gloss', c), [-0.4 + i * 0.2, -0.24, 0.05]));
+  },
+  rainbow({ part, S, pair, vc, eyeAt, smileAt, blushAt, t }) {
+    ['#ff4d6d', '#ff9a3d', '#ffd23e', '#5fd36a', '#4fa8ff', '#9a6bff'].forEach((c, i) => {
+      part(new THREE.TorusGeometry(t.r * (0.85 - i * 0.08), t.r * 0.045, 10, 40, Math.PI), vc('fab', c), [0, -0.35, 0], [0, 0, 0], [1, 1, 1.6]);
+    });
+    pair((s) => {
+      for (const [dx, dy, k] of [[0, 0, 0.2], [0.17, 0.03, 0.16], [-0.17, 0.02, 0.15], [0.05, 0.15, 0.15]]) part(S(k, 14, 10), vc('fab', '#ffffff'), [s * 0.66 + dx, -0.5 + dy, 0.05]);
+    });
+    eyeAt(-0.72, -0.47, 0.23, 0.06);
+    eyeAt(-0.6, -0.47, 0.23, 0.06);
+    smileAt(-0.66, -0.57, 0.24, 0.025);
+    blushAt(0.66, -0.55, 0.2);
+  },
   cosmicgem({ part, vc, t }) {
     part(new THREE.OctahedronGeometry(t.r * 0.72), vc('gloss', t.color), [0, 0.05, 0], [0, Math.PI / 4, 0], [1, 1.3, 1]);
     part(new THREE.TorusGeometry(t.r * 0.52, t.r * 0.06, 8, 32), vc('metal', '#ffc93a'), [0, 0.05, 0], [Math.PI / 2, 0, 0]);
@@ -2369,6 +2800,7 @@ const CUSTOM_LOOKS = {
 };
 
 const prizeTemplates = {};
+const prizeShapes = {};     // per prize: its collision hull, how far it reaches sideways, and its top
 function buildPrize(t) {
   if (!prizeTemplates[t.id]) prizeTemplates[t.id] = buildPrizeTemplate(t);
   const g = prizeTemplates[t.id].clone();
@@ -2383,6 +2815,7 @@ function disposeModel(g) {
 
 function buildPrizeTemplate(t) {
   const r = t.r;
+  sewingWith = PRIZE_FABRIC[t.id] || 'fur';
   const buckets = new Map();
   const m4 = new THREE.Matrix4(), eu = new THREE.Euler(), qt = new THREE.Quaternion(), pv = new THREE.Vector3(), sv = new THREE.Vector3();
   // place a part, in units of the prize's radius
@@ -2618,7 +3051,7 @@ function buildPrizeTemplate(t) {
   for (const [mat, geos] of buckets) {
     const merged = mergeGeometries(geos);
     if (merged) {
-      const mesh = new THREE.Mesh(merged, VC_MATS[mat] || mat);
+      const mesh = new THREE.Mesh(merged, mat === 'fab' ? fabricMats[sewingWith] : VC_MATS[mat] || mat);
       mesh.castShadow = mesh.receiveShadow = true;
       meshes.push(mesh);
     }
@@ -2628,6 +3061,24 @@ function buildPrizeTemplate(t) {
   let low = Infinity;
   for (const m of meshes) { m.geometry.computeBoundingBox(); low = Math.min(low, m.geometry.boundingBox.min.y); }
   for (const m of meshes) { m.geometry.translate(0, -r - low, 0); g.add(m); }
+  // the physics shape is the hull of the model itself, so toys touch where they look like they
+  // do. A plain ball of radius r is half again as wide as the toy, which left them resting on
+  // an invisible shell: hovering over the floor when tipped, and over each other in a pile.
+  const seen = new Set(), pts = [];
+  let reach = 0, top = -Infinity;
+  for (const m of meshes) {
+    const a = m.geometry.attributes.position;
+    for (let i = 0; i < a.count; i++) {
+      const x = a.getX(i), y = a.getY(i), z = a.getZ(i);
+      const key = `${Math.round(x * 400)},${Math.round(y * 400)},${Math.round(z * 400)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      pts.push(x, y, z);
+      reach = Math.max(reach, Math.hypot(x, z));
+      top = Math.max(top, y);
+    }
+  }
+  prizeShapes[t.id] = { hull: new Float32Array(pts), r: reach, top };
   const glow = RARITY_GLOW[t.rarity];
   if (glow) { const s = glowSprite(glow, r * 3.4); s.material.opacity = 0.5; g.add(s); }
   return g;
@@ -2643,6 +3094,8 @@ const CLAW_GROUPS = groups(G_CLAW, G_PRIZE);
 const claw = {
   world: null, prizes: [], hub: null, prongs: [],
   x: HOME.x, y: REST_Y, z: HOME.z, angle: OPEN_ANGLE,
+  angles: [OPEN_ANGLE, OPEN_ANGLE, OPEN_ANGLE],   // each prong's own angle, so they can clamp independently
+  clampT: 0,
   prev: null,                 // the pose at the last physics step, to move smoothly between steps
   state: 'idle',              // idle, aim, drop, close, lift, carry, release
   timer: 0, stateT: 0,
@@ -2693,7 +3146,9 @@ function buildClawWorld() {
 }
 
 // where a prong is: it hinges just under the hub and swings out by `angle`
-function prongAt(i, x = claw.x, y = claw.y, z = claw.z, angle = claw.angle) {
+// angle can be one angle for all three prongs, or one per prong
+function prongAt(i, x = claw.x, y = claw.y, z = claw.z, angles = claw.angles) {
+  const angle = Array.isArray(angles) ? angles[i] : angles;
   const phi = Math.PI / 2 + (i * 2 * Math.PI) / 3;
   const c = Math.cos(phi), s = Math.sin(phi);
   const hinge = new THREE.Vector3(x + c * HINGE_R, y - HUB_DROP, z + s * HINGE_R);
@@ -2732,15 +3187,18 @@ function addPrize(t, pos) {
     .setLinearDamping(0.3).setAngularDamping(2.5).setCcdEnabled(true));
   // weighted low, like a beanbag bottom, so a toy settles sitting up
   const mass = t.weight * (4 / 3) * Math.PI * t.r ** 3, inertia = 0.4 * mass * t.r * t.r;
-  const collider = claw.world.createCollider(RAPIER.ColliderDesc.ball(t.r).setFriction(0.9).setRestitution(0.15)
-    .setMassProperties(mass, { x: 0, y: -0.35 * t.r, z: 0 }, { x: inertia, y: inertia, z: inertia }, { x: 0, y: 0, z: 0, w: 1 })
-    .setCollisionGroups(PRIZE_GROUPS), body);
   const model = buildPrize(t);
   claw.scene.add(model);
+  const shape = prizeShapes[t.id];
+  const collider = claw.world.createCollider((RAPIER.ColliderDesc.convexHull(shape.hull) || RAPIER.ColliderDesc.ball(shape.r))
+    .setFriction(0.9).setRestitution(0.15)
+    .setMassProperties(mass, { x: 0, y: -0.35 * t.r, z: 0 }, { x: inertia, y: inertia, z: inertia }, { x: 0, y: 0, z: 0, w: 1 })
+    .setCollisionGroups(PRIZE_GROUPS), body);
   // it drops into the pile without turning, so it lands facing the player; it's free to
   // tumble once it has settled
   body.lockRotations(true, true);
-  const p = { id: t.id, t, r: t.r, body, collider, model, out: false, restoreAt: 0, unlockAt: now + 2500 };
+  // r and top are the toy's real reach and height, for the claw's sense of what it's touching
+  const p = { id: t.id, t, r: shape.r, top: shape.top, body, collider, model, out: false, restoreAt: 0, unlockAt: now + 2500 };
   claw.prizes.push(p);
   return p;
 }
@@ -2772,14 +3230,14 @@ function stepClaw(dt) {
   const n = Math.min(8, Math.floor(claw.acc / STEP));
   claw.acc = n === 8 ? 0 : claw.acc - n * STEP;
   if (!n) return;
-  const a = claw.prev || { x: claw.x, y: claw.y, z: claw.z, angle: claw.angle };
+  const a = claw.prev || { x: claw.x, y: claw.y, z: claw.z, angles: claw.angles };
   for (let k = 1; k <= n; k++) {
     const f = k / n;
-    poseRig(a.x + (claw.x - a.x) * f, a.y + (claw.y - a.y) * f, a.z + (claw.z - a.z) * f, a.angle + (claw.angle - a.angle) * f);
+    poseRig(a.x + (claw.x - a.x) * f, a.y + (claw.y - a.y) * f, a.z + (claw.z - a.z) * f, a.angles.map((v, i) => v + (claw.angles[i] - v) * f));
     claw.world.step();
     afterClawStep();
   }
-  claw.prev = { x: claw.x, y: claw.y, z: claw.z, angle: claw.angle };
+  claw.prev = { x: claw.x, y: claw.y, z: claw.z, angles: [...claw.angles] };
 }
 function afterClawStep() {
   for (let i = claw.prizes.length - 1; i >= 0; i--) {
@@ -2809,7 +3267,7 @@ function fillClaw() {
 function resetClaw() {
   releaseHeld(true);
   claw.collection = {}; claw.misses = 0; claw.move = { x: 0, z: 0 };
-  claw.state = 'idle'; claw.x = HOME.x; claw.y = REST_Y; claw.z = HOME.z; claw.angle = OPEN_ANGLE; claw.prev = null;
+  claw.state = 'idle'; claw.x = HOME.x; claw.y = REST_Y; claw.z = HOME.z; claw.angle = OPEN_ANGLE; claw.angles = [OPEN_ANGLE, OPEN_ANGLE, OPEN_ANGLE]; claw.prev = null;
   fillClaw();
   renderShelf();
 }
@@ -2829,11 +3287,156 @@ function startClawMusic() {
   clawMusic.play().catch(() => { /* blocked or unavailable: play silently */ });
 }
 function updateClawMusic(dt) {
-  const target = soundOn && claw.state !== 'idle' ? CLAW_MUSIC_VOL : 0;
+  // wait for the pusher's song to fade out first, so the two never play over each other
+  const playing = soundOn && claw.state !== 'idle';
+  const target = playing && pm.vol < 0.01 ? CLAW_MUSIC_VOL : 0;
   const step = dt * (target > clawMusic.volume ? 0.6 : 0.35);   // ~0.6s fade in, ~1s fade out
   clawMusic.volume = clamp(clawMusic.volume + clamp(target - clawMusic.volume, -step, step), 0, 1);
-  if (target === 0 && clawMusic.volume === 0 && !clawMusic.paused) clawMusic.pause();
+  if (!playing && clawMusic.volume === 0 && !clawMusic.paused) clawMusic.pause();
 }
+
+// ---------- Coin pusher music ----------
+// A little chiptune made right here with Web Audio: lead, arpeggio, bass and drums over an
+// 8-bar loop (C G Am F C G F G). It starts with your first drop, rests while a claw round
+// plays its own music, and fades out after a while without any drops.
+const PM_BPM = 124;
+const PM_VOL = 0.5;               // overall level, under the coin sounds
+const PM_IDLE_MS = 45000;         // fade out this long after the last drop
+const PM_STEP = 60 / PM_BPM / 4;  // a 16th note, in seconds
+const PM_CHORDS = [               // [bass root, chord tones], one per bar
+  [36, [60, 64, 67]], [43, [59, 62, 67]], [45, [60, 64, 69]], [41, [60, 65, 69]],
+  [36, [60, 64, 67]], [43, [59, 62, 67]], [41, [60, 65, 69]], [43, [59, 62, 67]],
+];
+const PM_MELODY = [               // per bar: [16th step, midi note, length in 16ths]
+  [[0, 76, 2], [2, 79, 2], [4, 84, 4], [8, 79, 2], [10, 76, 2], [12, 79, 4]],
+  [[0, 74, 2], [2, 79, 2], [4, 83, 4], [8, 81, 2], [10, 79, 2], [12, 74, 4]],
+  [[0, 72, 2], [2, 76, 2], [4, 81, 4], [8, 79, 2], [10, 76, 2], [12, 72, 2], [14, 74, 2]],
+  [[0, 77, 3], [4, 76, 2], [6, 74, 2], [8, 72, 6]],
+  [[0, 76, 2], [2, 76, 2], [4, 79, 2], [6, 84, 2], [8, 83, 2], [10, 84, 2], [12, 79, 4]],
+  [[0, 83, 2], [2, 81, 2], [4, 79, 2], [6, 74, 2], [8, 79, 6], [14, 81, 2]],
+  [[0, 81, 2], [2, 79, 2], [4, 77, 2], [6, 81, 2], [8, 79, 4], [12, 77, 2], [14, 76, 2]],
+  [[0, 74, 2], [2, 76, 2], [4, 77, 2], [6, 79, 2], [8, 83, 4], [12, 79, 4]],
+];
+const pm = { gain: null, noise: null, timer: null, next: 0, step: 0, vol: 0, lastActive: -Infinity, lastUpdate: 0 };
+const midiHz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+function pmNote(t, midi, dur, type, vol) {
+  const o = audio.createOscillator();
+  const g = audio.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(midiHz(midi), t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(vol * 0.6, t + dur * 0.5);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(pm.gain);
+  o.start(t);
+  o.stop(t + dur + 0.02);
+}
+function pmDrum(t, kind) {
+  if (kind === 'kick') {
+    const o = audio.createOscillator();
+    const g = audio.createGain();
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+    g.gain.setValueAtTime(0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    o.connect(g).connect(pm.gain);
+    o.start(t);
+    o.stop(t + 0.18);
+    return;
+  }
+  const src = audio.createBufferSource();
+  const f = audio.createBiquadFilter();
+  const g = audio.createGain();
+  src.buffer = pm.noise;
+  f.type = kind === 'snare' ? 'bandpass' : 'highpass';
+  f.frequency.value = kind === 'snare' ? 1800 : 7000;
+  const len = kind === 'snare' ? 0.14 : 0.04;
+  g.gain.setValueAtTime(kind === 'snare' ? 0.22 : 0.07, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  src.connect(f).connect(g).connect(pm.gain);
+  src.start(t, Math.random() * 0.3);
+  src.stop(t + len + 0.02);
+}
+// play one 16th-note step of the song at time t
+function pmPlayStep(t, step) {
+  const bar = Math.floor(step / 16) % PM_CHORDS.length;
+  const s = step % 16;
+  const [root, chord] = PM_CHORDS[bar];
+  for (const [at, midi, len] of PM_MELODY[bar]) if (at === s) pmNote(t, midi, len * PM_STEP * 0.95, 'square', 0.05);
+  pmNote(t, chord[[0, 1, 2, 1][s % 4]] + 12, PM_STEP * 0.9, 'square', 0.018);              // arpeggio
+  if (s % 2 === 0) pmNote(t, s % 4 === 0 ? root : root + 12, PM_STEP * 1.8, 'triangle', 0.16); // bass
+  if (s === 0 || s === 8 || (s === 10 && bar % 2)) pmDrum(t, 'kick');
+  if (s === 4 || s === 12) pmDrum(t, 'snare');
+  if (s % 2 === 0) pmDrum(t, 'hat');
+}
+// schedule a little way ahead so timer hiccups never cause gaps
+function pmSchedule() {
+  // after a stall (a busy frame, a theme change) skip the steps we missed, rather than
+  // scheduling them all in the past where they'd play at the same instant
+  const behind = audio.currentTime - pm.next;
+  if (behind > 0) {
+    const skip = Math.ceil(behind / PM_STEP);
+    pm.next += skip * PM_STEP;
+    pm.step = (pm.step + skip) % (16 * PM_CHORDS.length);
+  }
+  while (pm.next < audio.currentTime + 0.15) {
+    pmPlayStep(pm.next, pm.step);
+    pm.next += PM_STEP;
+    pm.step = (pm.step + 1) % (16 * PM_CHORDS.length);
+  }
+}
+function pusherMusicWake() {
+  // called from a drop, so the browser lets audio start
+  pm.lastActive = performance.now();
+  if (!soundOn) return;
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') audio.resume();
+    if (!pm.gain) {
+      pm.gain = audio.createGain();
+      pm.gain.gain.value = 0;
+      pm.gain.connect(audio.destination);
+      pm.noise = audio.createBuffer(1, audio.sampleRate * 0.5, audio.sampleRate);
+      const d = pm.noise.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+  } catch (e) { /* audio unavailable */ }
+}
+function pusherMusicSilence() {
+  if (!pm.gain) return;
+  pm.vol = 0;
+  pm.gain.gain.cancelScheduledValues(audio.currentTime);
+  pm.gain.gain.setValueAtTime(0, audio.currentTime);
+  clearInterval(pm.timer);
+  pm.timer = null;
+}
+function updatePusherMusic() {
+  if (!pm.gain) return;
+  // fades run on the real clock, so they keep their speed even if frames are slow
+  const t = performance.now();
+  const dt = Math.min((t - (pm.lastUpdate || t)) / 1000, 0.5);
+  pm.lastUpdate = t;
+  // rest while a claw round plays, and only come back once the claw music has faded away
+  const clawQuiet = claw.state === 'idle' && (clawMusic.paused || clawMusic.volume < 0.01);
+  const want = soundOn && !document.hidden && clawQuiet && performance.now() - pm.lastActive < PM_IDLE_MS;
+  const target = want ? PM_VOL : 0;
+  const out = claw.state === 'idle' ? 0.5 : 2;   // ~1s fade out, or a quick ~0.25s one for a claw round
+  pm.vol = clamp(pm.vol + clamp(target - pm.vol, -dt * out, dt * 0.8), 0, PM_VOL);
+  pm.gain.gain.setTargetAtTime(pm.vol, audio.currentTime, 0.05);
+  if (pm.vol > 0 && !pm.timer) {
+    pm.next = audio.currentTime + 0.05;
+    pm.timer = setInterval(pmSchedule, 30);
+  } else if (pm.vol === 0 && pm.timer) {
+    clearInterval(pm.timer);
+    pm.timer = null;
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  // a background tab throttles timers, so go quiet rather than stutter
+  if (document.hidden) pusherMusicSilence();
+});
 
 function clawPlay() {
   if (!claw.world) return;
@@ -2865,7 +3468,7 @@ function surfaceAt(x, z, skip = null) {
     if (p === skip) continue;
     const q = p.body.translation();
     const d = Math.hypot(q.x - x, q.z - z);
-    if (d < p.r) top = Math.max(top, q.y + Math.sqrt(p.r * p.r - d * d));
+    if (d < p.r) top = Math.max(top, q.y + p.top * Math.sqrt(1 - (d / p.r) ** 2));
   }
   return top;
 }
@@ -2889,6 +3492,7 @@ function dropBlocked() {
 // the claw think it was squeezing before its prongs had closed at all.
 function prongContacts() {
   const counts = new Map();
+  const touching = [[], [], []];   // what each prong is touching
   for (let i = 0; i < 3; i++) {
     const p = prongAt(i);
     const grip = p.hinge.clone().addScaledVector(p.dir, PRONG * 0.4);
@@ -2897,9 +3501,10 @@ function prongContacts() {
       const q = pr.body.translation();
       const inward = (q.x - p.hinge.x) * -p.c + (q.z - p.hinge.z) * -p.s;
       if (inward < -pr.r * 0.3) continue;   // it's outside this prong
-      if (segDist(q, grip, p.tip) < pr.r + PRONG_R + 0.025) counts.set(pr, (counts.get(pr) || 0) + 1);
+      if (segDist(q, grip, p.tip) < pr.r + PRONG_R + 0.025) { counts.set(pr, (counts.get(pr) || 0) + 1); touching[i].push(pr); }
     }
   }
+  counts.touching = touching;
   return counts;
 }
 
@@ -3023,12 +3628,42 @@ function clawUpdate(dt) {
       break;
     }
     case 'close': {
-      // the prongs close until at least two of them are squeezing the same prize, instead of
-      // crushing it out of the grip
-      const counts = prongContacts();
-      const squeezing = [...counts.values()].some((n) => n >= 2);
-      if (!squeezing) claw.angle = Math.max(SHUT_ANGLE, claw.angle - 1.3 * dt);
-      if (claw.stateT > 0.75 || (squeezing && claw.stateT > 0.35)) { decideGrab(counts); clawSetState('lift'); }
+      // each prong closes on its own until it meets something (or shuts), so the claw clamps
+      // round whatever is under it instead of crushing it out of the grip...
+      if (!claw.clampT) {
+        // the toy it's clamping on is the one most nearly under the hub; a prong that brushes a
+        // neighbour just pushes it aside and keeps closing
+        if (claw.stateT <= dt) {
+          let best = null, bestD = Infinity;
+          for (const pr of claw.prizes) {
+            const q = pr.body.translation();
+            const d = Math.hypot(q.x - claw.x, q.z - claw.z);
+            if (q.y < claw.y && d < pr.r + HINGE_R + 0.15 && d < bestD) { best = pr; bestD = d; }
+          }
+          claw.target = best;
+        }
+        const { touching } = prongContacts();
+        const stopped = touching.map((list) => (claw.target ? list.includes(claw.target) : list.length > 0));
+        claw.angles = claw.angles.map((a, i) => (stopped[i] ? a : Math.max(SHUT_ANGLE, a - 1.6 * dt)));
+        if (claw.angles.every((a, i) => stopped[i] || a <= SHUT_ANGLE) || claw.stateT > 0.9) {
+          claw.clampT = 1e-4;
+          claw.clampFrom = [...claw.angles];
+          clink(700, { vol: 0.07, decay: 0.15 });
+          tone(110, { dur: 0.08, type: 'square', vol: 0.05 });
+        }
+      } else {
+        // ...then gives one hard squeeze before it decides whether it has a grip
+        claw.clampT += dt;
+        const k = Math.sin(Math.min(1, claw.clampT / 0.22) * Math.PI);
+        claw.angles = claw.clampFrom.map((a) => Math.max(0, a - 0.07 * k));
+        if (claw.clampT > 0.25) {
+          claw.clampT = 0;
+          decideGrab(prongContacts());
+          if (claw.held) claw.held.squish = 1;
+          claw.angle = claw.angles.reduce((a, b) => a + b, 0) / 3;
+          clawSetState('lift');
+        }
+      }
       break;
     }
     case 'lift': {
@@ -3083,6 +3718,11 @@ function clawUpdate(dt) {
       tone(330, { dur: 0.4, type: 'triangle', vol: 0.06, slide: 0.55 });
     }
   }
+
+  // outside the clamp, the prongs follow the claw's angle together; a toy squashed by the clamp
+  // springs back
+  if (claw.state !== 'close') claw.angles = claw.angles.map((a) => a + (claw.angle - a) * Math.min(1, dt * 8));
+  for (const p of claw.prizes) if (p.squish) p.squish = Math.max(0, p.squish - dt * 2.5);
 
   stepClaw(dt);
 
@@ -3309,6 +3949,19 @@ function applyClawTheme() {
     shell.scale.set(1, 0.5, 1.2);
     shell.position.set(-0.4, 0, -1.0);
     parts.deco.add(star, shell, ambientParticles('bubbles', new THREE.Box3(new THREE.Vector3(CAB.x0 + 0.1, 0, CAB.z0 + 0.1), new THREE.Vector3(CAB.x1 - 0.1, CAB.top - 0.2, CAB.z1 - 0.2))));
+  } else if (th.ambient === 'sprinkles') {
+    // lollipop trees in the back corners, gumdrops on the frosting
+    [[-1.35, -0.92, 2.0, '#ff6fb5'], [1.35, -0.92, 2.4, '#7ee8c8'], [-0.9, -1.0, 1.4, '#ffd23e'], [0.85, -1.0, 1.7, '#b26bff']].forEach(([x, z, hgt, c]) => {
+      const tree = lollipopTree(hgt, c);
+      tree.position.set(x, 0, z);
+      parts.deco.add(tree);
+    });
+    [[1.35, 0.95, '#ff4d6d', 0.1], [-0.3, -1.0, '#5fd36a', 0.09], [1.4, -0.4, '#ffd23e', 0.08], [0.2, -1.02, '#4fa8ff', 0.08]].forEach(([x, z, c, k]) => {
+      const gd = gumdrop(c, k);
+      gd.position.set(x, 0, z);
+      parts.deco.add(gd);
+    });
+    parts.deco.add(ambientParticles('sprinkles', new THREE.Box3(new THREE.Vector3(CAB.x0 + 0.1, 0, CAB.z0 + 0.1), new THREE.Vector3(CAB.x1 - 0.1, CAB.top - 0.2, CAB.z1 - 0.2))));
   } else if (th.ambient === 'stars') {
     const planet = ringedPlanet(0.3, '#e8a86b', '#f6dcb0');
     planet.position.set(0.95, 2.75, CAB.z0 + 0.35);
@@ -3341,7 +3994,8 @@ function renderClaw() {
   if (!claw.visible || !claw.scene) return;
   const parts = claw.parts;
   const pose = claw.prev || claw;
-  const { x, y, z, angle } = pose;
+  const { x, y, z } = pose;
+  const angles = pose.angles || [pose.angle, pose.angle, pose.angle];
   parts.bar.position.z = z;
   parts.trolley.position.set(x, RAIL_Y, z);
   const cableTop = RAIL_Y - 0.07, cableBot = y + 0.15;
@@ -3349,9 +4003,9 @@ function renderClaw() {
   parts.cable.position.set(x, (cableTop + cableBot) / 2, z);
   parts.hub.position.set(x, y, z);
   parts.prongs.forEach((g, i) => {
-    const p = prongAt(i, x, y, z, angle);
+    const p = prongAt(i, x, y, z, angles);
     g.position.copy(p.hinge);
-    g.rotation.set(0, -p.phi, angle, 'YZX');
+    g.rotation.set(0, -p.phi, angles[i], 'YZX');
   });
   const aiming = claw.state === 'aim' || claw.state === 'idle';
   parts.laser.visible = parts.dot.visible = claw.state === 'aim';
@@ -3367,6 +4021,9 @@ function renderClaw() {
     const q = p.body.translation(), r = p.body.rotation();
     p.model.position.set(q.x, q.y, q.z);
     p.model.quaternion.set(r.x, r.y, r.z, r.w);
+    // squashed by the clamp, and pinched a little the whole time it's held
+    const sq = Math.min(1, (p.squish || 0) + (p === claw.held ? 0.3 : 0));
+    p.model.scale.set(1 + 0.07 * sq, 1 - 0.09 * sq, 1 + 0.07 * sq);
     if (p.model.userData.glow) p.model.userData.glow.material.opacity = 0.35 + 0.2 * Math.sin(tNow * 4 + q.x * 3);
   }
   // won prizes pop up out of the hole and spin
@@ -3502,6 +4159,7 @@ function setTheme(id, { restock = true } = {}) {
   document.documentElement.dataset.theme = themeId;
   PRIZES = PRIZE_SETS[themeId];
   recolorNeon();
+  applyCoinTheme();
   if (pusher.scene) applyPusherTheme();
   if (claw.scene) { applyClawTheme(); if (restock) fillClaw(); }
   renderShelf();
@@ -3625,6 +4283,7 @@ function frame(ts) {
   last = ts;
   now = ts;
   updatePusher(dt);
+  updatePusherMusic();
   renderPusher();
   updateReels(dt);
   clawUpdate(dt);
