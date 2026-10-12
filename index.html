@@ -136,6 +136,10 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
   transform: translateY(6px);
   box-shadow: 0 2px 0 #6d0b3f, 0 4px 10px rgba(0,0,0,.6), 0 0 34px rgba(255,62,165,.8), inset 0 -6px 12px rgba(0,0,0,.25);
 }
+.drop-btn::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(rgba(20,0,12,.55) calc(var(--cd, 0) * 360deg), transparent 0);
+}
 .drop-btn:disabled { filter: grayscale(.8) brightness(.7); cursor: not-allowed; }
 
 .footer {
@@ -197,7 +201,7 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
     <details class="help">
       <summary>How to play</summary>
       <ul>
-        <li><b>Tap the playfield</b> to drop a coin right there, or press <b>DROP</b> (or Space) to drop from the moving chute. Hold to keep dropping.</li>
+        <li><b>Tap the playfield</b> to drop a coin right there, or press <b>DROP</b> (or Space) to drop from the moving chute. Hold to keep dropping. There's a short wait between drops, shown as a sweep on the DROP button.</li>
         <li>The shelf slides back and forth. The back wall scrapes coins off the shelf onto the table, and the shelf pushes them forward.</li>
         <li>Coins pushed off the <b>front edge</b> are yours. Coins that fall off the <b>sides</b> go to the house.</li>
         <li>Drop a coin through the moving <b>LUCKY</b> gate on the back wall to earn a slot spin. Coins take a moment to fall, so aim where the gate is <b>going</b>, not where it is. Match 3 for coin showers, a <b>10</b> big coin, a <b>★</b> bonus token or the <b>💎</b> jackpot gem.</li>
@@ -519,6 +523,7 @@ const ctx = canvas.getContext('2d');
 const machine = new Machine();
 const SAVE_KEY = 'coinPusher_v1';
 const START_CREDITS = 20;
+const DROP_COOLDOWN = 350;  // ms between paid drops
 const REFILL_BELOW = 3;
 const REFILL_SECS = 30;
 
@@ -969,10 +974,17 @@ const falling = [];    // coins dropping off the table (won or lost)
 const floaters = [];   // "+1" texts
 const sparks = [];
 
+let lastDropAt = -Infinity;
+function dropCooldown() {
+  return Math.max(0, 1 - (now - lastDropAt) / DROP_COOLDOWN);
+}
+
 function dropCoin(x, type = 'coin', free = false) {
   if (!free) {
+    if (dropCooldown() > 0) return false;
     if (credits < 1) { flashRefill(); return false; }
     credits -= 1;
+    lastDropAt = now;
     sfx.insert();
   }
   x = clamp(x, TYPES[type].r, W - TYPES[type].r);
@@ -1510,6 +1522,8 @@ function update(dt) {
     if (floaters[i].t > 0.9) floaters.splice(i, 1);
   }
 
+  $('drop').style.setProperty('--cd', dropCooldown().toFixed(3));
+
   // free credits when running low
   if (credits < REFILL_BELOW) {
     refillTimer -= dt;
@@ -1552,7 +1566,7 @@ let holdTimer = null;
 function startHold(fn) {
   stopHold();
   fn();
-  holdTimer = setInterval(fn, 200);
+  holdTimer = setInterval(fn, 50);  // dropCoin enforces the cooldown
 }
 function stopHold() {
   clearInterval(holdTimer);

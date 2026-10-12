@@ -10,7 +10,7 @@ Or download `index.html` and double-click it. The whole game is that one file, w
 
 ## How it works
 
-- **Drop coins:** tap the playfield to drop a coin at that spot, or press **DROP** (or Space) to drop from the moving chute. Hold to keep dropping. Each drop costs 1 credit.
+- **Drop coins:** tap the playfield to drop a coin at that spot, or press **DROP** (or Space) to drop from the moving chute. Hold to keep dropping. Each drop costs 1 credit, and there is a short cooldown (0.35s) between drops, shown as a sweep on the DROP button.
 - **The pusher:** the shelf slides back and forth. The back wall scrapes coins off the shelf onto the table, and the shelf's front face pushes the table coins forward.
 - **Winning:** coins pushed off the **front edge** pay out. Near the front, the sides are open, and coins that fall off there go to the house.
 - **Real coin physics:** coins pile on top of each other, slide with friction, and only tip over an edge when the balance point of the coin plus everything stacked on it is past the edge. Coins can hang over the lip held down by the coins behind them, and when one drops, the coins resting on it tumble too.
