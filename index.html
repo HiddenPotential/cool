@@ -236,6 +236,48 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
 .changer .hint { font-size: .72rem; color: var(--muted); margin-top: 8px; }
 .led.creditsbump span { animation: ledBump .35s; }
 
+/* Claw machine */
+.claw-cab {
+  width: calc(100% - 32px); max-width: 420px; margin: 12px 16px 0; padding: 12px 12px 16px; position: relative;
+  background: linear-gradient(180deg, #3a1d66, #1d0f38 30%, #110822);
+  border-radius: 22px;
+  box-shadow: 0 0 0 3px #5b3a99, 0 0 0 6px #120a24, 0 0 40px rgba(192,99,255,.28), 0 20px 50px rgba(0,0,0,.6);
+}
+.claw-cab .marquee h1 { font-size: clamp(1.4rem, 6vw, 1.9rem); }
+.claw-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; margin: 10px 0 8px; }
+.led.small span { font-size: clamp(1.1rem, 5vw, 1.4rem); }
+.claw-price { text-align: center; font-size: .7rem; letter-spacing: .14em; color: var(--neon-yellow); text-shadow: 0 0 8px rgba(255,210,62,.5); line-height: 1.4; }
+.claw-panel { grid-template-columns: minmax(0, 1fr) auto; }
+.claw-controls { display: flex; align-items: center; gap: 10px; }
+.arrow {
+  width: 56px; height: 56px; border-radius: 14px; border: 0; font-size: 1.4rem; color: #fff;
+  background: linear-gradient(180deg, #4b5cff, #2a35a8);
+  box-shadow: 0 5px 0 #18206b, 0 0 14px rgba(75,92,255,.45);
+  transition: transform .06s, box-shadow .06s; touch-action: none;
+}
+.arrow:active, .arrow.pressed { transform: translateY(4px); box-shadow: 0 1px 0 #18206b, 0 0 18px rgba(75,92,255,.7); }
+.arrow:disabled { filter: grayscale(.8) brightness(.6); }
+.drop-btn.grab { background: radial-gradient(circle at 50% 35%, #ffe27a, #ffb52e 45%, #b36b00 100%); box-shadow: 0 8px 0 #6e4200, 0 10px 18px rgba(0,0,0,.6), 0 0 26px rgba(255,181,46,.55), inset 0 -6px 12px rgba(0,0,0,.25); color: #3a1f00; text-shadow: 0 1px 0 rgba(255,255,255,.4); }
+.drop-btn.grab:active, .drop-btn.grab.pressed { box-shadow: 0 2px 0 #6e4200, 0 4px 10px rgba(0,0,0,.6), 0 0 34px rgba(255,181,46,.8), inset 0 -6px 12px rgba(0,0,0,.25); }
+.drop-btn.grab::after { display: none; }
+
+.shelf { margin-top: 14px; background: linear-gradient(180deg, #2a1748, #160c2b); border-radius: 14px; padding: 10px 12px 12px; box-shadow: inset 0 0 0 2px #4a2a7a; }
+.shelf h2 { margin: 0 0 8px; font-size: .8rem; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.shelf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+.shelf-item {
+  position: relative; aspect-ratio: 1; border-radius: 10px; display: grid; place-items: center;
+  background: #120a22; box-shadow: inset 0 0 0 2px var(--rc, #3a2a5a); font-size: 30px;
+}
+.shelf-item.locked span { filter: brightness(0) opacity(.35); }
+.shelf-item.rare { --rc: #c063ff; }
+.shelf-item.super { --rc: #ffd23e; box-shadow: inset 0 0 0 2px var(--rc), 0 0 12px rgba(255,210,62,.35); }
+.shelf-item b {
+  position: absolute; right: 3px; bottom: 2px; font-size: .65rem; color: #fff;
+  background: rgba(0,0,0,.6); border-radius: 6px; padding: 0 4px;
+}
+.shelf-item.pop { animation: shelfPop .6s cubic-bezier(.3,1.6,.5,1); }
+@keyframes shelfPop { 0% { transform: scale(.3); } 100% { transform: scale(1); } }
+
 .help {
   margin-top: 10px; font-size: .82rem; color: var(--muted); line-height: 1.5;
   background: #140b26; border-radius: 10px; padding: 8px 12px;
@@ -294,10 +336,39 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
         <li>Coins roll down inside the back wall and slide out of the slot onto the shelf. If one rolls past the moving <b>LUCKY</b> window on the way down, you earn a slot spin. Match 3 for coin showers, a <b>10</b> big coin, a <b>★</b> bonus token or the <b>💎</b> jackpot gem.</li>
         <li>Push a ★ off the front for 3 free spins. Push a 💎 off for 50 credits.</li>
         <li>Visit the <b>Coin Machine</b> once a day for free coins. Come back on consecutive days to build a streak for a bigger payout.</li>
+        <li>Spend credits at the <b>Claw Machine</b> too: 5 credits a play, prizes go on your shelf.</li>
         <li>Running low? You also get a free credit every 15 seconds while you have fewer than 5.</li>
       </ul>
     </details>
   </div>
+
+  <section class="claw-cab" id="clawCab" aria-label="Claw machine">
+    <header class="marquee">
+      <div class="bulbs"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <h1>CLAW <span>MACHINE</span></h1>
+      <div class="bulbs"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </header>
+      <div class="claw-top">
+        <div class="led small"><label>TIME</label><span id="clawTime">--</span></div>
+        <div class="claw-price">5 CREDITS<br>PER PLAY</div>
+        <div class="led small won"><label>PRIZES</label><span id="prizeCount">0</span></div>
+      </div>
+      <div class="playfield">
+        <canvas id="claw" aria-label="Claw machine. Move the claw, then grab a prize."></canvas>
+        <div class="banner" id="clawBanner"></div>
+      </div>
+      <div class="panel claw-panel">
+        <div class="led"><label>CREDITS</label><span id="clawCredits">000</span></div>
+        <div class="claw-controls">
+          <button class="arrow" id="clawLeft" aria-label="Move claw left">◀</button>
+          <button class="drop-btn grab" id="grab">PLAY<small>5 CREDITS</small></button>
+          <button class="arrow" id="clawRight" aria-label="Move claw right">▶</button>
+        </div>
+      </div>
+      <section class="shelf">
+        <h2>Prize Shelf</h2>
+        <div class="shelf-grid" id="shelf"></div>
+      </section>
 
   <section class="changer" id="changer" aria-label="Coin machine: free coins every day">
     <h2><small>FREE DAILY</small>COIN MACHINE</h2>
@@ -307,6 +378,16 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
     <button class="dispense-btn" id="dispense">DISPENSE</button>
     <div class="chute" id="chute" aria-hidden="true"></div>
     <div class="hint">One free payout per day. Resets at midnight.</div>
+  </section>
+
+    <details class="help">
+      <summary>How to play</summary>
+      <ul>
+        <li>Spend 5 credits for a play. Move the claw with ◀ ▶ (or drag on the machine, or the arrow keys) and press <b>GRAB</b> (or Space) before the 15 seconds run out.</li>
+        <li>The claw is weak, like a real one: grab prizes near their middle, and watch out for slips on the way to the chute. Miss 6 times in a row and the next grab is guaranteed strong.</li>
+        <li>Prizes you win go on your <b>Prize Shelf</b>. Rare prizes are heavier and harder to hold.</li>
+      </ul>
+    </details>
   </section>
   </main>
 
@@ -968,8 +1049,7 @@ function queueDrop(type, delay) {
 }
 
 // ---------- Effects ----------
-function banner(title, sub, color) {
-  const b = $('banner');
+function banner(title, sub, color, b = $('banner')) {
   b.innerHTML = `${title}<small>${sub}</small>`;
   b.style.setProperty('--c', color);
   b.classList.remove('show');
@@ -1022,12 +1102,45 @@ function drawScene() {
   felt.addColorStop(1, '#14607a');
   ctx.fillStyle = felt;
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.save();
+  quad(t0, t1, t2, t3);
+  ctx.clip();
+  // overhead spotlight on the middle of the table
+  const mid = proj(W / 2, L * 0.55);
+  const spot = ctx.createRadialGradient(mid.x, mid.y, 0, mid.x, mid.y, (t2.x - t3.x) * 0.75);
+  spot.addColorStop(0, 'rgba(120,230,255,.22)');
+  spot.addColorStop(1, 'rgba(120,230,255,0)');
+  ctx.fillStyle = spot;
+  ctx.fillRect(0, 0, cw, ch);
+  // perspective grid: rows get wider apart and columns converge toward the back
   ctx.lineWidth = 1;
-  for (let y = 40; y < L; y += 40) {
+  for (let y = 30; y < L; y += 30) {
     const a = proj(0, y), b = proj(W, y);
+    ctx.strokeStyle = `rgba(255,255,255,${0.03 + 0.05 * (y / L)})`;
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
   }
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  for (let x = 30; x < W; x += 30) {
+    const a = proj(x, 0), b = proj(x, L);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  // shade where the table meets the side walls
+  [0, W].forEach((x) => {
+    const a = proj(x, 0), b = proj(x, L), ia = proj(x + (x ? -26 : 26), 0), ib = proj(x + (x ? -26 : 26), L);
+    const g = ctx.createLinearGradient(a.x, 0, ia.x, 0);
+    g.addColorStop(0, 'rgba(0,0,0,.45)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    quad(a, b, ib, ia);
+    ctx.fill();
+  });
+  // back of the table falls into shadow
+  const depth = ctx.createLinearGradient(0, t0.y, 0, t3.y);
+  depth.addColorStop(0, 'rgba(0,0,0,.5)');
+  depth.addColorStop(0.45, 'rgba(0,0,0,0)');
+  ctx.fillStyle = depth;
+  ctx.fillRect(0, 0, cw, ch);
+  ctx.restore();
 
   // the slanted front ramp: rises toward the edge
   const r0 = proj(0, SLOPE_START), r1 = proj(W, SLOPE_START), r2 = proj(W, LIP_START, SLOPE_H), r3 = proj(0, LIP_START, SLOPE_H);
@@ -1036,6 +1149,15 @@ function drawScene() {
   ramp.addColorStop(0, '#16566c');
   ramp.addColorStop(1, '#2a8fae');
   ctx.fillStyle = ramp;
+  ctx.fill();
+  // the slope catches more light the higher it rises
+  const sheen = ctx.createLinearGradient(r0.x, 0, r1.x, 0);
+  sheen.addColorStop(0, 'rgba(0,0,0,.3)');
+  sheen.addColorStop(0.35, 'rgba(255,255,255,.08)');
+  sheen.addColorStop(0.5, 'rgba(255,255,255,.12)');
+  sheen.addColorStop(1, 'rgba(0,0,0,.3)');
+  quad(r0, r1, r2, r3);
+  ctx.fillStyle = sheen;
   ctx.fill();
   ctx.strokeStyle = 'rgba(46,242,255,.45)';
   ctx.lineWidth = 1.5;
@@ -1092,6 +1214,24 @@ function drawScene() {
   wall.addColorStop(1, '#1c0d33');
   ctx.fillStyle = wall;
   ctx.fill();
+  // panel seams with a lit edge, and a dark crease along the base
+  for (let i = 1; i < 6; i++) {
+    const x = (W / 6) * i;
+    const a = proj(x, 0, DECK_H), b = proj(x, 0, CHUTE_ELEV + 18);
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(a.x + 1.5, a.y); ctx.lineTo(b.x + 1.5, b.y); ctx.stroke();
+  }
+  const wallBase = ctx.createLinearGradient(0, proj(0, 0, DECK_H + 26).y, 0, w0.y);
+  wallBase.addColorStop(0, 'rgba(0,0,0,0)');
+  wallBase.addColorStop(1, 'rgba(0,0,0,.55)');
+  ctx.fillStyle = wallBase;
+  quad(w0, w1, proj(W, 0, DECK_H + 26), proj(0, 0, DECK_H + 26));
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.12)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(w3.x, w3.y); ctx.lineTo(w2.x, w2.y); ctx.stroke();
   // wall bulbs
   for (let i = 0; i <= 14; i++) {
     const p = proj((W / 14) * i, 0, CHUTE_ELEV + 10);
@@ -1177,13 +1317,40 @@ function drawScene() {
 
   // shelf (pusher) top and front face
   const f = machine.front;
+  // the shelf casts a shadow onto the table in front of it
+  const sh0 = proj(0, f), sh1 = proj(W, f), sh2 = proj(W, f + 22), sh3 = proj(0, f + 22);
+  const shelfShadow = ctx.createLinearGradient(0, sh0.y, 0, sh3.y);
+  shelfShadow.addColorStop(0, 'rgba(0,0,0,.55)');
+  shelfShadow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = shelfShadow;
+  quad(sh0, sh1, sh2, sh3);
+  ctx.fill();
   const d0 = proj(0, 0, DECK_H), d1 = proj(W, 0, DECK_H), d2 = proj(W, f, DECK_H), d3 = proj(0, f, DECK_H);
   quad(d0, d1, d2, d3);
   const deck = ctx.createLinearGradient(0, d0.y, 0, d3.y);
-  deck.addColorStop(0, '#6b7187');
-  deck.addColorStop(1, '#b9c0d4');
+  deck.addColorStop(0, '#4f5468');
+  deck.addColorStop(0.7, '#a3abc1');
+  deck.addColorStop(1, '#c9d0e2');
   ctx.fillStyle = deck;
   ctx.fill();
+  // brushed-metal sheen across the deck, plus plate seams running front to back
+  ctx.save();
+  quad(d0, d1, d2, d3);
+  ctx.clip();
+  const brushed = ctx.createLinearGradient(d3.x, 0, d2.x, 0);
+  brushed.addColorStop(0, 'rgba(0,0,0,.25)');
+  brushed.addColorStop(0.3, 'rgba(255,255,255,.18)');
+  brushed.addColorStop(0.55, 'rgba(255,255,255,0)');
+  brushed.addColorStop(0.8, 'rgba(255,255,255,.1)');
+  brushed.addColorStop(1, 'rgba(0,0,0,.25)');
+  ctx.fillStyle = brushed;
+  ctx.fillRect(0, 0, cw, ch);
+  for (let x = 50; x < W; x += 50) {
+    const a = proj(x, 0, DECK_H), b = proj(x, f, DECK_H);
+    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  ctx.restore();
   const e0 = proj(0, f, 0), e1 = proj(W, f, 0);
   quad(d3, d2, e1, e0);
   const face = ctx.createLinearGradient(0, d3.y, 0, e0.y);
@@ -1202,12 +1369,26 @@ function drawScene() {
     ctx.moveTo(x, e0.y); ctx.lineTo(x + stripeW, e0.y); ctx.lineTo(x + stripeW + (e0.y - d3.y), d3.y); ctx.lineTo(x + (e0.y - d3.y), d3.y);
     ctx.fill();
   }
+  // rounded face: light along the top, darker toward the table
+  const curve = ctx.createLinearGradient(0, d3.y, 0, e0.y);
+  curve.addColorStop(0, 'rgba(255,255,255,.35)');
+  curve.addColorStop(0.25, 'rgba(255,255,255,0)');
+  curve.addColorStop(1, 'rgba(0,0,0,.35)');
+  ctx.fillStyle = curve;
+  ctx.fillRect(0, 0, cw, ch);
   ctx.restore();
+  // bevel highlight on the shelf's front edge
+  ctx.strokeStyle = 'rgba(255,255,255,.75)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(d3.x, d3.y); ctx.lineTo(d2.x, d2.y); ctx.stroke();
 
   // coins on the shelf, then on the table, back to front
+  // (shadows first, so a coin's shadow never darkens the coin in front of it)
   const deckCoins = machine.coins.filter((c) => c.layer === 1).sort((a, b) => a.y - b.y);
+  for (const c of deckCoins) drawCoinShadow(c.type, c.x, c.y, DECK_H);
   for (const c of deckCoins) drawCoin(c.type, c.x, c.y, DECK_H);
   const tableCoins = machine.coins.filter((c) => c.layer === 0).sort((a, b) => a.y - b.y);
+  for (const c of tableCoins) drawCoinShadow(c.type, c.x, c.y, rampH(c.y), Math.max(0, c.elev - rampH(c.y)));
   for (const c of tableCoins) drawCoin(c.type, c.x, c.y, Math.max(c.elev, rampH(c.y)));
 
   // chrome rim on top of the kicker lip, in front of the coins climbing it
@@ -1228,10 +1409,28 @@ function drawScene() {
   [0, W].forEach((x) => {
     const a = proj(x, -2, 0), b = proj(x, SIDE_WALL_END, rampH(SIDE_WALL_END)), c = proj(x, SIDE_WALL_END, 14 + rampH(SIDE_WALL_END)), d = proj(x, -2, 14);
     quad(a, b, c, d);
-    const rail = ctx.createLinearGradient(0, d.y, 0, b.y);
-    rail.addColorStop(0, '#e9ecf5');
-    rail.addColorStop(1, '#6d7387');
+    const rail = ctx.createLinearGradient(0, d.y, 0, a.y);
+    rail.addColorStop(0, '#f4f6fb');
+    rail.addColorStop(0.3, '#b7bdcc');
+    rail.addColorStop(0.55, '#6d7387');
+    rail.addColorStop(1, '#3b4050');
     ctx.fillStyle = rail;
+    ctx.fill();
+    // top of the rail, so it reads as a solid bar with thickness
+    const out = x === 0 ? -8 : 8;
+    const tc = proj(x + out, SIDE_WALL_END, 14 + rampH(SIDE_WALL_END)), td = proj(x + out, -2, 14);
+    quad(d, c, tc, td);
+    const cap = ctx.createLinearGradient(d.x, 0, td.x, 0);
+    cap.addColorStop(0, '#ffffff');
+    cap.addColorStop(1, '#8a90a2');
+    ctx.fillStyle = cap;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.9)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(c.x, c.y); ctx.stroke();
+    // end cap facing the player
+    quad(b, c, tc, proj(x + out, SIDE_WALL_END, rampH(SIDE_WALL_END)));
+    ctx.fillStyle = '#4b5062';
     ctx.fill();
   });
 
@@ -1309,6 +1508,16 @@ function drawScene() {
     ctx.restore();
     ctx.globalAlpha = 1;
   }
+
+  // the cabinet's front glass: a faint diagonal reflection
+  const glass = ctx.createLinearGradient(0, 0, cw, ch * 0.8);
+  glass.addColorStop(0.0, 'rgba(255,255,255,0)');
+  glass.addColorStop(0.18, 'rgba(255,255,255,.06)');
+  glass.addColorStop(0.24, 'rgba(255,255,255,0)');
+  glass.addColorStop(0.3, 'rgba(255,255,255,.035)');
+  glass.addColorStop(0.34, 'rgba(255,255,255,0)');
+  ctx.fillStyle = glass;
+  ctx.fillRect(0, 0, cw, ch);
 
   // sparks
   ctx.globalCompositeOperation = 'lighter';
@@ -1445,6 +1654,8 @@ function frame(ts) {
   now = ts;
   update(dt);
   drawScene();
+  clawUpdate(dt);
+  clawDraw();
   requestAnimationFrame(frame);
 }
 
@@ -1455,6 +1666,7 @@ function updateHud() {
   $('won').textContent = pad(won);
   $('spins').textContent = spins;
   $('drop').disabled = credits < 1;
+  if ($('clawCredits')) $('clawCredits').textContent = pad(credits);
 }
 function flashRefill() {
   const r = $('refill');
@@ -1498,6 +1710,11 @@ dropBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); startHold((
 
 let spaceDown = false;
 window.addEventListener('keydown', (e) => {
+  if (claw.state === 'aim') {
+    if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { e.preventDefault(); claw.move = e.code === 'ArrowLeft' ? -1 : 1; }
+    if (e.code === 'Space' && !e.repeat) { e.preventDefault(); clawPlay(); }
+    return;
+  }
   if (e.code !== 'Space' || spaceDown) return;
   e.preventDefault();
   spaceDown = true;
@@ -1505,6 +1722,7 @@ window.addEventListener('keydown', (e) => {
   startHold(() => dropCoin(chuteX));
 });
 window.addEventListener('keyup', (e) => {
+  if ((e.code === 'ArrowLeft' && claw.move < 0) || (e.code === 'ArrowRight' && claw.move > 0)) claw.move = 0;
   if (e.code !== 'Space') return;
   spaceDown = false;
   dropBtn.classList.remove('pressed');
@@ -1517,10 +1735,11 @@ $('sound').onclick = () => {
   save();
 };
 $('reset').onclick = () => {
-  if (!confirm('Start over with 30 credits and a fresh machine?')) return;
+  if (!confirm(`Start over with ${START_CREDITS} credits, fresh machines and an empty prize shelf?`)) return;
   credits = START_CREDITS; won = 0; spins = 0;
   incoming.length = 0; falling.length = 0;
   machine.fill();
+  resetClaw();
   save();
   updateHud();
 };
@@ -1617,12 +1836,683 @@ $('freeReady').onclick = () => {
   $('changer').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)' }, { transform: 'scale(1)' }], { duration: 500, delay: 300 });
 };
 
+// ======================= CLAW MACHINE =======================
+// Side view of a glass cabinet, in "claw units" (CW x CH). The chute is on the left, behind a low wall.
+const CW = 360;
+const CH = 440;
+const FLOOR = 408;           // top of the prize pit floor
+const CHUTE_X = 84;          // the chute wall
+const CHUTE_TOP = 255;       // top of the chute wall (taller than the pile, so prizes don't spill in)
+const RAIL_Y = 46;           // where the claw rides
+const HOME_X = 46;           // the claw rests over the chute
+const PRONG = 50;            // prong length
+const OPEN_ANGLE = 0.62;     // radians from straight down
+const SHUT_ANGLE = 0.08;
+const CLAW_COST = 5;
+const CLAW_TIME = 15;
+const CLAW_PITY = 6;         // misses in a row before a guaranteed strong grab
+const CLAW_GRIP = 0.42;                // base chance to hold a centered prize all the way
+const STOCK = 15;            // prizes in a full machine
+const PRIZE_GRAVITY = 1300;
+
+const PRIZES = [
+  { id: 'bear',    emoji: '🧸', name: 'Teddy',   rarity: 'common', r: 27, weight: 1,    chance: 12 },
+  { id: 'bunny',   emoji: '🐰', name: 'Bunny',   rarity: 'common', r: 25, weight: 1,    chance: 12 },
+  { id: 'cat',     emoji: '🐱', name: 'Kitty',   rarity: 'common', r: 25, weight: 1,    chance: 12 },
+  { id: 'dog',     emoji: '🐶', name: 'Puppy',   rarity: 'common', r: 25, weight: 1,    chance: 12 },
+  { id: 'frog',    emoji: '🐸', name: 'Froggy',  rarity: 'common', r: 24, weight: 1,    chance: 10 },
+  { id: 'duck',    emoji: '🐥', name: 'Chick',   rarity: 'common', r: 23, weight: 0.9,  chance: 10 },
+  { id: 'panda',   emoji: '🐼', name: 'Panda',   rarity: 'common', r: 26, weight: 1.05, chance: 8 },
+  { id: 'fox',     emoji: '🦊', name: 'Fox',     rarity: 'common', r: 25, weight: 1,    chance: 8 },
+  { id: 'unicorn', emoji: '🦄', name: 'Unicorn', rarity: 'rare',   r: 28, weight: 1.35, chance: 3 },
+  { id: 'dragon',  emoji: '🐲', name: 'Dragon',  rarity: 'rare',   r: 28, weight: 1.35, chance: 3 },
+  { id: 'octopus', emoji: '🐙', name: 'Octopus', rarity: 'rare',   r: 27, weight: 1.3,  chance: 3 },
+  { id: 'crown',   emoji: '👑', name: 'Crown',   rarity: 'super',  r: 22, weight: 1.8,  chance: 0.8 },
+  { id: 'trophy',  emoji: '🏆', name: 'Trophy',  rarity: 'super',  r: 23, weight: 1.8,  chance: 0.8 },
+];
+const PRIZE_BY_ID = Object.fromEntries(PRIZES.map((p) => [p.id, p]));
+const RARITY_GLOW = { common: null, rare: '#c063ff', super: '#ffd23e' };
+
+function makeCanvas(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  return [c, c.getContext('2d')];
+}
+
+const clawCanvas = $('claw');
+const cctx = clawCanvas.getContext('2d');
+let ccw = 0, cch = 0, csc = 1;   // claw canvas size and claw-units -> px scale
+
+const claw = {
+  prizes: [],
+  x: HOME_X, y: RAIL_Y, vx: 0, vy: 0,
+  angle: OPEN_ANGLE,
+  state: 'idle',            // idle, aim, drop, close, lift, carry, release, home
+  timer: 0,
+  held: null,
+  slipAt: Infinity,         // seconds after the grab when a weak grip lets go
+  swing: 0, swingV: 0,      // pendulum angle of a held prize, and its angular speed
+  contact: [null, null],    // which prize each prong is touching while closing
+  grabT: 0,
+  wonThisPlay: false,
+  slipped: false,
+  move: 0,                  // -1, 0, 1 from the buttons/keys
+  dragX: null,
+  misses: 0,
+  collection: {},
+  popups: [],               // prizes coming out of the door
+  stateT: 0,
+};
+
+// pre-rendered emoji so they're crisp and cheap to draw
+const prizeSprites = {};
+function prizeSprite(id) {
+  if (prizeSprites[id]) return prizeSprites[id];
+  const [c, g] = makeCanvas(128, 128);
+  g.font = '100px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(PRIZE_BY_ID[id].emoji, 64, 70);
+  return (prizeSprites[id] = c);
+}
+
+function pickPrize() {
+  const total = PRIZES.reduce((s, p) => s + p.chance, 0);
+  let r = Math.random() * total;
+  for (const p of PRIZES) { r -= p.chance; if (r < 0) return p; }
+  return PRIZES[0];
+}
+
+function addPrize(type, x, y) {
+  claw.prizes.push({ id: type.id, r: type.r, w: type.weight, x, y, px: x, py: y, vx: 0, vy: 0, a: (Math.random() - 0.5) * 1.2, onFloor: false });
+}
+
+function stockMachine(n, fromTop) {
+  for (let i = 0; i < n; i++) {
+    const t = pickPrize();
+    const x = CHUTE_X + t.r + 24 + Math.random() * (CW - CHUTE_X - 2 * t.r - 40);
+    addPrize(t, x, fromTop ? -40 - i * 50 : FLOOR - t.r - Math.random() * 180);
+  }
+}
+
+function clawResize() {
+  const w = clawCanvas.parentElement.clientWidth;
+  if (!w) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  ccw = w;
+  cch = Math.round(w * CH / CW);
+  clawCanvas.width = ccw * dpr;
+  clawCanvas.height = cch * dpr;
+  clawCanvas.style.height = cch + 'px';
+  csc = ccw / CW;
+  cctx.setTransform(dpr * csc, 0, 0, dpr * csc, 0, 0);
+}
+
+// ---------- Claw geometry ----------
+function prongTips() {
+  const a = claw.angle;
+  const hubY = claw.y + 14;
+  return [
+    { x: claw.x - 9 - Math.sin(a) * PRONG, y: hubY + Math.cos(a) * PRONG, bx: claw.x - 9, by: hubY },
+    { x: claw.x + 9 + Math.sin(a) * PRONG, y: hubY + Math.cos(a) * PRONG, bx: claw.x + 9, by: hubY },
+  ];
+}
+
+function segDist(p, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const t = clamp(((p.x - ax) * dx + (p.y - ay) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+  return Math.hypot(p.x - (ax + dx * t), p.y - (ay + dy * t));
+}
+
+function pushOutOfSegment(p, ax, ay, bx, by, extra = 0, maxPush = Infinity) {
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx * dx + dy * dy || 1;
+  const t = clamp(((p.x - ax) * dx + (p.y - ay) * dy) / len2, 0, 1);
+  const cx = ax + dx * t, cy = ay + dy * t;
+  let ox = p.x - cx, oy = p.y - cy;
+  const d = Math.hypot(ox, oy);
+  const min = p.r + extra;
+  if (d >= min) return false;
+  if (d < 1e-4) { ox = p.x < ax ? -1 : 1; oy = 0; } else { ox /= d; oy /= d; }
+  const push = Math.min(min - d, maxPush);
+  p.x += ox * push;
+  p.y += oy * push;
+  return true;
+}
+
+// ---------- Prize physics ----------
+function stepPrizes(dt) {
+  const list = claw.prizes;
+  for (const p of list) {
+    p.px = p.x; p.py = p.y;
+    if (p === claw.held) continue;
+    p.vy += PRIZE_GRAVITY * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+  }
+  const tips = prongTips();
+  for (let it = 0; it < 5; it++) {
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        const a = list[i], b = list[j];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        const min = (a.r + b.r) * 0.9;            // plush squishes a little
+        const d2 = dx * dx + dy * dy;
+        if (d2 >= min * min) continue;
+        let d = Math.sqrt(d2);
+        if (d < 1e-4) { dx = 0.01; dy = 1; d = 1; }
+        const corr = Math.min((min - d) * 0.5, 1.5);   // gentle, so a squeeze never launches anything
+        const ha = a === claw.held, hb = b === claw.held;
+        const wa = ha ? 0 : 1 / a.w, wb = hb ? 0 : 1 / b.w;
+        if (wa + wb === 0) continue;
+        const nx = dx / d, ny = dy / d;
+        a.x -= nx * corr * 2 * wa / (wa + wb); a.y -= ny * corr * 2 * wa / (wa + wb);
+        b.x += nx * corr * 2 * wb / (wa + wb); b.y += ny * corr * 2 * wb / (wa + wb);
+      }
+    }
+    for (const p of list) {
+      if (p === claw.held) continue;
+      // prongs and hub are solid, but plush gives: they ease prizes aside a little at a time,
+      // so nothing ever gets batted across the machine
+      if (claw.y > RAIL_Y + 4 || claw.state === 'drop') {
+        // (this runs 5 times a step, 2 steps a frame: 0.15 here is about 1.5 units per frame,
+        // roughly how fast the prongs themselves move)
+        const give = claw.state === 'close' ? 0.15 : 0.1;
+        for (const t of tips) pushOutOfSegment(p, t.bx, t.by, t.x, t.y, 2, give);
+        pushOutOfSegment(p, claw.x - 16, claw.y + 8, claw.x + 16, claw.y + 8, 2, 0.12);
+      }
+      // cabinet
+      p.onFloor = false;
+      if (p.x > CHUTE_X) {
+        if (p.y > FLOOR - p.r) { p.y = FLOOR - p.r; p.onFloor = true; }
+        if (p.x > CW - 12 - p.r) p.x = CW - 12 - p.r;
+      } else if (p.x < 12 + p.r) p.x = 12 + p.r;
+      pushOutOfSegment(p, CHUTE_X, CHUTE_TOP, CHUTE_X, FLOOR + 40);
+      // never squeeze through the chute wall: a prize that was in the pit stays in the pit
+      if (p.px >= CHUTE_X && p.y > CHUTE_TOP - p.r * 0.2 && p.x < CHUTE_X + p.r) p.x = CHUTE_X + p.r;
+    }
+  }
+  // velocity from motion; plush doesn't bounce much and drags on the floor
+  for (const p of list) {
+    if (p === claw.held) { p.vx = (p.x - p.px) / dt; p.vy = (p.y - p.py) / dt; continue; }
+    p.vx = clamp((p.x - p.px) / dt, -220, 220) * 0.985;
+    p.vy = clamp((p.y - p.py) / dt, -220, 900);
+    if (p.onFloor) { p.vx *= 0.82; if (p.vy > 0) p.vy = 0; }
+    p.a += ((p.x - p.px) / p.r) * 0.8;
+  }
+  // through the chute's hole = won
+  for (let i = list.length - 1; i >= 0; i--) {
+    const p = list[i];
+    if (p.x < CHUTE_X && p.y > FLOOR + p.r) {
+      list.splice(i, 1);
+      if (p === claw.held) claw.held = null;
+      if (!claw.settling) winPrize(p);
+    } else if (p.y > CH + 200) list.splice(i, 1);
+  }
+}
+
+// ---------- Playing ----------
+function clawPlay() {
+  if (claw.state === 'idle') {
+    if (credits < CLAW_COST) { banner('NEED 5', 'CREDITS', '#ff4d6d', $('clawBanner')); sfx.miss(); return; }
+    credits -= CLAW_COST;
+    updateHud();
+    sfx.insert();
+    claw.state = 'aim';
+    claw.timer = CLAW_TIME;
+    claw.wonThisPlay = false;
+    claw.slipped = false;
+    save();
+  } else if (claw.state === 'aim') {
+    clawSetState('drop');
+    tone(500, { dur: 0.5, type: 'triangle', vol: 0.06, slide: 0.5 });
+  }
+}
+
+function clawSetState(s) {
+  claw.state = s;
+  claw.stateT = 0;
+}
+
+function decideGrab() {
+  // a prize is caught only if both prongs ended up squeezing it
+  const [l, r] = claw.contact;
+  claw.contact = [null, null];
+  if (!l || l !== r) return;
+  const best = l;
+  const t = PRIZE_BY_ID[best.id];
+  // prongs that reach under the prize's belly hold well; pinching just the top slips off
+  const tips = prongTips();
+  const under = clamp(((tips[0].y + tips[1].y) / 2 - best.y) / best.r, -1, 1);
+  const offset = Math.min(1, Math.abs(best.x - claw.x) / best.r);
+  const grip = CLAW_GRIP * (0.55 + 0.6 * under) * (1 - 0.5 * offset);
+  const chance = claw.misses >= CLAW_PITY ? 1 : clamp(grip / t.weight, 0.04, 0.92);
+  claw.held = best;
+  // keep it exactly where it was caught: no snapping into place
+  best.gx = best.x - claw.x;
+  best.gy = best.y - claw.y;
+  claw.swing = 0;
+  claw.swingV = 0;
+  claw.grabT = 0;
+  // a weak grip gives up somewhere on the way up or over to the chute
+  claw.slipAt = Math.random() < chance ? Infinity : 0.25 + Math.random() * 2.2;
+  clink(900, { vol: 0.06, decay: 0.2 });
+  tone(160, { dur: 0.12, type: 'square', vol: 0.05 });
+}
+
+function releaseHeld() {
+  const p = claw.held;
+  if (!p) return;
+  claw.held = null;
+  // it leaves with the claw's motion plus whatever its swing was doing
+  const len = Math.hypot(p.gx, p.gy);
+  p.vx = clamp(claw.vx + Math.cos(claw.swing) * claw.swingV * len * 0.5, -220, 220);
+  p.vy = Math.max(claw.vy, 0) + Math.sin(claw.swing) * claw.swingV * len * 0.25;
+  claw.swing = 0;
+  claw.swingV = 0;
+}
+
+function winPrize(p) {
+  const t = PRIZE_BY_ID[p.id];
+  claw.collection[t.id] = (claw.collection[t.id] || 0) + 1;
+  claw.wonThisPlay = true;
+  claw.misses = 0;
+  claw.popups.push({ id: t.id, t: 0 });
+  const color = t.rarity === 'super' ? '#ffd23e' : t.rarity === 'rare' ? '#c063ff' : '#2ef2ff';
+  banner(t.rarity === 'super' ? 'SUPER RARE!' : t.rarity === 'rare' ? 'RARE WIN!' : 'YOU WON!', t.name.toUpperCase(), color, $('clawBanner'));
+  sfx.fanfare(t.rarity !== 'common');
+  jingle(4, { base: 2800, vol: 0.05 });
+  renderShelf(t.id);
+  updateHud();
+  save();
+}
+
+function clawUpdate(dt) {
+  claw.stateT += dt;
+  const ox = claw.x, oy = claw.y;
+  const SPEED_X = 130;
+
+  switch (claw.state) {
+    case 'idle':
+    case 'aim': {
+      if (claw.state === 'aim') {
+        claw.timer -= dt;
+        if (claw.timer <= 0) { claw.timer = 0; clawSetState('drop'); tone(500, { dur: 0.5, type: 'triangle', vol: 0.06, slide: 0.5 }); break; }
+        let dir = claw.move;
+        if (claw.dragX !== null) dir = Math.abs(claw.dragX - claw.x) < 3 ? 0 : Math.sign(claw.dragX - claw.x);
+        claw.x = clamp(claw.x + dir * SPEED_X * dt, HOME_X, CW - 40);
+        if (dir && Math.random() < dt * 8) tone(120 + Math.random() * 20, { dur: 0.05, type: 'sawtooth', vol: 0.012 });
+      }
+      claw.angle += (OPEN_ANGLE - claw.angle) * Math.min(1, dt * 8);
+      break;
+    }
+    case 'drop': {
+      claw.angle += (OPEN_ANGLE - claw.angle) * Math.min(1, dt * 8);
+      claw.y += 150 * dt;
+      // stop when a prong tip or the hub comes to rest on something
+      const tips = prongTips();
+      let hit = tips.some((t) => t.y >= FLOOR - 2) || claw.y > FLOOR - PRONG - 10;
+      for (const p of claw.prizes) {
+        if (hit) break;
+        // the hub lands on the prize right underneath it
+        if (Math.abs(p.x - claw.x) < p.r * 0.8 && claw.y + 18 > p.y - p.r * 0.85) hit = true;
+        // a tip lands on top of a prize (one beside it just slides down its side)
+        for (const t of tips) if (t.y < p.y - p.r * 0.35 && Math.hypot(t.x - p.x, t.y - p.y) < p.r * 0.9) hit = true;
+      }
+      if (hit || claw.stateT > 3) { clawSetState('close'); tone(220, { dur: 0.25, type: 'square', vol: 0.04, slide: 0.8 }); }
+      break;
+    }
+    case 'close': {
+      // each prong touches the nearest prize on its inner side; once both are squeezing the
+      // same prize the claw stops closing instead of crushing it out of the grip
+      const tips = prongTips();
+      claw.contact = tips.map((t, i) => {
+        const inward = i === 0 ? 1 : -1;
+        let best = null, bestD = Infinity;
+        for (const p of claw.prizes) {
+          if ((p.x - t.x) * inward < -p.r * 0.3) continue;   // it's outside this prong
+          const d = segDist(p, t.bx, t.by, t.x, t.y) - p.r;
+          if (d < 3 && d < bestD) { bestD = d; best = p; }
+        }
+        return best;
+      });
+      const squeezing = claw.contact[0] && claw.contact[0] === claw.contact[1];
+      if (!squeezing) claw.angle = Math.max(SHUT_ANGLE, claw.angle - 1.4 * dt);
+      // with nothing under the hub, the claw settles a little lower as it closes
+      const onPrize = claw.prizes.some((p) => Math.abs(p.x - claw.x) < p.r * 0.8 && claw.y + 20 > p.y - p.r);
+      if (!onPrize && claw.y < FLOOR - PRONG - 18) claw.y += 30 * dt;
+      if (claw.stateT > 0.7 || (squeezing && claw.stateT > 0.35)) { decideGrab(); clawSetState('lift'); }
+      break;
+    }
+    case 'lift': {
+      claw.y = Math.max(RAIL_Y, claw.y - 110 * dt);
+      if (claw.y <= RAIL_Y) clawSetState('carry');
+      break;
+    }
+    case 'carry': {
+      const dx = HOME_X - claw.x;
+      claw.x += Math.sign(dx) * Math.min(Math.abs(dx), SPEED_X * dt);
+      if (Math.abs(dx) < 0.5) clawSetState('release');
+      break;
+    }
+    case 'release': {
+      claw.angle += (OPEN_ANGLE - claw.angle) * Math.min(1, dt * 6);
+      // wait for a swinging prize to settle over the chute before letting go
+      if (claw.held && claw.stateT > 0.15 && (Math.abs(claw.swing) < 0.05 || claw.stateT > 1)) { releaseHeld(); claw.releasedT = claw.stateT; }
+      // give a dropped prize time to fall all the way into the chute before calling it
+      if (!claw.held && claw.stateT > Math.max(1.4, (claw.releasedT || 0) + 1.1)) {
+        claw.releasedT = 0;
+        if (!claw.wonThisPlay) {
+          claw.misses++;
+          const near = claw.slipped;
+          banner(near ? 'SO CLOSE!' : 'MISSED', claw.misses >= CLAW_PITY ? 'NEXT GRAB IS STRONG!' : 'TRY AGAIN', '#ff4d6d', $('clawBanner'));
+          sfx.miss();
+        }
+        clawSetState('idle');
+        claw.timer = 0;
+        save();
+      }
+      break;
+    }
+  }
+
+  // held prize: hangs from the prongs, swaying a little; a weak grip lets go
+  if (claw.held) {
+    claw.grabT += dt;
+    if (claw.grabT > claw.slipAt) {
+      claw.slipped = true;
+      releaseHeld();
+      claw.angle = Math.min(OPEN_ANGLE, claw.angle + 0.25);
+      tone(330, { dur: 0.4, type: 'triangle', vol: 0.06, slide: 0.55 });
+    } else {
+      const p = claw.held;
+      // it slides toward the middle of the claw and settles into the prongs as it's lifted
+      p.gx *= 1 - Math.min(1, dt * 3);
+      p.gy += (Math.max(p.gy, 14 + p.r * 0.55) - p.gy) * Math.min(1, dt * 4);
+      // and hangs like a pendulum: the claw speeding up or stopping sets it swinging
+      const len = Math.max(20, Math.hypot(p.gx, p.gy));
+      const ax = (claw.vx - (claw.prevVx || 0)) / dt;
+      claw.swingV += (-(PRIZE_GRAVITY / len) * Math.sin(claw.swing) - (ax / len) * Math.cos(claw.swing) * 0.6) * dt;
+      claw.swingV *= Math.exp(-(claw.state === 'release' ? 6 : 2.5) * dt);
+      claw.swing = clamp(claw.swing + claw.swingV * dt, -0.5, 0.5);
+      p.x = claw.x + p.gx * Math.cos(claw.swing) + p.gy * Math.sin(claw.swing);
+      p.y = claw.y - p.gx * Math.sin(claw.swing) + p.gy * Math.cos(claw.swing);
+      p.a += (claw.swing * 0.6 - p.a) * Math.min(1, dt * 6);
+      claw.angle = Math.max(claw.angle, Math.asin(clamp((p.r * 0.8 - 9) / PRONG, 0, 0.9)));
+    }
+  }
+
+  claw.prevVx = claw.vx;
+  claw.vx = (claw.x - ox) / dt;
+  claw.vy = (claw.y - oy) / dt;
+
+  // physics in small steps
+  const n = Math.ceil(dt / (1 / 120));
+  for (let i = 0; i < n; i++) stepPrizes(dt / n);
+
+  // restock when running low and nobody is playing
+  if (claw.state === 'idle' && claw.prizes.length < STOCK - 6) {
+    stockMachine(STOCK - claw.prizes.length, true);
+    banner('RESTOCKED!', 'NEW PRIZES', '#2ef2ff', $('clawBanner'));
+  }
+
+  for (let i = claw.popups.length - 1; i >= 0; i--) {
+    claw.popups[i].t += dt;
+    if (claw.popups[i].t > 2.2) claw.popups.splice(i, 1);
+  }
+
+  $('clawTime').textContent = claw.state === 'aim' ? String(Math.ceil(claw.timer)).padStart(2, '0') : '--';
+  const g = $('grab');
+  const playing = claw.state !== 'idle';
+  g.innerHTML = claw.state === 'aim' ? 'GRAB<small>OR SPACE</small>' : playing ? '···<small>&nbsp;</small>' : `PLAY<small>${CLAW_COST} CREDITS</small>`;
+  g.disabled = (playing && claw.state !== 'aim') || (!playing && credits < CLAW_COST);
+  $('clawLeft').disabled = $('clawRight').disabled = claw.state !== 'aim';
+}
+
+// ---------- Drawing ----------
+const clawBg = (() => {
+  const [c, g] = makeCanvas(CW * 2, CH * 2);
+  g.scale(2, 2);
+  const back = g.createLinearGradient(0, 0, 0, CH);
+  back.addColorStop(0, '#2a1250');
+  back.addColorStop(1, '#14082a');
+  g.fillStyle = back;
+  g.fillRect(0, 0, CW, CH);
+  // polka-dot back panel
+  for (let y = 70; y < FLOOR; y += 26) {
+    for (let x = (y / 26) % 2 ? 13 : 0; x < CW; x += 26) {
+      g.fillStyle = 'rgba(255,62,165,.08)';
+      g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill();
+    }
+  }
+  // neon strip at the top
+  g.shadowColor = '#2ef2ff';
+  g.shadowBlur = 14;
+  g.fillStyle = '#9ff8ff';
+  g.fillRect(14, 16, CW - 28, 4);
+  g.shadowBlur = 0;
+  // rail
+  const rail = g.createLinearGradient(0, RAIL_Y - 30, 0, RAIL_Y - 20);
+  rail.addColorStop(0, '#f2f4fa');
+  rail.addColorStop(1, '#6d7387');
+  g.fillStyle = rail;
+  g.fillRect(10, RAIL_Y - 30, CW - 20, 9);
+  // floor of the pit
+  const floor = g.createLinearGradient(0, FLOOR, 0, CH);
+  floor.addColorStop(0, '#3a1d66');
+  floor.addColorStop(1, '#1a0d30');
+  g.fillStyle = floor;
+  g.fillRect(CHUTE_X, FLOOR, CW - CHUTE_X, CH - FLOOR);
+  g.fillStyle = 'rgba(255,255,255,.12)';
+  g.fillRect(CHUTE_X, FLOOR, CW - CHUTE_X, 2);
+  // chute: a dark hole with a glowing rim
+  g.fillStyle = '#05020c';
+  g.fillRect(12, CHUTE_TOP - 4, CHUTE_X - 12, CH - CHUTE_TOP + 4);
+  const hole = g.createLinearGradient(0, FLOOR, 0, CH);
+  hole.addColorStop(0, '#000');
+  hole.addColorStop(1, '#1a0d30');
+  g.fillStyle = hole;
+  g.fillRect(12, FLOOR, CHUTE_X - 12, CH - FLOOR);
+  g.fillStyle = 'rgba(255,210,62,.85)';
+  g.font = '900 13px system-ui, sans-serif';
+  g.textAlign = 'center';
+  g.fillText('PRIZE', (12 + CHUTE_X) / 2, CHUTE_TOP + 30);
+  g.font = '900 18px system-ui, sans-serif';
+  g.fillText('▼', (12 + CHUTE_X) / 2, CHUTE_TOP + 52);
+  return c;
+})();
+
+function drawPrize(p) {
+  const t = PRIZE_BY_ID[p.id];
+  const glow = RARITY_GLOW[t.rarity];
+  // shadow on the floor
+  if (p.x > CHUTE_X) {
+    const h = clamp((FLOOR - p.y - p.r) / 200, 0, 1);
+    cctx.fillStyle = `rgba(0,0,0,${0.35 * (1 - h)})`;
+    cctx.beginPath(); cctx.ellipse(p.x, FLOOR + 1, p.r * (1 - h * 0.4), 4, 0, 0, Math.PI * 2); cctx.fill();
+  }
+  if (glow) {
+    cctx.save();
+    cctx.globalCompositeOperation = 'lighter';
+    const g = cctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 1.6);
+    g.addColorStop(0, glow + '88');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    cctx.globalAlpha = 0.55 + 0.25 * Math.sin(now / 250 + p.x);
+    cctx.fillStyle = g;
+    cctx.fillRect(p.x - p.r * 1.6, p.y - p.r * 1.6, p.r * 3.2, p.r * 3.2);
+    cctx.restore();
+  }
+  cctx.save();
+  cctx.translate(p.x, p.y);
+  cctx.rotate(p.a);
+  const size = p.r * 2.25;
+  cctx.drawImage(prizeSprite(p.id), -size / 2, -size / 2, size, size);
+  cctx.restore();
+}
+
+function drawClaw() {
+  const g = cctx;
+  // trolley on the rail and the cable
+  g.fillStyle = '#c9cfdf';
+  g.fillRect(claw.x - 16, RAIL_Y - 34, 32, 16);
+  g.fillStyle = '#ff3ea5';
+  g.fillRect(claw.x - 16, RAIL_Y - 20, 32, 3);
+  g.strokeStyle = '#9aa1b3';
+  g.lineWidth = 2;
+  g.beginPath(); g.moveTo(claw.x, RAIL_Y - 18); g.lineTo(claw.x, claw.y); g.stroke();
+  // prongs
+  const tips = prongTips();
+  for (const [i, t] of tips.entries()) {
+    const side = i === 0 ? -1 : 1;
+    const grad = g.createLinearGradient(t.bx, t.by, t.x, t.y);
+    grad.addColorStop(0, '#f4f6fb');
+    grad.addColorStop(1, '#7d8597');
+    g.strokeStyle = grad;
+    g.lineWidth = 5;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(t.bx, t.by);
+    g.lineTo(t.x, t.y);
+    // hooked tip curling inward
+    g.lineTo(t.x - side * 9 * Math.cos(claw.angle), t.y + 4);
+    g.stroke();
+  }
+  // middle prong, seen edge-on
+  g.strokeStyle = '#8a92a5';
+  g.lineWidth = 4;
+  g.beginPath(); g.moveTo(claw.x, claw.y + 14); g.lineTo(claw.x, claw.y + 14 + PRONG * Math.cos(claw.angle) * 0.85); g.stroke();
+  // hub
+  const hub = g.createLinearGradient(claw.x - 18, 0, claw.x + 18, 0);
+  hub.addColorStop(0, '#7d8597');
+  hub.addColorStop(0.5, '#f4f6fb');
+  hub.addColorStop(1, '#7d8597');
+  g.fillStyle = hub;
+  g.beginPath();
+  g.roundRect(claw.x - 18, claw.y, 36, 18, 6);
+  g.fill();
+  g.fillStyle = '#ffd23e';
+  g.beginPath(); g.arc(claw.x, claw.y + 9, 3.5, 0, Math.PI * 2); g.fill();
+}
+
+function clawDraw() {
+  if (!ccw) clawResize();
+  const g = cctx;
+  g.drawImage(clawBg, 0, 0, CW, CH);
+
+  // aim guide while steering
+  if (claw.state === 'aim') {
+    g.strokeStyle = 'rgba(255,210,62,.35)';
+    g.setLineDash([5, 6]);
+    g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(claw.x, claw.y + 70); g.lineTo(claw.x, FLOOR); g.stroke();
+    g.setLineDash([]);
+  }
+
+  for (const p of claw.prizes) if (p !== claw.held) drawPrize(p);
+  drawClaw();
+  if (claw.held) drawPrize(claw.held);
+
+  // chute wall: clear acrylic with a chrome top
+  g.fillStyle = 'rgba(180,220,255,.16)';
+  g.fillRect(CHUTE_X - 4, CHUTE_TOP, 8, FLOOR - CHUTE_TOP);
+  g.fillStyle = '#e9ecf5';
+  g.fillRect(CHUTE_X - 5, CHUTE_TOP - 4, 10, 5);
+  // the chute's front panel, over anything falling inside it
+  g.fillStyle = 'rgba(255,62,165,.12)';
+  g.fillRect(12, CHUTE_TOP, CHUTE_X - 16, FLOOR - CHUTE_TOP);
+
+  // glass glare
+  const glare = g.createLinearGradient(0, 0, CW, CH);
+  glare.addColorStop(0.2, 'rgba(255,255,255,0)');
+  glare.addColorStop(0.27, 'rgba(255,255,255,.07)');
+  glare.addColorStop(0.31, 'rgba(255,255,255,0)');
+  g.fillStyle = glare;
+  g.fillRect(0, 0, CW, CH);
+
+  // prizes popping out of the door
+  for (const pu of claw.popups) {
+    const k2 = Math.min(1, pu.t / 0.5);
+    const y = CH - 30 - Math.sin(k2 * Math.PI) * 30 - k2 * 20;
+    const size = 40 + 30 * (1 - Math.abs(1 - k2));
+    g.globalAlpha = Math.min(1, (2.2 - pu.t) * 2);
+    g.drawImage(prizeSprite(pu.id), (12 + CHUTE_X) / 2 - size / 2 + k2 * 30, y - size / 2, size, size);
+    g.globalAlpha = 1;
+  }
+
+  if (claw.state === 'idle' && Math.floor(now / 500) % 2 === 0) {
+    g.fillStyle = '#ffd23e';
+    g.shadowColor = '#ffd23e';
+    g.shadowBlur = 10;
+    g.font = '900 16px system-ui, sans-serif';
+    g.textAlign = 'center';
+    g.fillText(credits >= CLAW_COST ? 'PRESS PLAY' : `INSERT ${CLAW_COST} CREDITS`, CW / 2 + 30, 92);
+    g.shadowBlur = 0;
+  }
+}
+
+// ---------- Prize shelf ----------
+function renderShelf(popId) {
+  const box = $('shelf');
+  box.innerHTML = '';
+  let total = 0;
+  for (const t of PRIZES) {
+    const n = claw.collection[t.id] || 0;
+    total += n;
+    const el = document.createElement('div');
+    el.className = `shelf-item ${t.rarity}${n ? '' : ' locked'}${t.id === popId ? ' pop' : ''}`;
+    el.title = n ? `${t.name} ×${n}` : '???';
+    el.innerHTML = `<span>${t.emoji}</span>${n ? `<b>×${n}</b>` : ''}`;
+    box.appendChild(el);
+  }
+  $('prizeCount').textContent = String(total).padStart(3, '0');
+}
+
+// ---------- Controls ----------
+function holdButton(id, dir) {
+  const el = $(id);
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); claw.move = dir; el.classList.add('pressed'); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => el.addEventListener(ev, () => {
+    if (claw.move === dir) claw.move = 0;
+    el.classList.remove('pressed');
+  }));
+}
+holdButton('clawLeft', -1);
+holdButton('clawRight', 1);
+$('grab').addEventListener('click', clawPlay);
+clawCanvas.addEventListener('pointerdown', (e) => {
+  clawCanvas.setPointerCapture(e.pointerId);
+  const r = clawCanvas.getBoundingClientRect();
+  claw.dragX = (e.clientX - r.left) / csc;
+});
+clawCanvas.addEventListener('pointermove', (e) => {
+  if (claw.dragX === null) return;
+  const r = clawCanvas.getBoundingClientRect();
+  claw.dragX = (e.clientX - r.left) / csc;
+});
+['pointerup', 'pointercancel'].forEach((ev) => clawCanvas.addEventListener(ev, () => { claw.dragX = null; }));
+
+// fill the claw machine and let the prizes settle into a pile
+function fillClaw() {
+  claw.prizes = [];
+  stockMachine(STOCK, false);
+  claw.settling = true;
+  for (let i = 0; i < 240; i++) stepPrizes(1 / 120);
+  claw.settling = false;
+}
+function resetClaw() {
+  claw.collection = {}; claw.misses = 0; claw.held = null; claw.move = 0;
+  claw.state = 'idle'; claw.x = HOME_X; claw.y = RAIL_Y; claw.angle = OPEN_ANGLE;
+  fillClaw();
+  renderShelf();
+}
+
 // ---------- Save / load ----------
 const TYPE_LIST = ['coin', 'big', 'star', 'gem'];
 function save() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       credits, won, spins, soundOn, daily, t: machine.t,
+      claw: { collection: claw.collection, misses: claw.misses },
       coins: machine.coins.map((c) => [Math.round(c.x * 10) / 10, Math.round(c.y * 10) / 10, c.layer, TYPE_LIST.indexOf(c.type)]),
     }));
   } catch (e) { /* storage unavailable */ }
@@ -1635,6 +2525,10 @@ function load() {
     won = Number(s.won) || 0;
     spins = Number(s.spins) || 0;
     soundOn = s.soundOn !== false;
+    if (s.claw && typeof s.claw === 'object') {
+      claw.collection = s.claw.collection && typeof s.claw.collection === 'object' ? s.claw.collection : {};
+      claw.misses = Number(s.claw.misses) || 0;
+    }
     if (s.daily && typeof s.daily.last === 'string') daily = { last: s.daily.last, streak: Number(s.daily.streak) || 0 };
     machine.t = Number(s.t) || 0;
     machine.front = machine.frontAt(machine.t);
@@ -1646,9 +2540,12 @@ function load() {
 
 // ---------- Start ----------
 if (!load()) machine.fill();
+fillClaw();
+renderShelf();
 $('sound').textContent = soundOn ? '🔊' : '🔇';
 resize();
-window.addEventListener('resize', resize);
+clawResize();
+window.addEventListener('resize', () => { resize(); clawResize(); });
 updateHud();
 renderChanger();
 setInterval(renderChanger, 1000);
