@@ -20,16 +20,36 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
-  margin: 0; background: radial-gradient(ellipse at 50% 0%, #241443, var(--bg) 60%) fixed;
+  margin: 0; background-color: var(--bg);
+  /* arcade carpet: neon squiggles and stars on dark */
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(80, 40, 140, .55), transparent 60%),
+    radial-gradient(circle at 20% 30%, rgba(46,242,255,.10) 0 3px, transparent 4px),
+    radial-gradient(circle at 70% 80%, rgba(255,62,165,.12) 0 4px, transparent 5px),
+    radial-gradient(circle at 85% 20%, rgba(255,210,62,.10) 0 2px, transparent 3px),
+    repeating-linear-gradient(135deg, transparent 0 22px, rgba(255,62,165,.05) 22px 24px, transparent 24px 60px);
+  background-size: 100% 100%, 90px 90px, 120px 120px, 70px 70px, auto;
+  background-attachment: fixed;
   color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  display: flex; justify-content: center; align-items: flex-start;
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 button { font: inherit; color: inherit; cursor: pointer; }
 
+/* Arcade floor */
+.arcade-sign {
+  text-align: center; margin: 18px 16px 0; font-weight: 900; letter-spacing: .3em;
+  font-size: clamp(.9rem, 3.5vw, 1.1rem); color: #fff;
+  text-shadow: 0 0 6px var(--neon-yellow), 0 0 18px var(--neon-yellow);
+}
+.floor {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;
+  gap: 4px 20px; padding: 0 0 24px;
+}
+
 .cabinet {
-  width: 100%; max-width: 480px; margin: 12px 16px 24px; padding: 12px 12px 16px;
+  width: calc(100% - 32px); max-width: 480px; margin: 12px 16px 0; padding: 12px 12px 16px;
   background: linear-gradient(180deg, var(--cab2), var(--cab) 30%, #120a24);
   border-radius: 22px; position: relative;
   box-shadow: 0 0 0 3px #3a2366, 0 0 0 6px #120a24, 0 0 40px rgba(255, 62, 165, .25), 0 20px 50px rgba(0,0,0,.6);
@@ -151,50 +171,70 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
 }
 #refill { color: var(--neon-yellow); }
 
-.tabs { display: flex; gap: 6px; margin: 10px 0 0; }
-.tab {
-  flex: 1; border: 1px solid #4a2a7a; background: #1c1034; color: var(--muted);
-  border-radius: 10px; padding: 8px 6px; font-weight: 700; font-size: .9rem;
+#freeReady {
+  display: none; border: 0; border-radius: 999px; padding: 5px 12px; font-size: .78rem; font-weight: 800;
+  background: var(--neon-yellow); color: #2a1600; box-shadow: 0 0 14px rgba(255,210,62,.6);
+  animation: readyPulse 1.2s ease-in-out infinite;
 }
-.tab.active {
-  color: #fff; background: linear-gradient(180deg, #3a1d66, #24133f);
-  box-shadow: 0 0 0 1px var(--neon-pink), 0 0 14px rgba(255,62,165,.35);
-}
-#pusherView[hidden], #clawView[hidden] { display: none; }
+#freeReady.show { display: inline-block; }
+@keyframes readyPulse { 50% { box-shadow: 0 0 24px rgba(255,210,62,.95); transform: scale(1.05); } }
 
-.claw-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; margin: 10px 0 8px; }
-.led.small span { font-size: clamp(1.1rem, 5vw, 1.4rem); }
-.claw-price { text-align: center; font-size: .7rem; letter-spacing: .14em; color: var(--neon-yellow); text-shadow: 0 0 8px rgba(255,210,62,.5); line-height: 1.4; }
-.claw-panel { grid-template-columns: minmax(0, 1fr) auto; }
-.claw-controls { display: flex; align-items: center; gap: 10px; }
-.arrow {
-  width: 56px; height: 56px; border-radius: 14px; border: 0; font-size: 1.4rem; color: #fff;
-  background: linear-gradient(180deg, #4b5cff, #2a35a8);
-  box-shadow: 0 5px 0 #18206b, 0 0 14px rgba(75,92,255,.45);
-  transition: transform .06s, box-shadow .06s; touch-action: none;
+/* Coin machine (daily free coins) */
+.changer {
+  width: calc(100% - 32px); max-width: 300px; margin: 12px 16px 0; padding: 12px 12px 14px; position: relative;
+  background: linear-gradient(180deg, #123a52, #0b2236 35%, #081626);
+  border-radius: 22px 22px 14px 14px; text-align: center;
+  box-shadow: 0 0 0 3px #1d5a7a, 0 0 0 6px #06101c, 0 0 40px rgba(46,242,255,.22), 0 20px 50px rgba(0,0,0,.6);
 }
-.arrow:active, .arrow.pressed { transform: translateY(4px); box-shadow: 0 1px 0 #18206b, 0 0 18px rgba(75,92,255,.7); }
-.arrow:disabled { filter: grayscale(.8) brightness(.6); }
-.drop-btn.grab { background: radial-gradient(circle at 50% 35%, #ffe27a, #ffb52e 45%, #b36b00 100%); box-shadow: 0 8px 0 #6e4200, 0 10px 18px rgba(0,0,0,.6), 0 0 26px rgba(255,181,46,.55), inset 0 -6px 12px rgba(0,0,0,.25); color: #3a1f00; text-shadow: 0 1px 0 rgba(255,255,255,.4); }
-.drop-btn.grab:active, .drop-btn.grab.pressed { box-shadow: 0 2px 0 #6e4200, 0 4px 10px rgba(0,0,0,.6), 0 0 34px rgba(255,181,46,.8), inset 0 -6px 12px rgba(0,0,0,.25); }
-.drop-btn.grab::after { display: none; }
-
-.shelf { margin-top: 14px; background: linear-gradient(180deg, #2a1748, #160c2b); border-radius: 14px; padding: 10px 12px 12px; box-shadow: inset 0 0 0 2px #4a2a7a; }
-.shelf h2 { margin: 0 0 8px; font-size: .8rem; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
-.shelf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
-.shelf-item {
-  position: relative; aspect-ratio: 1; border-radius: 10px; display: grid; place-items: center;
-  background: #120a22; box-shadow: inset 0 0 0 2px var(--rc, #3a2a5a); font-size: 30px;
+.changer h2 {
+  margin: 2px 0 10px; font-size: 1.35rem; font-weight: 900; letter-spacing: .1em; color: #fff;
+  text-shadow: 0 0 6px var(--neon-cyan), 0 0 16px var(--neon-cyan), 0 0 30px var(--neon-cyan);
 }
-.shelf-item.locked span { filter: brightness(0) opacity(.35); }
-.shelf-item.rare { --rc: #c063ff; }
-.shelf-item.super { --rc: #ffd23e; box-shadow: inset 0 0 0 2px var(--rc), 0 0 12px rgba(255,210,62,.35); }
-.shelf-item b {
-  position: absolute; right: 3px; bottom: 2px; font-size: .65rem; color: #fff;
-  background: rgba(0,0,0,.6); border-radius: 6px; padding: 0 4px;
+.changer h2 small { display: block; font-size: .55em; letter-spacing: .3em; color: var(--neon-yellow); text-shadow: 0 0 8px var(--neon-yellow); }
+.screen {
+  background: #04090f; border-radius: 10px; padding: 10px 8px; margin-bottom: 10px;
+  box-shadow: inset 0 0 0 2px #17384d, inset 0 4px 14px rgba(0,0,0,.9);
+  font-family: "Courier New", monospace; font-weight: 900;
 }
-.shelf-item.pop { animation: shelfPop .6s cubic-bezier(.3,1.6,.5,1); }
-@keyframes shelfPop { 0% { transform: scale(.3); } 100% { transform: scale(1); } }
+.screen .amount { font-size: 2.1rem; color: var(--neon-yellow); text-shadow: 0 0 8px var(--neon-yellow); line-height: 1.1; }
+.screen .label { font-size: .7rem; letter-spacing: .18em; color: var(--muted); }
+.screen .wait { font-size: 1.5rem; color: var(--neon-cyan); text-shadow: 0 0 8px var(--neon-cyan); }
+.streak { display: flex; justify-content: center; gap: 6px; margin: 2px 0 10px; }
+.streak i {
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-style: normal;
+  font-size: .62rem; font-weight: 900; color: #5c6b80; background: #0d1d2c; box-shadow: inset 0 0 0 2px #1d3a50;
+}
+.streak i.on { color: #3a2400; background: radial-gradient(circle at 40% 35%, #fff3b0, #f5c53a 55%, #b07a12); box-shadow: 0 0 10px rgba(255,210,62,.6); }
+.streak i.next { box-shadow: inset 0 0 0 2px var(--neon-yellow); color: var(--neon-yellow); }
+.streak-label { font-size: .7rem; letter-spacing: .15em; color: var(--muted); margin-bottom: 4px; }
+.dispense-btn {
+  width: 100%; border: 0; border-radius: 14px; padding: 14px 8px; font-weight: 900; font-size: 1.15rem; letter-spacing: .12em;
+  background: linear-gradient(180deg, #ffe680, var(--neon-yellow) 50%, #d39b00); color: #3a2400;
+  box-shadow: 0 6px 0 #8a6200, 0 8px 16px rgba(0,0,0,.5), 0 0 22px rgba(255,210,62,.5);
+  transition: transform .06s, box-shadow .06s;
+}
+.dispense-btn:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 1px 0 #8a6200, 0 3px 8px rgba(0,0,0,.5); }
+.dispense-btn:disabled { filter: grayscale(.9) brightness(.55); cursor: not-allowed; box-shadow: 0 6px 0 #3b3b3b, 0 8px 16px rgba(0,0,0,.5); }
+.chute {
+  margin: 16px auto 0; width: 70%; height: 74px; border-radius: 6px 6px 14px 14px; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #02060b, #0a1622); box-shadow: inset 0 0 0 2px #1d3a50, inset 0 10px 18px rgba(0,0,0,.9);
+}
+.chute::before {
+  content: ''; position: absolute; left: 35%; right: 35%; top: 0; height: 8px; border-radius: 0 0 6px 6px;
+  background: #000; box-shadow: 0 0 0 2px #2c5570;
+}
+.chute .tok {
+  position: absolute; top: -20px; width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #fff3b0, #f5c53a 55%, #b07a12);
+  box-shadow: inset 0 0 0 2px rgba(122,79,6,.7), 0 1px 2px rgba(0,0,0,.6);
+  font-size: 11px; line-height: 22px; color: rgba(255,240,170,.9); font-weight: 900;
+  animation: tokFall .5s cubic-bezier(.4,0,1,1) forwards;
+}
+@keyframes tokFall {
+  to { transform: translateY(var(--land)) rotate(var(--rot)); }
+}
+.changer .hint { font-size: .72rem; color: var(--muted); margin-top: 8px; }
+.led.creditsbump span { animation: ledBump .35s; }
 
 .help {
   margin-top: 10px; font-size: .82rem; color: var(--muted); line-height: 1.5;
@@ -205,24 +245,20 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
 .help b { color: var(--text); }
 
 @media (prefers-reduced-motion: reduce) {
-  .marquee h1, .bulbs i, .reel.hit { animation: none !important; }
+  .marquee h1, .bulbs i, .reel.hit, #freeReady { animation: none !important; }
 }
   </style>
 </head>
 <body>
+  <div class="arcade-sign">★ ARCADE ★</div>
+  <main class="floor">
   <div class="cabinet">
     <header class="marquee" id="marquee">
       <div class="bulbs"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      <h1 id="title">COIN <span>PUSHER</span></h1>
+      <h1>COIN <span>PUSHER</span></h1>
       <div class="bulbs"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
     </header>
 
-    <nav class="tabs" role="tablist">
-      <button class="tab active" id="tabPusher" role="tab" aria-selected="true">🪙 Coin Pusher</button>
-      <button class="tab" id="tabClaw" role="tab" aria-selected="false">🧸 Claw Machine</button>
-    </nav>
-
-    <div id="pusherView">
     <div class="slot" aria-label="Lucky slot">
       <div class="reel" id="reel0"><span>7</span></div>
       <div class="reel" id="reel1"><span>7</span></div>
@@ -240,34 +276,9 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
       <button class="drop-btn" id="drop">DROP<small>1 CREDIT</small></button>
       <div class="led won" id="wonBox"><label>WON</label><span id="won">000</span></div>
     </div>
-    </div>
-
-    <div id="clawView" hidden>
-      <div class="claw-top">
-        <div class="led small"><label>TIME</label><span id="clawTime">--</span></div>
-        <div class="claw-price">5 CREDITS<br>PER PLAY</div>
-        <div class="led small won"><label>PRIZES</label><span id="prizeCount">0</span></div>
-      </div>
-      <div class="playfield">
-        <canvas id="claw" aria-label="Claw machine. Move the claw, then grab a prize."></canvas>
-        <div class="banner" id="clawBanner"></div>
-      </div>
-      <div class="panel claw-panel">
-        <div class="led"><label>CREDITS</label><span id="clawCredits">000</span></div>
-        <div class="claw-controls">
-          <button class="arrow" id="clawLeft" aria-label="Move claw left">◀</button>
-          <button class="drop-btn grab" id="grab">PLAY<small>5 CREDITS</small></button>
-          <button class="arrow" id="clawRight" aria-label="Move claw right">▶</button>
-        </div>
-      </div>
-      <section class="shelf">
-        <h2>Prize Shelf</h2>
-        <div class="shelf-grid" id="shelf"></div>
-      </section>
-    </div>
 
     <div class="footer">
-      <span id="refill"></span>
+      <span><button id="freeReady" title="Go to the coin machine">🎁 Free coins ready!</button> <span id="refill"></span></span>
       <span>
         <button id="sound" title="Toggle sound">🔊</button>
         <button id="reset" title="Start over">Reset</button>
@@ -277,163 +288,105 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
     <details class="help">
       <summary>How to play</summary>
       <ul>
-        <li><b>Tap the playfield</b> to drop a coin right there, or press <b>DROP</b> (or Space) to drop from the moving chute. Hold to keep dropping. There's a short wait between drops, shown as a sweep on the DROP button.</li>
+        <li><b>Tap the playfield</b> to drop a coin right there, or press <b>DROP</b> (or Space) to drop from the moving chute. Hold to keep dropping.</li>
         <li>The shelf slides back and forth. The back wall scrapes coins off the shelf onto the table, and the shelf pushes them forward.</li>
-        <li>Coins pushed off the <b>front edge</b> are yours. Coins that fall off the <b>sides</b> go to the house.</li>
-        <li>Drop a coin through the moving <b>LUCKY</b> gate on the back wall to earn a slot spin. Coins take a moment to fall, so aim where the gate is <b>going</b>, not where it is. Match 3 for coin showers, a <b>10</b> big coin, a <b>★</b> bonus token or the <b>💎</b> jackpot gem.</li>
+        <li>The front of the table is a <b>ramp</b> that slopes up to the edge, so loose coins slide back, and a raised <b>lip</b> at the very edge kicks them back again. Coins pushed over the <b>front edge</b> are yours. Coins that fall off the <b>sides</b> go to the house.</li>
+        <li>Coins roll down inside the back wall and slide out of the slot onto the shelf. If one rolls past the moving <b>LUCKY</b> window on the way down, you earn a slot spin. Match 3 for coin showers, a <b>10</b> big coin, a <b>★</b> bonus token or the <b>💎</b> jackpot gem.</li>
         <li>Push a ★ off the front for 3 free spins. Push a 💎 off for 50 credits.</li>
-        <li>Running low? You get a free credit every 30 seconds while you have fewer than 3.</li>
-        <li><b>Claw Machine:</b> spend 5 credits for a play. Move the claw with ◀ ▶ (or drag on the machine, or the arrow keys) and press <b>GRAB</b> (or Space) before the 15 seconds run out. The claw is weak, like a real one: grab prizes near their middle, and watch out for slips on the way to the chute. Miss 6 times in a row and the next grab is guaranteed strong.</li>
-        <li>Prizes you win go on your <b>Prize Shelf</b>. Rare prizes are heavier and harder to hold.</li>
+        <li>Visit the <b>Coin Machine</b> once a day for free coins. Come back on consecutive days to build a streak for a bigger payout.</li>
+        <li>Running low? You also get a free credit every 15 seconds while you have fewer than 5.</li>
       </ul>
     </details>
   </div>
 
+  <section class="changer" id="changer" aria-label="Coin machine: free coins every day">
+    <h2><small>FREE DAILY</small>COIN MACHINE</h2>
+    <div class="screen" id="changerScreen"></div>
+    <div class="streak-label" id="streakLabel">DAILY STREAK</div>
+    <div class="streak" id="streak"></div>
+    <button class="dispense-btn" id="dispense">DISPENSE</button>
+    <div class="chute" id="chute" aria-hidden="true"></div>
+    <div class="hint">One free payout per day. Resets at midnight.</div>
+  </section>
+  </main>
+
   <script>
 // ======================= SIM-START =======================
-// The physics runs in "table units": x across (0..W), y from the back wall (0) to the front edge (L),
-// and z = height above the surface a coin sits on. Coins stack, slide with friction, and only tip
-// over an edge when the balance point of the coin plus everything resting on it is past that edge.
+// The physics runs in "table units": x across (0..W), y from the back wall (0) to the front edge (L).
 const W = 300;
 const L = 360;
 const DECK_H = 16;          // height of the sliding shelf
 const FRONT_MIN = 45;       // shelf front edge, fully retracted
 const FRONT_MAX = 115;      // shelf front edge, fully extended
 const PERIOD = 3.2;         // seconds per push cycle
-const SIDE_WALL_END = 300;  // past this depth the sides are open and coins can fall off
-const ITERATIONS = 3;
-const GRAVITY = 1400;
-const FRICTION = 14;        // how quickly sliding coins come to rest
-const MAX_SPEED = 140;
-const KEEP = 0.35;           // share of each step's motion kept as momentum (coins barely bounce)
-const CELL = 40;
-const GX = 12;               // grid columns (x from -80 to 400)
-const GY = 14;               // grid rows (y from -80 to 480)
-const JAM = 2;
-const GRIP = 3;
-const STIFF = 0.5;           // how firmly overlaps are pushed apart each pass           // extra resistance per coin of weight resting on top (friction)            // overlap left after solving that makes a squeezed coin ride up
-const MAX_STACK = 3;        // coins per pile
+const SIDE_WALL_END = 290;  // past this depth the sides are open and coins can fall off
+const ITERATIONS = 6;
+const SLOPE_START = 270;    // the front strip rises toward the edge, so loose coins slide back
+const SLOPE_H = 26;         // ramp height at the front lip
+const SLOPE_PULL = 8;       // how fast coins slide back down the ramp (units/sec)
+const LIP_START = L - 14;   // a short, steep kicker lip right at the front edge
+const LIP_H = 10;           // extra height the lip adds at the very edge
+const LIP_PULL = 40;        // coins on the lip slide back much faster
+const slopeH = (y) => (y <= SLOPE_START ? 0 : SLOPE_H * Math.min(1, (y - SLOPE_START) / (LIP_START - SLOPE_START)));
+const rampH = (y) => slopeH(y) + (y <= LIP_START ? 0 : LIP_H * Math.min(1, (y - LIP_START) / (L - LIP_START)));
 
 const TYPES = {
-  coin: { r: 13, h: 3.2, mass: 1, value: 1 },
-  big:  { r: 19, h: 4.2, mass: 2.4, value: 10 },
-  star: { r: 15, h: 3.6, mass: 1.2, value: 0 },
-  gem:  { r: 15, h: 3.6, mass: 1.2, value: 0 },
+  coin: { r: 13, value: 1 },
+  big:  { r: 19, value: 10 },
+  star: { r: 15, value: 0 },
+  gem:  { r: 15, value: 0 },
 };
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-let nextCoinId = 1;
 
 class Machine {
   constructor() {
     this.coins = [];
     this.t = 0;
     this.front = FRONT_MIN;
-    this.pfront = FRONT_MIN;
-    this.cells = Array.from({ length: 2 * GX * GY }, () => []);
   }
 
   frontAt(t) {
     return FRONT_MIN + (FRONT_MAX - FRONT_MIN) * (0.5 - 0.5 * Math.cos((2 * Math.PI * t) / PERIOD));
   }
 
-  // layer 1 = on the sliding shelf, layer 0 = on the table
-  add(x, y, layer, type = 'coin', z = 0, vz = 0) {
-    const T = TYPES[type];
-    const c = {
-      id: nextCoinId++, x, y, z, vx: 0, vy: 0, vz, layer, type,
-      r: T.r, h: T.h, m: T.mass,
-      support: null, grounded: false, gz: 0, am: T.mass, nb: [],
-      px: x, py: y, pe: (layer ? DECK_H : 0) + z,   // position at the previous step, for smooth drawing lastDx: 0, lastDy: 0, x0: x, y0: y, sx: x, sy: y,
-    };
+  add(x, y, layer, type = 'coin') {
+    const c = { x, y, layer, type, r: TYPES[type].r, elev: layer ? DECK_H : 0 };
     this.coins.push(c);
     return c;
   }
 
-  // Each step, every coin gets a list of nearby coins on the same surface; all passes reuse it.
-  findNeighbors() {
-    const cells = this.cells;
-    for (const list of cells) list.length = 0;
-    const cellOf = (c) => {
-      const gx = clamp(Math.floor(c.x / CELL) + 2, 0, GX - 1);
-      const gy = clamp(Math.floor(c.y / CELL) + 2, 0, GY - 1);
-      return [gx, gy];
-    };
-    for (const c of this.coins) {
-      c.nb.length = 0;
-      const [gx, gy] = cellOf(c);
-      cells[(c.layer * GX + gx) * GY + gy].push(c);
-    }
-    for (const a of this.coins) {
-      const [gx, gy] = cellOf(a);
-      for (let x = Math.max(gx - 1, 0); x <= Math.min(gx + 1, GX - 1); x++) {
-        for (let y = Math.max(gy - 1, 0); y <= Math.min(gy + 1, GY - 1); y++) {
-          for (const b of cells[(a.layer * GX + x) * GY + y]) {
-            if (b.id <= a.id) continue;
-            const lim = a.r + b.r + 6;
-            const dx = b.x - a.x;
-            const dy = b.y - a.y;
-            if (dx * dx + dy * dy < lim * lim) { a.nb.push(b); b.nb.push(a); }
-          }
-        }
-      }
-    }
-  }
-
+  // layer 1 = riding on the shelf, layer 0 = on the table
   step(dt, onOut) {
-    this.pfront = this.front;
-    for (const c of this.coins) { c.px = c.x; c.py = c.y; c.pe = (c.layer ? DECK_H : 0) + c.z; }
     this.t += dt;
     const next = this.frontAt(this.t);
     const df = next - this.front;
     this.front = next;
 
-    // 1. Coins resting on something move with it (static friction), then slide and fall
-    const damp = Math.exp(-FRICTION * dt);
     for (const c of this.coins) {
-      c.sx = c.x;
-      c.sy = c.y;
-      if (c.grounded) {
-        if (c.support) {
-          c.x += c.support.lastDx * 0.97;
-          c.y += c.support.lastDy * 0.97;
-        } else if (c.layer === 1) {
-          c.y += df;
-        }
-        c.vx *= damp;
-        c.vy *= damp;
-        if (c.vx * c.vx + c.vy * c.vy < 9) { c.vx = 0; c.vy = 0; }
-      }
-      c.x0 = c.x;
-      c.y0 = c.y;
-      c.x += c.vx * dt;
-      c.y += c.vy * dt;
-      c.vz -= GRAVITY * dt;
-      c.z += c.vz * dt;
+      if (c.layer === 1) c.y += df;
+      else if (c.y > LIP_START) c.y -= LIP_PULL * dt;       // the lip kicks coins back
+      else if (c.y > SLOPE_START) c.y -= SLOPE_PULL * dt;   // gravity on the ramp
     }
 
-    // 2. Keep coins out of walls, the pusher, and each other
-    this.findNeighbors();
     for (let i = 0; i < ITERATIONS; i++) {
       this.constrain();
       this.collide();
     }
     this.constrain();
-    this.climbJams();
 
-    // 3. Land on whatever is underneath
-    this.resolveGround();
-
-    // 4. Velocity comes from how far each coin actually moved
+    const keep = [];
     for (const c of this.coins) {
-      c.vx = clamp(KEEP * (c.x - c.x0) / dt, -MAX_SPEED, MAX_SPEED);
-      c.vy = clamp(KEEP * (c.y - c.y0) / dt, -MAX_SPEED, MAX_SPEED);
-      c.lastDx = c.x - c.sx;
-      c.lastDy = c.y - c.sy;
+      if (c.layer === 1 && c.y > this.front) {
+        // slid off the front of the shelf onto the table
+        c.layer = 0;
+        c.y = this.front + c.r;
+      }
+      if (c.layer === 0 && c.y > L) { onOut(c, 'win'); continue; }
+      if (c.layer === 0 && (c.x < 0 || c.x > W)) { onOut(c, 'lost'); continue; }
+      keep.push(c);
     }
-
-    // 5. Tip over edges
-    this.checkEdges(onOut);
+    this.coins = keep;
   }
 
   constrain() {
@@ -441,157 +394,72 @@ class Machine {
     for (const c of this.coins) {
       const r = c.r;
       if (c.layer === 1) {
-        if (c.y < r) c.y = r;                                  // back wall scrapes the shelf
+        if (c.y < r) c.y = r;                       // back wall
         c.x = clamp(c.x, r, W - r);
       } else {
-        if (c.z < DECK_H && c.y < f + r) {                     // pusher face
-          const fix = f + r - c.y;
-          c.y += fix;
-          if (fix > 1) c.y0 += fix - 1;   // only the pusher's own motion becomes speed, not the snap
-        }
-        if (c.y < SIDE_WALL_END) c.x = clamp(c.x, r, W - r);   // side walls
+        if (c.y < f + r) c.y = f + r;               // shelf front face
+        if (c.y < SIDE_WALL_END) c.x = clamp(c.x, r, W - r);
       }
     }
   }
 
   collide() {
-    for (const a of this.coins) {
-      for (const b of a.nb) {
-        if (b.id <= a.id) continue;
-        // coins at different heights pass over each other (one is stacked on the other)
-        if (Math.abs(a.z - b.z) >= Math.min(a.h, b.h) * 0.85) continue;
-        let dx = b.x - a.x;
-        let dy = b.y - a.y;
-        const min = a.r + b.r;
-        const d2 = dx * dx + dy * dy;
-        if (d2 >= min * min) continue;
-        let d = Math.sqrt(d2);
-        if (d < 1e-4) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d = Math.hypot(dx, dy); }
-        const corr = Math.min(min - d, 4) * STIFF;
-        // friction: a coin with weight on top of it is much harder to shove
-        const wa = 1 / (a.m + (a.grounded ? GRIP * (a.am - a.m) : 0));
-        const wb = 1 / (b.m + (b.grounded ? GRIP * (b.am - b.m) : 0));
-        const nx = (dx / d) * corr / (wa + wb);
-        const ny = (dy / d) * corr / (wa + wb);
-        a.x -= nx * wa; a.y -= ny * wa;
-        b.x += nx * wb; b.y += ny * wb;
-      }
+    const cell = 40;
+    const grid = new Map();
+    const coins = this.coins;
+    for (let i = 0; i < coins.length; i++) {
+      const c = coins[i];
+      const key = c.layer * 1e6 + (Math.floor(c.x / cell) + 50) * 1000 + (Math.floor(c.y / cell) + 50);
+      let list = grid.get(key);
+      if (!list) grid.set(key, (list = []));
+      list.push(i);
     }
-  }
-
-  // When coins are jammed so tightly they can't separate, the one being pushed from
-  // behind rides up onto the one in front, which is how real piles form.
-  climbJams() {
-    for (const a of this.coins) {
-      if (!a.grounded) continue;
-      for (const b of a.nb) {
-        if (a.climbed || b.climbed || Math.abs(a.z - b.z) >= Math.min(a.h, b.h) * 0.85) continue;
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const min = a.r + b.r;
-        const d2 = dx * dx + dy * dy;
-        if (d2 > (min - JAM) * (min - JAM)) continue;
-        // the coin further back climbs over the one further forward
-        const [lo, hi] = a.y < b.y ? [a, b] : [b, a];
-        if (lo.z + hi.h > MAX_STACK * TYPES.coin.h) continue;
-        lo.z = hi.z + hi.h + 0.2;
-        lo.vz = 0;
-        lo.grounded = false;
-        lo.climbed = true;
-        // nudge it toward the coin it's climbing so it actually rests on top
-        const nx = dx * (lo === a ? 0.25 : -0.25);
-        const ny = dy * (lo === a ? 0.25 : -0.25);
-        lo.x += nx; lo.y += ny;
-        lo.x0 += nx; lo.y0 += ny;   // so the nudge doesn't turn into speed
-      }
-    }
-    for (const c of this.coins) c.climbed = false;
-  }
-
-  resolveGround() {
-    // lowest coins first, so supports have settled before the coins resting on them
-    const sorted = this.coins.slice().sort((a, b) => a.z - b.z);
-    for (const c of sorted) {
-      let best = 0;
-      let sup = null;
-      for (const o of c.nb) {
-        if (o.z >= c.z) continue;
-        const top = o.z + o.h;
-        if (top > c.z + 1.6) continue;
-        const dx = o.x - c.x;
-        const dy = o.y - c.y;
-        const reach = o.r + c.r * 0.3;   // resting on its rim still counts
-        if (dx * dx + dy * dy < reach * reach && top > best) { best = top; sup = o; }
-      }
-      c.gz = best;
-      if (c.z <= best + 0.05) {
-        c.z = best;
-        if (c.vz < -160) {
-          c.vz = -c.vz * 0.22;        // a little bounce when dropped
-          c.grounded = false;
-        } else {
-          c.vz = 0;
-          c.grounded = true;
+    for (let i = 0; i < coins.length; i++) {
+      const a = coins[i];
+      const gx = Math.floor(a.x / cell) + 50;
+      const gy = Math.floor(a.y / cell) + 50;
+      for (let ox = -1; ox <= 1; ox++) {
+        for (let oy = -1; oy <= 1; oy++) {
+          const list = grid.get(a.layer * 1e6 + (gx + ox) * 1000 + (gy + oy));
+          if (!list) continue;
+          for (const j of list) {
+            if (j <= i) continue;
+            const b = coins[j];
+            let dx = b.x - a.x;
+            let dy = b.y - a.y;
+            const min = a.r + b.r;
+            let d2 = dx * dx + dy * dy;
+            if (d2 >= min * min) continue;
+            let d = Math.sqrt(d2);
+            if (d < 1e-4) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d = Math.hypot(dx, dy); }
+            const push = Math.min((min - d) * 0.5, 2.5);
+            const nx = dx / d;
+            const ny = dy / d;
+            a.x -= nx * push; a.y -= ny * push;
+            b.x += nx * push; b.y += ny * push;
+          }
         }
-        c.support = sup;
-      } else {
-        c.grounded = false;
-        c.support = null;
       }
     }
   }
 
-  checkEdges(onOut) {
-    // Total weight and balance point of each coin plus everything stacked on it
-    const order = this.coins.slice().sort((a, b) => b.z - a.z);
-    for (const c of order) { c.am = c.m; c.ax = c.x * c.m; c.ay = c.y * c.m; }
-    for (const c of order) {
-      const s = c.support;
-      if (s && s.layer === c.layer) { s.am += c.am; s.ax += c.ax; s.ay += c.ay; }
-    }
-
-    let out = null;
-    for (const c of this.coins) {
-      if (c.support && c.support.layer === c.layer) continue;
-      const bx = c.ax / c.am;
-      const by = c.ay / c.am;
-      if (c.layer === 0) {
-        const offFront = by > L;
-        const offSide = by > SIDE_WALL_END && (bx < 0 || bx > W);
-        if (offFront || offSide) {
-          (out || (out = new Set())).add(c);
-          onOut(c, offFront ? 'win' : 'lost');
-        }
-      } else if (by > this.front) {
-        // tipped off the front of the shelf: drop onto the table below
-        c.layer = 0;
-        c.z += DECK_H;
-        c.grounded = false;
-        c.support = null;
-        c.vy = Math.max(c.vy, 20);
-      }
-    }
-    if (out) this.coins = this.coins.filter((c) => !out.has(c));
-  }
-
-  // Start from a machine that's already been played for a while (piles, coins on the brink),
-  // recorded from this simulation, with a little jitter so every new game looks different.
+  // A full table so the pushing starts right away
   fill() {
     this.coins = [];
-    this.t = START_STATE.t;
-    this.front = this.frontAt(this.t);
-    const types = ['coin', 'big', 'star', 'gem'];
-    const d = START_STATE.coins;
-    for (let i = 0; i < d.length; i += 4) {
-      const c = this.add(d[i] / 10 + (Math.random() - 0.5) * 0.6, d[i + 1] / 10 + (Math.random() - 0.5) * 0.4, d[i + 3] >> 2, types[d[i + 3] & 3], d[i + 2] / 10);
-      c.grounded = true;
+    const r = TYPES.coin.r;
+    let row = 0;
+    for (let y = FRONT_MAX + r + 2; y < L - r - 4; y += r * 1.8, row++) {
+      for (let x = r + (row % 2 ? r : 2); x < W - r; x += r * 2.05) {
+        this.add(x + (Math.random() - 0.5) * 3, y + (Math.random() - 0.5) * 3, 0);
+      }
     }
-    for (let i = 0; i < 30; i++) this.step(1 / 60, () => {});
+    for (let i = 0; i < 14; i++) this.add(r + Math.random() * (W - 2 * r), r + Math.random() * 60, 1);
+    // a couple of prizes to aim for
+    this.coins.splice(Math.floor(this.coins.length * 0.5), 1);
+    this.add(W * 0.35, L * 0.62, 0, 'big');
+    this.add(W * 0.68, L * 0.5, 0, 'star');
   }
 }
-
-// Recorded after 10 minutes of simulated play: [x, y, z] in tenths of a unit, then layer * 4 + type
-const START_STATE = {"t":1817.051,"coins":[2710,3552,0,0,2451,3628,32,0,247,3487,32,0,826,3289,0,0,403,3182,0,0,7,3586,32,0,2870,2803,32,0,669,3082,0,0,1485,3100,96,0,1162,3501,96,0,2908,3301,0,0,403,3182,96,1,901,3543,32,0,2388,3376,32,0,23,3632,64,0,2612,2847,96,0,13,3597,96,0,2146,2967,64,0,1203,3009,96,0,1068,3195,0,0,660,2761,96,0,2844,3033,64,0,910,3188,64,0,278,3230,32,0,514,3408,32,0,169,3417,64,0,153,2697,0,0,601,3454,96,0,579,3373,0,0,130,2979,0,0,1227,3596,64,0,2292,1979,0,0,2024,3567,32,0,151,3527,0,0,1630,3346,0,0,2122,3493,0,0,927,3529,0,0,92,3597,128,0,158,3267,0,0,2317,3094,0,0,1356,3326,96,0,645,3162,64,0,2386,3531,0,0,610,3520,64,0,2087,3216,0,0,2870,2776,64,0,392,2862,62,0,1300,3457,32,0,1618,3347,32,0,1223,2866,128,0,152,2938,32,0,411,2665,0,0,1349,3335,64,0,141,2825,96,0,1644,3168,64,0,418,3348,64,0,1536,3522,96,0,1893,2987,0,0,2870,2808,0,0,2366,2452,0,0,634,3178,32,0,631,2309,0,0,1408,2967,64,0,130,1885,64,0,942,3031,96,0,2729,3539,32,0,1214,3411,0,0,1400,3208,32,0,1440,2909,0,0,130,2967,64,0,1742,3060,96,0,928,2977,0,0,2870,2192,0,0,720,2819,0,0,2589,2586,0,0,638,1822,32,0,2621,2587,96,0,1446,3486,128,0,2158,2608,0,0,750,3486,128,0,394,2486,32,0,1208,2794,0,0,130,2429,0,0,1142,3228,32,0,1666,3072,32,0,1896,3105,64,0,355,3097,64,0,1878,3352,32,0,467,2919,0,0,987,2637,64,0,2870,1894,0,0,2655,3388,64,0,925,3606,96,0,869,3507,64,0,132,2094,36,0,866,2199,0,0,2904,3338,32,0,2568,3161,0,0,1067,3259,96,0,2591,2662,32,0,959,2717,0,0,1999,2454,32,0,2870,2477,0,0,1884,2687,32,0,667,2442,96,0,605,2171,96,0,1689,2194,96,0,2135,3317,32,0,1594,3423,64,0,2387,2823,32,0,1197,3118,64,0,2141,2903,0,0,2643,2407,32,0,1928,2729,0,0,2364,2767,0,0,1735,2659,64,0,2389,2494,32,0,935,2558,96,0,655,2048,0,0,896,2928,64,0,167,2434,96,0,226,3448,96,0,728,2659,64,0,2613,2845,0,0,2810,3602,64,0,638,2902,64,0,1635,3082,0,0,2870,2221,96,0,2610,2737,64,0,1916,2846,64,0,1344,2185,32,0,2652,2334,0,0,389,2406,0,0,130,1797,96,0,1436,2951,32,0,1906,2464,64,0,1185,2815,32,0,130,2148,68,0,408,3592,0,0,883,3249,32,0,2843,3112,96,0,1887,3382,0,0,2870,2543,32,0,1949,2446,0,0,656,2568,0,0,1403,3218,0,0,627,2139,64,0,1148,2863,64,0,863,2445,32,0,482,2577,64,0,2638,1822,96,0,798,3263,96,0,1661,2909,64,0,886,2705,32,0,962,3196,128,0,362,1971,32,0,878,1925,32,0,1657,2815,96,0,987,2983,32,0,235,2495,64,0,638,2575,32,0,1683,2816,0,0,2123,2899,32,0,653,2835,32,0,1891,2154,0,0,804,2346,128,0,1398,2391,0,0,2870,1940,96,0,413,2226,32,0,892,1937,64,0,2625,2752,128,0,415,2147,0,0,867,2185,32,0,2177,2645,32,0,1365,1925,32,0,2316,2165,96,0,130,1257,0,0,1943,2884,96,0,454,2594,96,0,428,3031,32,0,1113,2283,0,0,618,1789,0,0,2024,2074,32,0,130,1777,0,0,2673,2113,32,0,1925,2377,96,0,2647,2058,0,0,855,1896,96,0,1501,2445,32,0,1596,2132,0,0,2201,1546,32,0,2573,3163,32,0,709,2392,64,0,372,2056,96,0,1092,3373,64,0,2870,2281,32,0,1197,2555,32,0,2362,2613,96,0,881,2196,64,0,2414,2315,64,0,150,2056,0,2,2217,2145,64,0,683,3022,96,0,1652,2805,32,0,1694,2500,0,0,373,1875,0,0,2822,3089,32,0,377,2070,64,0,1090,2318,32,0,2109,2667,96,0,1091,2341,96,0,2608,2133,96,0,2870,1620,0,0,130,2154,100,0,2089,2649,64,0,1482,2718,64,0,628,1512,32,0,2505,2521,128,0,1412,2440,96,0,130,1545,32,0,2365,2827,64,0,1558,2428,64,0,629,2081,32,0,893,2463,0,0,1594,2060,32,0,1245,2611,64,0,2460,1633,96,0,2138,1894,96,0,1150,2540,0,0,2036,1938,0,0,130,390,0,4,1418,2692,32,0,2866,1362,96,0,2353,2568,64,0,1937,3081,32,0,2614,1601,32,0,442,2321,64,0,1828,2258,32,0,1047,2794,96,0,1426,2649,0,0,2411,1974,64,0,1279,1810,0,0,1574,1918,64,0,858,2226,96,0,2615,2478,64,0,2188,2276,32,0,2870,2519,64,0,582,2122,128,0,1194,2579,96,0,1310,2329,64,0,1310,2201,96,0,2870,2260,64,0,1144,1646,96,0,2610,1861,32,0,2601,1802,0,0,2353,2875,96,0,413,1917,128,0,373,1614,0,0,2622,2158,64,0,2808,3061,0,0,130,408,64,4,865,1515,96,0,1072,2078,96,0,2446,2239,32,0,1057,2387,64,0,418,1536,96,0,1851,2641,96,0,131,1537,96,0,2156,2398,64,0,883,1923,0,0,2159,2216,0,0,1289,1935,96,0,1541,1779,0,0,1261,2070,0,0,2864,1622,96,0,1134,2137,64,0,2371,1308,0,0,1102,2059,32,0,2056,2153,96,0,130,1517,0,0,130,1820,32,0,1079,1549,0,0,1508,1461,32,0,1794,1835,0,0,402,1552,64,0,2854,2001,64,0,1671,2453,96,0,2388,1727,32,0,1128,1800,32,0,2430,2200,0,0,300,1312,64,0,1423,2702,96,0,533,1181,96,0,1758,2251,64,0,668,1535,64,0,639,1797,64,0,2201,1603,96,0,895,586,0,4,1853,1984,96,0,358,1682,32,0,2483,2365,96,0,2160,1852,32,0,1987,1399,32,0,413,1244,32,0,1971,1674,32,0,847,1665,0,0,2447,1430,64,0,130,1611,64,0,1317,1953,64,0,2207,1511,0,0,2074,1296,96,0,130,401,32,4,1827,1905,32,0,845,1664,32,0,2382,1987,32,0,1512,2169,64,0,2416,1714,64,0,2870,1697,128,0,547,1220,64,0,2631,1254,32,0,2352,1726,0,0,1329,1287,0,0,1572,1651,64,0,379,1810,64,0,900,1257,96,0,2187,2417,96,0,2397,1917,96,0,1339,1547,0,0,2870,1875,32,0,1170,1475,64,0,390,395,0,4,2219,1267,32,0,1591,1797,32,0,1765,1576,0,0,1965,2096,64,0,1140,1469,32,0,846,1401,0,0,927,1306,64,0,1349,1664,32,0,153,1257,32,0,661,573,64,4,592,575,32,4,2641,1852,64,0,2870,1460,64,0,377,1353,0,0,1112,1774,64,0,2333,1279,96,0,130,375,96,4,618,1525,0,0,619,621,0,4,2870,1616,32,0,2430,1419,32,0,2614,1542,0,0,2647,1593,64,0,2586,1339,96,0,1830,1874,64,0,2550,574,0,4,1874,1725,96,0,2627,1267,0,0,2009,1679,0,0,443,370,64,4,1794,1139,32,0,926,1566,64,0,622,1265,0,0,2811,319,0,4,1143,1195,32,0,2047,1074,0,0,886,619,32,4,1759,1524,32,0,1547,1970,96,0,1551,980,0,0,2170,552,0,4,991,627,64,4,2856,433,32,4,2870,1360,0,0,2237,584,32,4,1979,1401,64,0,1740,1212,0,0,710,637,96,4,1831,1614,64,0,839,1354,32,0,1709,414,0,4,2316,1205,64,0,1563,1403,0,0,2152,1824,64,0,1976,1390,0,0,1430,570,0,4,2202,653,64,4,1740,485,32,4,1703,1093,64,0,2870,1356,32,0,2429,387,64,4,2571,501,32,4,951,330,0,4,1665,571,64,4,2215,1548,64,0,1682,523,96,4,2031,323,0,4,2034,336,32,4,2861,508,64,4,390,399,32,4,393,392,96,4,695,373,0,4,1455,558,32,4,1416,1219,32,0,893,359,32,4,2291,320,0,4,2295,324,32,4,1876,418,64,4,1085,1097,0,0,188,1274,96,0,841,323,64,4,2551,314,0,4,1155,568,0,4,636,315,32,4,2870,404,96,4,1471,309,0,4,1211,314,0,4,1852,327,96,4]};
 // ======================= SIM-END =======================
 
 // ---------- Setup ----------
@@ -600,10 +468,10 @@ const canvas = $('game');
 const ctx = canvas.getContext('2d');
 const machine = new Machine();
 const SAVE_KEY = 'coinPusher_v1';
-const START_CREDITS = 20;
+const START_CREDITS = 30;
+const REFILL_BELOW = 5;
 const DROP_COOLDOWN = 350;  // ms between paid drops
-const REFILL_BELOW = 3;
-const REFILL_SECS = 30;
+const REFILL_SECS = 15;
 
 let credits = START_CREDITS;
 let won = 0;
@@ -694,32 +562,12 @@ const sfx = {
 };
 
 // ---------- Projection (table units -> screen pixels) ----------
-// The camera looks down at the table at an angle: TILT squashes depth, ELEV is how much height shows.
 let cw = 0, ch = 0, k = 1, yTop = 0, cx0 = 0;
-const TILT = 0.8;
-const ELEV = 0.6;
-const WALL_H = 150;
-const CHUTE_ELEV = 128;
-const GATE_ELEV = 78;
-const RAIL_H = 22;
-function depthScale(y) { return 0.62 + 0.38 * (y / L); }
-function proj(x, y, elev = 0) {
-  const s = depthScale(y);
-  return {
-    x: cx0 + (x - W / 2) * k * s,
-    y: yTop + k * TILT * (0.62 * y + 0.19 * (y * y) / L) - elev * k * s * ELEV,
-    s,
-  };
-}
-function unprojectX(px) {
-  // the chute sits above the back wall (y = 0)
-  return W / 2 + (px - cx0) / (k * depthScale(0));
-}
+const TILT = 0.85;
 function resize() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  if (!canvas.parentElement.clientWidth) return;
   cw = canvas.parentElement.clientWidth;
-  ch = Math.round(cw * 1.2);
+  ch = Math.round(cw * 1.18);
   canvas.width = cw * dpr;
   canvas.height = ch * dpr;
   canvas.style.height = ch + 'px';
@@ -727,312 +575,92 @@ function resize() {
   k = (cw * 0.84) / W;
   cx0 = cw / 2;
   yTop = cw * 0.25;
-  buildBackground(dpr);
 }
-
-// ---------- Textures (generated once) ----------
-const rnd = (a, b) => a + Math.random() * (b - a);
-function makeCanvas(w, h) {
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  return [c, c.getContext('2d')];
+function depthScale(y) { return 0.62 + 0.38 * (y / L); }
+function proj(x, y, elev = 0) {
+  const s = depthScale(y);
+  return {
+    x: cx0 + (x - W / 2) * k * s,
+    y: yTop + k * TILT * (0.62 * y + 0.19 * (y * y) / L) - elev * k * s * 0.9,
+    s,
+  };
 }
-function addNoise(g, w, h, amount) {
-  const img = g.getImageData(0, 0, w, h);
-  const d = img.data;
-  for (let i = 0; i < d.length; i += 4) {
-    const n = (Math.random() - 0.5) * amount;
-    d[i] += n; d[i + 1] += n; d[i + 2] += n;
-  }
-  g.putImageData(img, 0, 0);
+function unprojectX(px) {
+  // the chute sits above the back wall (y = 0)
+  return W / 2 + (px - cx0) / (k * depthScale(0));
 }
-function starPath(g, x, y, r1, r2) {
-  g.beginPath();
-  for (let i = 0; i < 10; i++) {
-    const a = -Math.PI / 2 + (i * Math.PI) / 5;
-    const r = i % 2 ? r2 : r1;
-    g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
-  }
-  g.closePath();
-}
-
-// Printed acrylic playfield, 2 px per table unit
-const TEX = 2;
-const tableTex = (() => {
-  const w = W * TEX, h = L * TEX;
-  const [c, g] = makeCanvas(w, h);
-  const base = g.createLinearGradient(0, 0, 0, h);
-  base.addColorStop(0, '#081634');
-  base.addColorStop(0.6, '#0f2f66');
-  base.addColorStop(1, '#16418a');
-  g.fillStyle = base;
-  g.fillRect(0, 0, w, h);
-  // sunburst from the front edge
-  g.save();
-  g.translate(w / 2, h + 40);
-  for (let i = 0; i < 48; i++) {
-    g.rotate((Math.PI * 2) / 48);
-    g.fillStyle = i % 2 ? 'rgba(120,180,255,.05)' : 'rgba(0,0,0,.05)';
-    g.beginPath(); g.moveTo(0, 0); g.lineTo(-40, -h * 1.4); g.lineTo(40, -h * 1.4); g.fill();
-  }
-  g.restore();
-  // printed stars
-  for (let i = 0; i < 70; i++) {
-    g.fillStyle = `rgba(150,200,255,${rnd(0.05, 0.16)})`;
-    starPath(g, rnd(0, w), rnd(0, h), rnd(4, 12), rnd(2, 5));
-    g.fill();
-  }
-  // chevrons pointing at the win edge
-  g.lineWidth = 6;
-  g.lineJoin = 'round';
-  for (let row = 0; row < 4; row++) {
-    const y = h - 60 - row * 46;
-    g.strokeStyle = `rgba(46,242,255,${0.22 - row * 0.045})`;
-    for (let x = 60; x < w; x += 120) {
-      g.beginPath(); g.moveTo(x - 26, y - 14); g.lineTo(x, y + 8); g.lineTo(x + 26, y - 14); g.stroke();
-    }
-  }
-  // "PUSH" lettering in the middle
-  g.save();
-  g.translate(w / 2, h * 0.55);
-  g.scale(1, 0.9);
-  g.font = '900 120px system-ui, sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillStyle = 'rgba(255,62,165,.10)';
-  g.fillText('PUSH', 0, 0);
-  g.restore();
-  // gloss band and fine grain
-  const gloss = g.createLinearGradient(0, 0, w, h);
-  gloss.addColorStop(0.35, 'rgba(255,255,255,0)');
-  gloss.addColorStop(0.5, 'rgba(255,255,255,.06)');
-  gloss.addColorStop(0.65, 'rgba(255,255,255,0)');
-  g.fillStyle = gloss;
-  g.fillRect(0, 0, w, h);
-  addNoise(g, w, h, 10);
-  return c;
-})();
-
-// Diamond-plate steel for the sliding shelf; tiles every DECK_TILE units
-const DECK_TILE = 24;
-const deckTex = (() => {
-  const w = W * TEX, h = DECK_TILE * TEX * 6;
-  const [c, g] = makeCanvas(w, h);
-  const base = g.createLinearGradient(0, 0, w, 0);
-  base.addColorStop(0, '#7f8798');
-  base.addColorStop(0.5, '#b4bbca');
-  base.addColorStop(1, '#7f8798');
-  g.fillStyle = base;
-  g.fillRect(0, 0, w, h);
-  // brushed streaks
-  for (let i = 0; i < 400; i++) {
-    g.strokeStyle = `rgba(255,255,255,${rnd(0.02, 0.07)})`;
-    g.lineWidth = 1;
-    const y = rnd(0, h);
-    g.beginPath(); g.moveTo(rnd(-50, w), y); g.lineTo(rnd(0, w + 50), y); g.stroke();
-  }
-  // raised diamonds
-  const step = DECK_TILE;
-  for (let y = 0, row = 0; y < h + step; y += step / 2, row++) {
-    for (let x = (row % 2) * step / 2; x < w + step; x += step) {
-      g.save();
-      g.translate(x, y);
-      g.rotate(Math.PI / 4);
-      g.fillStyle = 'rgba(0,0,0,.28)';
-      g.fillRect(-7, -2, 16, 5);
-      g.fillStyle = 'rgba(255,255,255,.45)';
-      g.fillRect(-8, -3, 16, 4);
-      g.restore();
-    }
-  }
-  addNoise(g, w, h, 12);
-  return c;
-})();
-
-// Back wall artwork
-const wallTex = (() => {
-  const w = W * TEX, h = WALL_H * TEX;
-  const [c, g] = makeCanvas(w, h);
-  const base = g.createLinearGradient(0, 0, 0, h);
-  base.addColorStop(0, '#2a0f4f');
-  base.addColorStop(0.7, '#4b1a7a');
-  base.addColorStop(1, '#1b0a33');
-  g.fillStyle = base;
-  g.fillRect(0, 0, w, h);
-  // neon arcs
-  g.lineWidth = 4;
-  [['#ff3ea5', 0.35], ['#2ef2ff', 0.25], ['#ffd23e', 0.18]].forEach(([col, a], i) => {
-    g.strokeStyle = col;
-    g.globalAlpha = a;
-    g.shadowColor = col;
-    g.shadowBlur = 12;
-    g.beginPath();
-    g.ellipse(w / 2, h * 1.05, w * (0.32 + i * 0.12), h * (0.6 + i * 0.16), 0, Math.PI, Math.PI * 2);
-    g.stroke();
-  });
-  g.globalAlpha = 1;
-  g.shadowBlur = 0;
-  // the gate's track
-  const ty = h - GATE_ELEV * TEX;
-  g.fillStyle = 'rgba(0,0,0,.45)';
-  g.fillRect(40, ty - 18, w - 80, 36);
-  g.strokeStyle = 'rgba(255,210,62,.35)';
-  g.lineWidth = 2;
-  g.strokeRect(40, ty - 18, w - 80, 36);
-  // the base where it meets the shelf
-  const lip = g.createLinearGradient(0, h - 24, 0, h);
-  lip.addColorStop(0, '#9aa1b3');
-  lip.addColorStop(1, '#3d4252');
-  g.fillStyle = lip;
-  g.fillRect(0, h - 22, w, 22);
-  addNoise(g, w, h, 8);
-  return c;
-})();
 
 // ---------- Coin sprites ----------
-// Drawn once at high resolution: ridged edge, raised rim, embossed emblem, polished shine.
-const SPRITE_RX = 60;
-const SPRITE_RY = SPRITE_RX * TILT;
-const SPRITE_PAD = 6;
+const SPRITE_RX = 44;
 const sprites = {};
-const PALETTES = {
-  coin: { hi: '#fff6c4', mid: '#f2c13a', lo: '#a8720e', edge: '#6e4505', emblem: '★' },
-  big:  { hi: '#ffffff', mid: '#d5dae5', lo: '#868ea3', edge: '#4a5163', emblem: '10' },
-  star: { hi: '#e0f8ff', mid: '#3fb6ff', lo: '#1f57c0', edge: '#123373', emblem: '★' },
-  gem:  { hi: '#ffe3f4', mid: '#ff5bb6', lo: '#ad1268', edge: '#640838', emblem: '◆' },
-};
 function makeSprite(type) {
-  const T = TYPES[type];
-  const P = PALETTES[type];
-  const rx = SPRITE_RX, ry = SPRITE_RY;
-  const rim = Math.max(6, (T.h * ELEV / T.r) * rx);
-  const [c, g] = makeCanvas(rx * 2 + SPRITE_PAD * 2, ry * 2 + rim + SPRITE_PAD * 2);
-  const cx = rx + SPRITE_PAD, cy = ry + SPRITE_PAD;
-
-  // edge band with reeding
-  const edge = g.createLinearGradient(cx - rx, 0, cx + rx, 0);
-  edge.addColorStop(0, P.edge);
-  edge.addColorStop(0.3, P.lo);
-  edge.addColorStop(0.45, P.mid);
-  edge.addColorStop(0.7, P.lo);
-  edge.addColorStop(1, P.edge);
-  g.fillStyle = edge;
-  g.beginPath();
-  g.ellipse(cx, cy + rim, rx, ry, 0, 0, Math.PI);
-  g.lineTo(cx - rx, cy);
-  g.ellipse(cx, cy, rx, ry, 0, Math.PI, 0, true);
-  g.closePath();
-  g.fill();
-  g.save();
-  g.clip();
-  g.strokeStyle = 'rgba(0,0,0,.28)';
-  g.lineWidth = 1.2;
-  for (let a = 0.04; a < Math.PI; a += 0.07) {
-    const x = cx - Math.cos(a) * rx;
-    const y = cy + Math.sin(a) * ry;
-    g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + rim); g.stroke();
-  }
-  g.restore();
-
+  const c = document.createElement('canvas');
+  c.width = 100; c.height = 70;
+  const g = c.getContext('2d');
+  const cx = 50, cy = 30, rx = SPRITE_RX, ry = 26, rim = 6;
+  const pal = {
+    coin: ['#fff3b0', '#f5c53a', '#b07a12', '#7a4f06'],
+    big:  ['#ffffff', '#d9dde6', '#8b93a6', '#4d5466'],
+    star: ['#d8f7ff', '#39b8ff', '#2160c9', '#173a7a'],
+    gem:  ['#ffe0f3', '#ff58b6', '#b0136b', '#6d0a42'],
+  }[type];
+  // rim
+  g.fillStyle = pal[3];
+  g.beginPath(); g.ellipse(cx, cy + rim, rx, ry, 0, 0, Math.PI * 2); g.fill();
+  g.fillRect(cx - rx, cy, rx * 2, rim);
+  g.fillStyle = pal[2];
+  g.beginPath(); g.ellipse(cx, cy + rim * 0.5, rx, ry, 0, 0, Math.PI * 2); g.fill();
   // face
-  const face = g.createRadialGradient(cx - rx * 0.35, cy - ry * 0.45, rx * 0.05, cx, cy, rx * 1.05);
-  face.addColorStop(0, P.hi);
-  face.addColorStop(0.5, P.mid);
-  face.addColorStop(1, P.lo);
-  g.fillStyle = face;
+  const grad = g.createRadialGradient(cx - rx * 0.35, cy - ry * 0.5, 2, cx, cy, rx * 1.1);
+  grad.addColorStop(0, pal[0]);
+  grad.addColorStop(0.45, pal[1]);
+  grad.addColorStop(1, pal[2]);
+  g.fillStyle = grad;
   g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fill();
-
-  // raised outer rim: lit top-left, shaded bottom-right
-  const ring = g.createLinearGradient(cx - rx, cy - ry, cx + rx, cy + ry);
-  ring.addColorStop(0, 'rgba(255,255,255,.75)');
-  ring.addColorStop(0.5, 'rgba(255,255,255,.05)');
-  ring.addColorStop(1, 'rgba(0,0,0,.45)');
-  g.strokeStyle = ring;
-  g.lineWidth = rx * 0.1;
-  g.beginPath(); g.ellipse(cx, cy, rx * 0.9, ry * 0.9, 0, 0, Math.PI * 2); g.stroke();
-  const ringIn = g.createLinearGradient(cx - rx, cy - ry, cx + rx, cy + ry);
-  ringIn.addColorStop(0, 'rgba(0,0,0,.35)');
-  ringIn.addColorStop(1, 'rgba(255,255,255,.4)');
-  g.strokeStyle = ringIn;
-  g.lineWidth = 2;
-  g.beginPath(); g.ellipse(cx, cy, rx * 0.8, ry * 0.8, 0, 0, Math.PI * 2); g.stroke();
-
-  // lathe lines in the inner field
-  g.lineWidth = 1;
-  for (let f = 0.12; f < 0.78; f += 0.055) {
-    g.strokeStyle = `rgba(${f * 300 % 2 ? '255,255,255' : '0,0,0'},.05)`;
-    g.beginPath(); g.ellipse(cx, cy, rx * f, ry * f, 0, 0, Math.PI * 2); g.stroke();
-  }
-
-  // embossed emblem
+  // inner ring
+  g.strokeStyle = 'rgba(0,0,0,.22)';
+  g.lineWidth = 2.5;
+  g.beginPath(); g.ellipse(cx, cy + 1, rx * 0.74, ry * 0.74, 0, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,.45)';
+  g.lineWidth = 1.5;
+  g.beginPath(); g.ellipse(cx, cy - 1, rx * 0.74, ry * 0.74, 0, Math.PI, Math.PI * 2); g.stroke();
+  // emblem
   g.save();
   g.translate(cx, cy);
-  g.scale(1, TILT);
-  const emblemSize = P.emblem === '10' ? rx * 0.82 : rx * 0.95;
-  g.font = `900 ${emblemSize}px system-ui, sans-serif`;
+  g.scale(1, ry / rx);
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillStyle = 'rgba(0,0,0,.35)';
-  g.fillText(P.emblem, 2.5, 4);
-  g.fillStyle = 'rgba(255,255,255,.7)';
-  g.fillText(P.emblem, -1.5, -1.5);
-  g.fillStyle = P.mid;
-  g.fillText(P.emblem, 0, 1);
+  g.font = '900 34px system-ui, sans-serif';
+  const emblem = { coin: '★', big: '10', star: '★', gem: '◆' }[type];
+  g.fillStyle = 'rgba(0,0,0,.25)';
+  g.fillText(emblem, 0, 3);
+  g.fillStyle = type === 'coin' ? 'rgba(255,240,170,.85)' : '#fff';
+  if (type === 'coin') g.font = '900 26px system-ui, sans-serif';
+  g.fillText(emblem, 0, 0);
   g.restore();
-
-  // polished shine
-  g.save();
-  g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.clip();
-  g.globalCompositeOperation = 'lighter';
-  const shine = g.createRadialGradient(cx - rx * 0.4, cy - ry * 0.5, 0, cx - rx * 0.4, cy - ry * 0.5, rx * 0.7);
-  shine.addColorStop(0, 'rgba(255,255,255,.55)');
-  shine.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = shine;
-  g.fillRect(0, 0, c.width, c.height);
-  g.restore();
-
-  c.rim = rim;
   return c;
 }
 ['coin', 'big', 'star', 'gem'].forEach((t) => (sprites[t] = makeSprite(t)));
 
-// soft contact shadow
-const shadowSprite = (() => {
-  const [c, g] = makeCanvas(128, 128);
-  const grad = g.createRadialGradient(64, 64, 20, 64, 64, 64);
-  grad.addColorStop(0, 'rgba(0,0,0,.55)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 128, 128);
-  return c;
-})();
-
-// base = height of the surface the coin sits on (shelf or table), z = its height above that
-function drawCoin(type, x, y, base, z, alpha = 1, extraScale = 1, gz = z) {
-  const T = TYPES[type];
-  // shadow on whatever is underneath
-  const sp = proj(x + 1.5, y + 2, base + gz);
-  const srx = T.r * k * sp.s * 1.25 * extraScale;
-  ctx.globalAlpha = alpha * Math.max(0.25, 0.8 - (z - gz) * 0.02);
-  ctx.drawImage(shadowSprite, sp.x - srx, sp.y - srx * TILT, srx * 2, srx * 2 * TILT);
-  // coin, positioned by its top face
-  const p = proj(x, y, base + z + T.h);
-  const rx = T.r * k * p.s * extraScale;
+// stand tips the coin up onto its edge (0 = flat, 1 = upright), pivoting on its front edge
+function drawCoin(type, x, y, elev, alpha = 1, extraScale = 1, stand = 0) {
+  const p = proj(x, y, elev);
+  const rx = TYPES[type].r * k * p.s * extraScale;
   const sc = rx / SPRITE_RX;
-  const spr = sprites[type];
-  ctx.globalAlpha = alpha;
-  ctx.drawImage(spr, p.x - (SPRITE_RX + SPRITE_PAD) * sc, p.y - (SPRITE_RY + SPRITE_PAD) * sc, spr.width * sc, spr.height * sc);
-  ctx.globalAlpha = 1;
+  const vs = 1 + stand * (SPRITE_RX / 26 - 1);   // 26 = the sprite face's vertical radius
+  if (alpha !== 1) ctx.globalAlpha = alpha;
+  ctx.drawImage(sprites[type], p.x - 50 * sc, p.y + 26 * sc - 56 * sc * vs, 100 * sc, 70 * sc * vs);
+  if (alpha !== 1) ctx.globalAlpha = 1;
   if (type !== 'coin') {
-    // special pieces glow so they're easy to spot
+    // special items glow so they're easy to spot
     const glow = { big: '#e6ecff', star: '#39b8ff', gem: '#ff58b6' }[type];
     ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = (0.22 + 0.14 * Math.sin(now / 200)) * alpha;
-    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rx * 1.7);
+    ctx.globalAlpha = 0.25 + 0.15 * Math.sin(now / 200);
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rx * 1.6);
     g.addColorStop(0, glow);
     g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g;
-    ctx.fillRect(p.x - rx * 1.7, p.y - rx * 1.7, rx * 3.4, rx * 3.4);
+    ctx.fillRect(p.x - rx * 1.6, p.y - rx * 1.6, rx * 3.2, rx * 3.2);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
   }
@@ -1043,10 +671,39 @@ let now = 0;
 let chuteX = W / 2;
 let aimX = null;          // where the player is pointing, if anywhere
 let aimUntil = 0;
-const GATE_HALF = 9;
-// fraction of the fall when a dropped coin passes the gate's height
-const GATE_PASS = Math.sqrt((CHUTE_ELEV - GATE_ELEV) / (CHUTE_ELEV - DECK_H - 10));
-function gateX(t) { return W / 2 + (W / 2 - 40) * Math.sin(t * 1.9); }
+const CHUTE_ELEV = 92;
+const GATE_ELEV = 52;
+const GATE_HALF = 12;
+const MOUTH_ELEV = DECK_H + 16;  // middle of the slot coins come out of onto the shelf
+const MOUTH_TOP = DECK_H + 32;   // tall enough for a coin standing on its edge
+const MOUTH_HALF = 17;
+// Paid coins go into the chute on their edge, roll down inside the back wall (visible
+// through the LUCKY window), roll out of a slot at its foot and fall over flat onto the
+// shelf. Bonus coins rain in from above.
+// stand: 0 = lying flat, 1 = standing on its edge. For a standing coin, elev is its bottom.
+const INTO_CHUTE = 0.1, OUT_OF_WALL = 0.5, ROLLED_OUT = 0.68;   // fractions of the drop
+function incomingPos(d) {
+  const p = Math.min(d.t / d.dur, 1);
+  if (d.free) {
+    const e = p * p;
+    return { stage: 'air', y: d.yLand * e, elev: CHUTE_ELEV + (DECK_H - CHUTE_ELEV) * e, scale: 1 + 0.15 * (1 - p), stand: 0 };
+  }
+  if (p < INTO_CHUTE) return { stage: 'chute', y: 0, elev: CHUTE_ELEV + 20 - 36 * (p / INTO_CHUTE), scale: 1, stand: 1 };
+  if (p < OUT_OF_WALL) {
+    const q = (p - INTO_CHUTE) / (OUT_OF_WALL - INTO_CHUTE);
+    return { stage: 'wall', y: 0, elev: CHUTE_ELEV + (DECK_H + 1 - CHUTE_ELEV) * q * q, scale: 1, stand: 1 };
+  }
+  const r = TYPES[d.type].r;
+  if (p < ROLLED_OUT) {
+    // roll out of the slot on its edge, slowing down
+    const q = (p - OUT_OF_WALL) / (ROLLED_OUT - OUT_OF_WALL);
+    return { stage: 'out', y: -r + (d.yLand + r) * (1 - (1 - q) * (1 - q)), elev: DECK_H, scale: 1, stand: 1 };
+  }
+  // then topple over, speeding up as it falls
+  const q = (p - ROLLED_OUT) / (1 - ROLLED_OUT);
+  return { stage: 'out', y: d.yLand, elev: DECK_H, scale: 1, stand: Math.cos(q * q * Math.PI / 2) };
+}
+function gateX(t) { return W / 2 + (W / 2 - 40) * Math.sin(t * 1.4); }
 
 const incoming = [];   // coins in the air on their way to the shelf
 const falling = [];    // coins dropping off the table (won or lost)
@@ -1055,7 +712,7 @@ const sparks = [];
 
 let lastDropAt = -Infinity;
 function dropCooldown() {
-  return Math.max(0, 1 - (now - lastDropAt) / DROP_COOLDOWN);
+  return Math.max(0, 1 - (performance.now() - lastDropAt) / DROP_COOLDOWN);
 }
 
 function dropCoin(x, type = 'coin', free = false) {
@@ -1063,24 +720,18 @@ function dropCoin(x, type = 'coin', free = false) {
     if (dropCooldown() > 0) return false;
     if (credits < 1) { flashRefill(); return false; }
     credits -= 1;
-    lastDropAt = now;
+    lastDropAt = performance.now();
     sfx.insert();
   }
   x = clamp(x, TYPES[type].r, W - TYPES[type].r);
-  incoming.push({ x, type, t: 0, dur: 0.4, yLand: 8 + Math.random() * 30, free, checked: false });
+  incoming.push({ x, type, t: 0, dur: free ? 0.42 : 0.85, yLand: 8 + Math.random() * 30, free, gateChecked: free });
   updateHud();
   return true;
 }
 
 function onOut(c, kind) {
-  const drawn = c.rx !== undefined;
-  const p = proj(drawn ? c.rx : c.x, drawn ? c.ry : c.y, (drawn ? c.re : (c.layer ? DECK_H : 0) + c.z) + c.h);
-  falling.push({
-    type: c.type, x: p.x, y: p.y, s: p.s, kind, t: 0,
-    vx: c.x < 0 ? -50 : c.x > W ? 50 : c.vx * k * 0.3,
-    vy: 20 + Math.max(0, c.vy) * k * 0.3,
-    spin: (Math.random() < 0.5 ? -1 : 1) * rnd(4, 9),
-  });
+  const p = proj(c.x, Math.min(c.y, L), rampH(Math.min(c.y, L)));
+  falling.push({ type: c.type, x: p.x, y: p.y, vx: (c.x < 0 ? -40 : c.x > W ? 40 : 0), vy: 30, s: p.s, kind, t: 0 });
 }
 
 function landFalling(f) {
@@ -1106,13 +757,13 @@ function landFalling(f) {
 // ---------- Lucky slot ----------
 const SYMBOLS = ['7', '💎', '⭐', '🍒', '🪙', '🔔'];
 const OUTCOMES = [
-  { sym: '7',  weight: 1.5,  run: () => { banner('JACKPOT!', '7 7 7', '#ff3ea5'); sfx.fanfare(true); shower(25); queueDrop('gem', 1600); party(3500); } },
+  { sym: '7',  weight: 2,  run: () => { banner('JACKPOT!', '7 7 7', '#ff3ea5'); sfx.fanfare(true); shower(25); queueDrop('gem', 1600); party(3500); } },
   { sym: '💎', weight: 4,  run: () => { banner('SUPER!', 'BIG COIN + 8', '#e6ecff'); sfx.fanfare(true); queueDrop('big', 300); shower(8); } },
   { sym: '⭐', weight: 7,  run: () => { banner('STAR!', 'BONUS TOKEN', '#39b8ff'); sfx.fanfare(false); queueDrop('star', 300); } },
   { sym: '🍒', weight: 12, run: () => { banner('WIN!', '6 COINS', '#ff4d6d'); sfx.fanfare(false); shower(6); } },
   { sym: '🔔', weight: 12, run: () => { banner('WIN!', '4 COINS', '#ffd23e'); sfx.fanfare(false); shower(4); } },
   { sym: '🪙', weight: 15, run: () => { banner('WIN!', '2 COINS', '#ffd23e'); sfx.fanfare(false); shower(2); } },
-  { sym: null, weight: 68 },
+  { sym: null, weight: 55 },
 ];
 let spinning = false;
 
@@ -1170,7 +821,8 @@ function queueDrop(type, delay) {
 }
 
 // ---------- Effects ----------
-function banner(title, sub, color, b = $('banner')) {
+function banner(title, sub, color) {
+  const b = $('banner');
   b.innerHTML = `${title}<small>${sub}</small>`;
   b.style.setProperty('--c', color);
   b.classList.remove('show');
@@ -1203,258 +855,241 @@ function quad(a, b, c, d) {
   ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y);
   ctx.closePath();
 }
-function roundRect(g, x, y, w, h, r) {
-  g.beginPath();
-  g.moveTo(x + r, y);
-  g.arcTo(x + w, y, x + w, y + h, r);
-  g.arcTo(x + w, y + h, x, y + h, r);
-  g.arcTo(x, y + h, x, y, r);
-  g.arcTo(x, y, x + w, y, r);
-  g.closePath();
-}
 
-// Draws a texture onto a flat surface in perspective, one thin strip of depth at a time.
-// texRow(y) gives the texture row (in table units) for depth y.
-function drawPlane(g, tex, y0, y1, elev, texRow, stepUnits = 2) {
-  for (let y = y0; y < y1; y += stepUnits) {
-    const yb = Math.min(y + stepUnits, y1);
-    const a = proj(0, y, elev);
-    const b = proj(W, y, elev);
-    const c = proj(0, yb, elev);
-    const sy = clamp(texRow(y) * TEX, 0, tex.height - 1);
-    const sh = Math.max(1, Math.min((yb - y) * TEX, tex.height - sy));
-    g.drawImage(tex, 0, sy, tex.width, sh, a.x, a.y, b.x - a.x, c.y - a.y + 0.6);
-  }
-}
-
-// Everything that never moves is drawn once into an offscreen canvas.
-let bgCanvas = null;
-let fgCanvas = null;
-function buildBackground(dpr) {
-  const make = () => {
-    const c = document.createElement('canvas');
-    c.width = cw * dpr; c.height = ch * dpr;
-    const g = c.getContext('2d');
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return [c, g];
-  };
-  let g;
-  [bgCanvas, g] = make();
-  const realCtx = ctx;
+function drawScene() {
+  const t = now / 1000;
+  ctx.clearRect(0, 0, cw, ch);
 
   // cabinet interior
-  const bg = g.createLinearGradient(0, 0, 0, ch);
+  const bg = ctx.createLinearGradient(0, 0, 0, ch);
   bg.addColorStop(0, '#1b0d33');
   bg.addColorStop(1, '#05030a');
-  g.fillStyle = bg;
-  g.fillRect(0, 0, cw, ch);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, cw, ch);
 
-  // the playfield
-  drawPlane(g, tableTex, 0, L, 0, (y) => y);
+  // table
+  const t0 = proj(0, 0), t1 = proj(W, 0), t2 = proj(W, L), t3 = proj(0, L);
+  quad(t0, t1, t2, t3);
+  const felt = ctx.createLinearGradient(0, t0.y, 0, t3.y);
+  felt.addColorStop(0, '#0d3b4a');
+  felt.addColorStop(1, '#14607a');
+  ctx.fillStyle = felt;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth = 1;
+  for (let y = 40; y < L; y += 40) {
+    const a = proj(0, y), b = proj(W, y);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
 
-  // front lip (the edge of the table you see from the front)
-  const t2 = proj(W, L), t3 = proj(0, L);
-  const lipH = 7 * k;
-  const lip = g.createLinearGradient(0, t3.y, 0, t3.y + lipH);
-  lip.addColorStop(0, '#f2f4fa');
-  lip.addColorStop(0.4, '#8c93a6');
-  lip.addColorStop(1, '#3b4050');
-  g.fillStyle = lip;
-  g.fillRect(t3.x, t3.y, t2.x - t3.x, lipH);
+  // the slanted front ramp: rises toward the edge
+  const r0 = proj(0, SLOPE_START), r1 = proj(W, SLOPE_START), r2 = proj(W, LIP_START, SLOPE_H), r3 = proj(0, LIP_START, SLOPE_H);
+  quad(r0, r1, r2, r3);
+  const ramp = ctx.createLinearGradient(0, r0.y, 0, r3.y);
+  ramp.addColorStop(0, '#16566c');
+  ramp.addColorStop(1, '#2a8fae');
+  ctx.fillStyle = ramp;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(46,242,255,.45)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(r0.x, r0.y); ctx.lineTo(r1.x, r1.y); ctx.stroke();
+  // chevrons pointing back down the slope
+  ctx.strokeStyle = 'rgba(255,255,255,.12)';
+  ctx.lineWidth = 2;
+  for (let x = 30; x < W; x += 60) {
+    const a = proj(x - 12, L - 30, rampH(L - 30)), b = proj(x, L - 48, rampH(L - 48)), c2 = proj(x + 12, L - 30, rampH(L - 30));
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c2.x, c2.y); ctx.stroke();
+  }
+  // the kicker lip at the edge, angled up so coins have to climb it
+  const k0 = proj(0, L, SLOPE_H + LIP_H), k1 = proj(W, L, SLOPE_H + LIP_H);
+  quad(r3, r2, k1, k0);
+  const lip = ctx.createLinearGradient(0, r3.y, 0, k0.y);
+  lip.addColorStop(0, '#6d7387');
+  lip.addColorStop(1, '#e9ecf5');
+  ctx.fillStyle = lip;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.35)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(r3.x, r3.y); ctx.lineTo(r2.x, r2.y); ctx.stroke();
+  // front face under the lip
+  const l0 = proj(0, L), l1 = proj(W, L);
+  quad(k0, k1, l1, l0);
+  ctx.fillStyle = '#0a2e3a';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(46,242,255,.8)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(k0.x, k0.y); ctx.lineTo(k1.x, k1.y); ctx.stroke();
 
   // open side gutters (lost coins) near the front
   [0, W].forEach((x) => {
     const dir = x === 0 ? -1 : 1;
-    const a = proj(x, SIDE_WALL_END), b = proj(x, L);
-    const grad = g.createLinearGradient(a.x, 0, a.x + dir * 14, 0);
-    grad.addColorStop(0, 'rgba(255,40,60,.35)');
-    grad.addColorStop(1, 'rgba(255,40,60,0)');
-    g.fillStyle = grad;
-    g.beginPath();
-    g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.lineTo(b.x + dir * 14, b.y + lipH); g.lineTo(a.x + dir * 12, a.y);
-    g.fill();
+    const a = proj(x, SIDE_WALL_END, rampH(SIDE_WALL_END)), b = proj(x, L, SLOPE_H + LIP_H);
+    ctx.fillStyle = 'rgba(255,40,60,.18)';
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(b.x + dir * 10, b.y); ctx.lineTo(a.x + dir * 8, a.y);
+    ctx.fill();
+    // little warning lights
+    for (let y = SIDE_WALL_END + 12; y < L; y += 26) {
+      const p = proj(x, y, rampH(y));
+      const on = Math.floor(t * 4 + y / 26) % 2 === 0;
+      ctx.fillStyle = on ? '#ff3b4f' : '#55141c';
+      ctx.beginPath(); ctx.arc(p.x + dir * 5 * p.s, p.y, 2.2 * p.s * k / 1.2, 0, Math.PI * 2); ctx.fill();
+    }
   });
 
-  // payout tray
-  const trayTop = t3.y + lipH + 8;
-  const tray = g.createLinearGradient(0, trayTop, 0, ch);
-  tray.addColorStop(0, '#0b0614');
-  tray.addColorStop(1, '#2a1748');
-  g.fillStyle = tray;
-  roundRect(g, cw * 0.05, trayTop, cw * 0.9, ch - trayTop - 8, 12);
-  g.fill();
-  g.strokeStyle = 'rgba(255,255,255,.08)';
-  g.lineWidth = 1.5;
-  g.stroke();
-  g.fillStyle = 'rgba(46,242,255,.16)';
-  g.font = `900 ${cw * 0.075}px system-ui, sans-serif`;
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText('WIN', cw / 2, (trayTop + ch) / 2);
-
   // back wall
-  const w0 = proj(0, 0, WALL_H), w1 = proj(W, 0, 0);
-  g.drawImage(wallTex, w0.x, w0.y, w1.x - w0.x, w1.y - w0.y);
-
-  // foreground: glass glare and a soft vignette
-  [fgCanvas, g] = make();
-  const glare = g.createLinearGradient(0, 0, cw, ch);
-  glare.addColorStop(0.25, 'rgba(255,255,255,0)');
-  glare.addColorStop(0.32, 'rgba(255,255,255,.07)');
-  glare.addColorStop(0.36, 'rgba(255,255,255,0)');
-  glare.addColorStop(0.6, 'rgba(255,255,255,0)');
-  glare.addColorStop(0.63, 'rgba(255,255,255,.04)');
-  glare.addColorStop(0.66, 'rgba(255,255,255,0)');
-  g.fillStyle = glare;
-  g.fillRect(0, 0, cw, ch);
-  const vig = g.createRadialGradient(cw / 2, ch * 0.45, cw * 0.3, cw / 2, ch * 0.45, cw * 0.95);
-  vig.addColorStop(0, 'rgba(0,0,0,0)');
-  vig.addColorStop(1, 'rgba(0,0,0,.45)');
-  g.fillStyle = vig;
-  g.fillRect(0, 0, cw, ch);
-  void realCtx;
-}
-
-// Where to draw each coin: blended between the last two physics steps (so motion is smooth on any
-// screen refresh rate), and when the physics moves a coin abruptly (untangling a jam, climbing onto
-// a pile) it glides there over a few frames instead of teleporting. Normal motion is drawn exactly.
-const GLIDE_RATE = 12;       // per second
-const FOLLOW_XY = 90;        // units/sec followed exactly across the table
-const FOLLOW_ELEV = 120;     // units/sec followed exactly up and down
-const MAX_GLIDE_XY = 150;    // fastest a correction is allowed to slide (units/sec)
-const MAX_GLIDE_ELEV = 260;  // fast enough that falling coins still drop quickly
-function smoothCoin(c, alpha, dt) {
-  const ix = c.px + (c.x - c.px) * alpha;
-  const iy = c.py + (c.y - c.py) * alpha;
-  const elev = (c.layer ? DECK_H : 0) + c.z;
-  const ie = c.pe + (elev - c.pe) * alpha;
-  if (c.rx === undefined) { c.rx = ix; c.ry = iy; c.re = ie; return; }
-  const dx = ix - c.rx;
-  const dy = iy - c.ry;
-  const dist = Math.hypot(dx, dy);
-  const moveXY = Math.min(dist, Math.max(FOLLOW_XY * dt, Math.min(dist * GLIDE_RATE * dt, MAX_GLIDE_XY * dt)));
-  if (dist > 1e-6) { c.rx += (dx / dist) * moveXY; c.ry += (dy / dist) * moveXY; }
-  const de = ie - c.re;
-  const moveE = Math.min(Math.abs(de), Math.max(FOLLOW_ELEV * dt, Math.min(Math.abs(de) * GLIDE_RATE * 1.4 * dt, MAX_GLIDE_ELEV * dt)));
-  c.re += Math.sign(de) * moveE;
-}
-
-function drawScene(dt = 1 / 60) {
-  const t = now / 1000;
-  const alpha = clamp(acc / STEP, 0, 1);
-  ctx.drawImage(bgCanvas, 0, 0, cw, ch);
-
+  const w0 = proj(0, 0, 0), w1 = proj(W, 0, 0), w2 = proj(W, 0, CHUTE_ELEV + 18), w3 = proj(0, 0, CHUTE_ELEV + 18);
+  quad(w0, w1, w2, w3);
+  const wall = ctx.createLinearGradient(0, w3.y, 0, w0.y);
+  wall.addColorStop(0, '#3a1a63');
+  wall.addColorStop(1, '#1c0d33');
+  ctx.fillStyle = wall;
+  ctx.fill();
   // wall bulbs
-  const party = now < partyUntil;
-  for (let i = 0; i <= 16; i++) {
-    const p = proj((W / 16) * i, 0, WALL_H - 8);
-    const on = (Math.floor(t * (party ? 14 : 5)) + i) % 3 === 0;
-    ctx.fillStyle = on ? '#ffe27a' : '#5a3d1a';
-    if (on) { ctx.shadowColor = '#ffd23e'; ctx.shadowBlur = 10; }
-    ctx.beginPath(); ctx.arc(p.x, p.y, 2.4 * k * 0.62, 0, Math.PI * 2); ctx.fill();
+  for (let i = 0; i <= 14; i++) {
+    const p = proj((W / 14) * i, 0, CHUTE_ELEV + 10);
+    const on = (Math.floor(t * (now < partyUntil ? 14 : 5)) + i) % 3 === 0;
+    ctx.fillStyle = on ? '#ffd23e' : '#5a3d1a';
+    if (on) { ctx.shadowColor = '#ffd23e'; ctx.shadowBlur = 8; }
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2.6 * k * 0.62, 0, Math.PI * 2); ctx.fill();
     ctx.shadowBlur = 0;
   }
 
-  // lucky gate riding its track
-  const gx = gateX(t);
-  const g0 = proj(gx - GATE_HALF, 0, GATE_ELEV + 10);
-  const g1 = proj(gx + GATE_HALF, 0, GATE_ELEV - 10);
-  const gw = g1.x - g0.x, gh = g1.y - g0.y;
-  ctx.shadowColor = '#ffd23e';
-  ctx.shadowBlur = 12 + 6 * Math.sin(t * 6);
-  const gateFill = ctx.createLinearGradient(0, g0.y, 0, g1.y);
-  gateFill.addColorStop(0, '#2a1300');
-  gateFill.addColorStop(1, '#000');
-  ctx.fillStyle = gateFill;
-  roundRect(ctx, g0.x - 4, g0.y - 3, gw + 8, gh + 6, 6);
+  // the coin channel down the wall and the slot at its foot
+  const ct = proj(chuteX, 0, CHUTE_ELEV), cb = proj(chuteX, 0, MOUTH_ELEV);
+  ctx.strokeStyle = 'rgba(255,62,165,.18)';
+  ctx.lineWidth = 10 * k * 0.62;
+  ctx.beginPath(); ctx.moveTo(ct.x, ct.y); ctx.lineTo(cb.x, cb.y); ctx.stroke();
+  const m0 = proj(chuteX - MOUTH_HALF, 0, DECK_H + 1), m1 = proj(chuteX + MOUTH_HALF, 0, MOUTH_TOP);
+  ctx.fillStyle = '#05020c';
+  ctx.strokeStyle = '#ff3ea5';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#ff3ea5';
+  ctx.shadowBlur = 8;
+  roundRect(m0.x, m1.y, m1.x - m0.x, m0.y - m1.y, 4);
   ctx.fill();
+  ctx.stroke();
   ctx.shadowBlur = 0;
+
+  // lucky gate on the back wall
+  const gx = gateX(t);
+  const g0 = proj(gx - GATE_HALF, 0, GATE_ELEV - 14), g1 = proj(gx + GATE_HALF, 0, GATE_ELEV + 14);
+  ctx.fillStyle = '#0a0414';
   ctx.strokeStyle = '#ffd23e';
   ctx.lineWidth = 2;
+  ctx.shadowColor = '#ffd23e';
+  ctx.shadowBlur = 10 + 6 * Math.sin(t * 6);
+  roundRect(g0.x, g1.y, g1.x - g0.x, g0.y - g1.y, 5);
+  ctx.fill();
   ctx.stroke();
+  ctx.shadowBlur = 0;
   ctx.fillStyle = '#ffd23e';
-  ctx.font = `900 ${Math.max(8, 6.5 * k * 0.62)}px system-ui, sans-serif`;
+  ctx.font = `900 ${Math.max(8, 7 * k * 0.62)}px system-ui, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('LUCKY', g0.x + gw / 2, g0.y + gh / 2);
-
-  // sliding shelf: diamond plate that moves with the pusher
-  const f = machine.pfront + (machine.front - machine.pfront) * alpha;
-  const tile = deckTex.height / TEX;
-  drawPlane(ctx, deckTex, 0, f, DECK_H, (y) => (((y - f) % tile) + tile) % tile);
-  const shade = ctx.createLinearGradient(0, proj(0, 0, DECK_H).y, 0, proj(0, f, DECK_H).y);
-  shade.addColorStop(0, 'rgba(0,0,0,.45)');
-  shade.addColorStop(0.35, 'rgba(0,0,0,0)');
-  ctx.fillStyle = shade;
-  quad(proj(0, 0, DECK_H), proj(W, 0, DECK_H), proj(W, f, DECK_H), proj(0, f, DECK_H));
-  ctx.fill();
-
-  // pusher face: chrome with a hazard stripe and running lights
-  const d3 = proj(0, f, DECK_H), d2 = proj(W, f, DECK_H), e1 = proj(W, f, 0), e0 = proj(0, f, 0);
-  const face = ctx.createLinearGradient(0, d3.y, 0, e0.y);
-  face.addColorStop(0, '#f4f6fb');
-  face.addColorStop(0.35, '#a9b0c2');
-  face.addColorStop(1, '#4a5062');
-  ctx.fillStyle = face;
-  quad(d3, d2, e1, e0);
-  ctx.fill();
-  const bandTop = d3.y + (e0.y - d3.y) * 0.3, bandH = (e0.y - d3.y) * 0.45;
+  ctx.fillText('LUCKY', (g0.x + g1.x) / 2, (g0.y + g1.y) / 2);
+  // coins rolling down inside the wall show through the gate window
   ctx.save();
-  ctx.beginPath(); ctx.rect(d3.x, bandTop, d2.x - d3.x, bandH); ctx.clip();
-  ctx.fillStyle = '#ffc531';
-  ctx.fillRect(d3.x, bandTop, d2.x - d3.x, bandH);
-  ctx.fillStyle = '#1a1206';
-  const stripe = 10 * k * d3.s;
-  for (let x = d3.x - bandH; x < d2.x + bandH; x += stripe * 2) {
+  roundRect(g0.x, g1.y, g1.x - g0.x, g0.y - g1.y, 5);
+  ctx.clip();
+  for (const d of incoming) {
+    const ip = incomingPos(d);
+    if (ip.stage === 'wall') drawCoin(d.type, d.x, 0, ip.elev, 1, ip.scale, ip.stand);
+  }
+  ctx.restore();
+
+  // shelf (pusher) top and front face
+  const f = machine.front;
+  const d0 = proj(0, 0, DECK_H), d1 = proj(W, 0, DECK_H), d2 = proj(W, f, DECK_H), d3 = proj(0, f, DECK_H);
+  quad(d0, d1, d2, d3);
+  const deck = ctx.createLinearGradient(0, d0.y, 0, d3.y);
+  deck.addColorStop(0, '#6b7187');
+  deck.addColorStop(1, '#b9c0d4');
+  ctx.fillStyle = deck;
+  ctx.fill();
+  const e0 = proj(0, f, 0), e1 = proj(W, f, 0);
+  quad(d3, d2, e1, e0);
+  const face = ctx.createLinearGradient(0, d3.y, 0, e0.y);
+  face.addColorStop(0, '#ffcf3e');
+  face.addColorStop(1, '#c98a08');
+  ctx.fillStyle = face;
+  ctx.fill();
+  // hazard stripes on the face
+  ctx.save();
+  quad(d3, d2, e1, e0);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(20,10,0,.55)';
+  const stripeW = 14 * k * d3.s;
+  for (let x = d3.x - 40; x < d2.x + 40; x += stripeW * 2) {
     ctx.beginPath();
-    ctx.moveTo(x, bandTop + bandH); ctx.lineTo(x + stripe, bandTop + bandH);
-    ctx.lineTo(x + stripe + bandH, bandTop); ctx.lineTo(x + bandH, bandTop);
+    ctx.moveTo(x, e0.y); ctx.lineTo(x + stripeW, e0.y); ctx.lineTo(x + stripeW + (e0.y - d3.y), d3.y); ctx.lineTo(x + (e0.y - d3.y), d3.y);
     ctx.fill();
   }
   ctx.restore();
 
-  // coins: back to front, lower before higher
-  for (const c of machine.coins) smoothCoin(c, alpha, dt);
-  const list = machine.coins.slice().sort((a, b) => (a.ry + a.re * 0.35) - (b.ry + b.re * 0.35));
-  for (const c of list) drawCoin(c.type, c.rx, c.ry, 0, c.re, 1, 1, c.re - (c.z - c.gz));
+  // coins on the shelf, then on the table, back to front
+  const deckCoins = machine.coins.filter((c) => c.layer === 1).sort((a, b) => a.y - b.y);
+  for (const c of deckCoins) drawCoin(c.type, c.x, c.y, DECK_H);
+  const tableCoins = machine.coins.filter((c) => c.layer === 0).sort((a, b) => a.y - b.y);
+  for (const c of tableCoins) drawCoin(c.type, c.x, c.y, Math.max(c.elev, rampH(c.y)));
 
-  // front edge glow
-  const t3 = proj(0, L), t2 = proj(W, L);
-  const glow = 0.55 + 0.45 * Math.sin(t * 4);
-  ctx.strokeStyle = `rgba(46,242,255,${0.35 + glow * 0.5})`;
-  ctx.shadowColor = '#2ef2ff';
-  ctx.shadowBlur = 12;
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(t3.x, t3.y + 7 * k); ctx.lineTo(t2.x, t2.y + 7 * k); ctx.stroke();
-  ctx.shadowBlur = 0;
+  // chrome rim on top of the kicker lip, in front of the coins climbing it
+  const top = SLOPE_H + LIP_H;
+  const n0 = proj(0, L, top), n1 = proj(W, L, top), n2 = proj(W, L, top - 6), n3 = proj(0, L, top - 6);
+  quad(n0, n1, n2, n3);
+  const rim = ctx.createLinearGradient(0, n0.y, 0, n3.y);
+  rim.addColorStop(0, '#ffffff');
+  rim.addColorStop(0.4, '#c3c9da');
+  rim.addColorStop(1, '#5d6378');
+  ctx.fillStyle = rim;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(46,242,255,.8)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(n0.x, n0.y); ctx.lineTo(n1.x, n1.y); ctx.stroke();
 
-  // side rails (chrome) with glass above them
+  // side walls (chrome rails)
   [0, W].forEach((x) => {
-    const a = proj(x, -2, 0), b = proj(x, SIDE_WALL_END, 0), c = proj(x, SIDE_WALL_END, RAIL_H), d = proj(x, -2, RAIL_H);
-    const rail = ctx.createLinearGradient(0, d.y, 0, b.y);
-    rail.addColorStop(0, '#ffffff');
-    rail.addColorStop(0.3, '#c2c8d6');
-    rail.addColorStop(1, '#5d6375');
-    ctx.fillStyle = rail;
+    const a = proj(x, -2, 0), b = proj(x, SIDE_WALL_END, rampH(SIDE_WALL_END)), c = proj(x, SIDE_WALL_END, 14 + rampH(SIDE_WALL_END)), d = proj(x, -2, 14);
     quad(a, b, c, d);
+    const rail = ctx.createLinearGradient(0, d.y, 0, b.y);
+    rail.addColorStop(0, '#e9ecf5');
+    rail.addColorStop(1, '#6d7387');
+    ctx.fillStyle = rail;
     ctx.fill();
-    const gtop = proj(x, -2, RAIL_H + 40), gbot = proj(x, SIDE_WALL_END, RAIL_H + 40);
-    ctx.fillStyle = 'rgba(180,220,255,.08)';
-    quad(d, c, gbot, gtop);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(220,240,255,.35)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(gtop.x, gtop.y); ctx.lineTo(gbot.x, gbot.y); ctx.stroke();
   });
 
-  // chute
+  // front edge: the win line
+  const glow = 0.55 + 0.45 * Math.sin(t * 5);
+  ctx.strokeStyle = `rgba(46,242,255,${0.5 + glow * 0.5})`;
+  ctx.shadowColor = '#2ef2ff';
+  ctx.shadowBlur = 14;
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(t3.x, t3.y + 2); ctx.lineTo(t2.x, t2.y + 2); ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // payout tray
+  const trayTop = t3.y + 12;
+  const tray = ctx.createLinearGradient(0, trayTop, 0, ch);
+  tray.addColorStop(0, '#120a20');
+  tray.addColorStop(1, '#2a1748');
+  ctx.fillStyle = tray;
+  roundRect(cw * 0.06, trayTop, cw * 0.88, ch - trayTop - 8, 12);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(46,242,255,.18)';
+  ctx.font = `900 ${cw * 0.07}px system-ui, sans-serif`;
+  ctx.fillText('WIN', cw / 2, (trayTop + ch) / 2);
+
+  // chute, with any coin being dropped into it behind its front face
   const cp = proj(chuteX, 0, CHUTE_ELEV);
   const cs = k * 0.62;
-  const chute = ctx.createLinearGradient(cp.x - 22 * cs, 0, cp.x + 22 * cs, 0);
-  chute.addColorStop(0, '#7d8597');
-  chute.addColorStop(0.5, '#eef1f8');
-  chute.addColorStop(1, '#7d8597');
-  ctx.fillStyle = chute;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, cw, cp.y - 14 * cs); ctx.clip();   // gone once it's in the funnel
+  for (const d of incoming) {
+    const ip = incomingPos(d);
+    if (ip.stage === 'chute') drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale, ip.stand);
+  }
+  ctx.restore();
+  ctx.fillStyle = '#c9cfdf';
   ctx.beginPath();
   ctx.moveTo(cp.x - 22 * cs, cp.y - 14 * cs);
   ctx.lineTo(cp.x + 22 * cs, cp.y - 14 * cs);
@@ -1463,37 +1098,38 @@ function drawScene(dt = 1 / 60) {
   ctx.closePath();
   ctx.fill();
   ctx.fillStyle = '#ff3ea5';
-  ctx.shadowColor = '#ff3ea5';
-  ctx.shadowBlur = 8;
   ctx.fillRect(cp.x - 22 * cs, cp.y - 17 * cs, 44 * cs, 4 * cs);
-  ctx.shadowBlur = 0;
   // aim line
-  ctx.strokeStyle = 'rgba(255,62,165,.4)';
+  ctx.strokeStyle = 'rgba(255,62,165,.35)';
   ctx.setLineDash([4, 5]);
   ctx.lineWidth = 1.5;
-  const land = proj(chuteX, 22, DECK_H);
-  ctx.beginPath(); ctx.moveTo(cp.x, cp.y + 4 * cs); ctx.lineTo(land.x, land.y); ctx.stroke();
+  const land = proj(chuteX, 22, DECK_H), mouth = proj(chuteX, 0, MOUTH_ELEV);
+  ctx.beginPath(); ctx.moveTo(mouth.x, mouth.y); ctx.lineTo(land.x, land.y); ctx.stroke();
   ctx.setLineDash([]);
 
-  // coins in the air
+  // coins in the air or sliding out of the wall slot
+  const slotL = proj(chuteX - MOUTH_HALF, 0, DECK_H), slotR = proj(chuteX + MOUTH_HALF, 0, MOUTH_TOP);
   for (const d of incoming) {
-    const p = Math.min(d.t / d.dur, 1);
-    const e = p * p;
-    const z = CHUTE_ELEV - DECK_H + (10 - (CHUTE_ELEV - DECK_H)) * e;
-    drawCoin(d.type, d.x, d.yLand * e, DECK_H, z, 1, 1 + 0.12 * (1 - p), 0);
+    const ip = incomingPos(d);
+    if (ip.stage === 'air') drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale);
+    else if (ip.stage === 'out') {
+      // while it's still partly inside the wall, only the bit in the slot shows
+      const inSlot = ip.y + TYPES[d.type].r < 3;
+      if (inSlot) { ctx.save(); ctx.beginPath(); ctx.rect(slotL.x, slotR.y, slotR.x - slotL.x, ch); ctx.clip(); }
+      drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale, ip.stand);
+      if (inSlot) ctx.restore();
+    }
   }
 
-  // coins tumbling off the table
+  // coins falling off the table
   for (const fc of falling) {
-    const spr = sprites[fc.type];
     const rx = TYPES[fc.type].r * k * fc.s;
     const sc = rx / SPRITE_RX;
     ctx.globalAlpha = fc.kind === 'win' ? 1 : Math.max(0, 1 - fc.t * 2);
     ctx.save();
     ctx.translate(fc.x, fc.y);
-    ctx.rotate(fc.t * fc.spin * 0.4);
-    ctx.scale(1, Math.max(0.15, Math.abs(Math.cos(fc.t * fc.spin))));
-    ctx.drawImage(spr, -(SPRITE_RX + SPRITE_PAD) * sc, -(SPRITE_RY + SPRITE_PAD) * sc, spr.width * sc, spr.height * sc);
+    ctx.rotate(fc.t * (fc.kind === 'win' ? 3 : -4));
+    ctx.drawImage(sprites[fc.type], -50 * sc, -30 * sc, 100 * sc, 70 * sc);
     ctx.restore();
     ctx.globalAlpha = 1;
   }
@@ -1508,11 +1144,7 @@ function drawScene(dt = 1 / 60) {
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
 
-  ctx.drawImage(fgCanvas, 0, 0, cw, ch);
-
   // +1 texts
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
   for (const fl of floaters) {
     ctx.globalAlpha = Math.max(0, 1 - fl.t / 0.9);
     ctx.fillStyle = fl.color;
@@ -1525,8 +1157,18 @@ function drawScene(dt = 1 / 60) {
   ctx.globalAlpha = 1;
 }
 
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
 // ---------- Update ----------
-const STEP = 1 / 60;
+const STEP = 1 / 120;
 let acc = 0;
 let last = performance.now();
 let lastShove = 0;
@@ -1542,26 +1184,30 @@ function update(dt) {
   const onShelf = () => machine.coins.reduce((n, c) => n + c.layer, 0);
   const shelfBefore = onShelf();
   let wentOut = 0;
-  while (acc >= STEP && steps < 6) {
+  while (acc >= STEP && steps < 12) {
     const before = machine.coins.length;
     machine.step(STEP, onOut);
     wentOut += before - machine.coins.length;
     acc -= STEP;
     steps++;
   }
-  if (steps === 6) acc = 0;
+  if (steps === 12) acc = 0;
   // coins tumbling off the shelf onto the table tinkle against the pile
   const tumbled = shelfBefore - onShelf();
   if (tumbled > 0 && now - lastShove > 70) { lastShove = now; sfx.shove(); }
   else if (wentOut === 0 && machine.front > machine.frontAt(machine.t - 0.05) && Math.random() < dt * 2.5) sfx.shove();
 
+  for (const c of machine.coins) if (c.elev > 0 && c.layer === 0) c.elev = Math.max(0, c.elev - dt * 90);
+
   for (let i = incoming.length - 1; i >= 0; i--) {
     const d = incoming[i];
     d.t += dt;
-    // the gate is checked when the coin actually falls past it, so you have to lead the target
-    if (!d.checked && d.t / d.dur >= GATE_PASS) {
-      d.checked = true;
-      if (!d.free && Math.abs(d.x - gateX(now / 1000)) < GATE_HALF) {
+    // until it leaves the wall slot, a coin rides along with the moving chute
+    if (!d.free && incomingPos(d).stage !== 'out') d.x = clamp(chuteX, TYPES[d.type].r, W - TYPES[d.type].r);
+    // a coin earns a spin if the LUCKY window is in front of it as it rolls past
+    if (!d.gateChecked && incomingPos(d).elev <= GATE_ELEV - 14) {   // coin centred in the window
+      d.gateChecked = true;
+      if (Math.abs(d.x - gateX(now / 1000)) < GATE_HALF) {
         const p = proj(d.x, 0, GATE_ELEV);
         burst(p.x, p.y, '#ffd23e', 24);
         floaters.push({ text: 'SPIN!', x: p.x, y: p.y, t: 0, color: '#ffd23e', big: true });
@@ -1571,8 +1217,7 @@ function update(dt) {
     }
     if (d.t >= d.dur) {
       incoming.splice(i, 1);
-      // hand it to the physics a little above the shelf, still falling
-      machine.add(d.x, d.yLand, 1, d.type, 10, -220);
+      machine.add(d.x, d.yLand, 1, d.type);
       sfx.land();
     }
   }
@@ -1581,7 +1226,7 @@ function update(dt) {
   for (let i = falling.length - 1; i >= 0; i--) {
     const fc = falling[i];
     fc.t += dt;
-    fc.vy += 1100 * dt;
+    fc.vy += 900 * dt;
     fc.x += fc.vx * dt;
     fc.y += fc.vy * dt;
     if ((fc.kind === 'win' && fc.y >= trayY) || fc.t > 0.6) {
@@ -1602,10 +1247,7 @@ function update(dt) {
 
   $('drop').style.setProperty('--cd', dropCooldown().toFixed(3));
 
-}
-
-// free credits when running low (in either machine)
-function tickRefill(dt) {
+  // free credits when running low
   if (credits < REFILL_BELOW) {
     refillTimer -= dt;
     if (refillTimer <= 0) {
@@ -1624,14 +1266,8 @@ function frame(ts) {
   const dt = Math.min((ts - last) / 1000, 0.1);
   last = ts;
   now = ts;
-  if (mode === 'pusher') {
-    update(dt);
-    drawScene(dt);
-  } else {
-    clawUpdate(dt);
-    clawDraw();
-  }
-  tickRefill(dt);
+  update(dt);
+  drawScene();
   requestAnimationFrame(frame);
 }
 
@@ -1642,11 +1278,11 @@ function updateHud() {
   $('won').textContent = pad(won);
   $('spins').textContent = spins;
   $('drop').disabled = credits < 1;
-  $('clawCredits').textContent = pad(credits);
 }
 function flashRefill() {
   const r = $('refill');
   r.animate([{ opacity: 1 }, { opacity: 0.2 }, { opacity: 1 }], { duration: 400, iterations: 2 });
+  if (canClaim()) $('freeReady').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.2)' }, { transform: 'scale(1)' }], { duration: 400, iterations: 2 });
 }
 
 // ---------- Input ----------
@@ -1685,11 +1321,6 @@ dropBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); startHold((
 
 let spaceDown = false;
 window.addEventListener('keydown', (e) => {
-  if (mode === 'claw') {
-    if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { e.preventDefault(); claw.move = e.code === 'ArrowLeft' ? -1 : 1; }
-    if (e.code === 'Space' && !e.repeat) { e.preventDefault(); clawPlay(); }
-    return;
-  }
   if (e.code !== 'Space' || spaceDown) return;
   e.preventDefault();
   spaceDown = true;
@@ -1697,10 +1328,6 @@ window.addEventListener('keydown', (e) => {
   startHold(() => dropCoin(chuteX));
 });
 window.addEventListener('keyup', (e) => {
-  if (mode === 'claw') {
-    if ((e.code === 'ArrowLeft' && claw.move < 0) || (e.code === 'ArrowRight' && claw.move > 0)) claw.move = 0;
-    return;
-  }
   if (e.code !== 'Space') return;
   spaceDown = false;
   dropBtn.classList.remove('pressed');
@@ -1713,653 +1340,113 @@ $('sound').onclick = () => {
   save();
 };
 $('reset').onclick = () => {
-  if (!confirm(`Start over with ${START_CREDITS} credits, fresh machines and an empty prize shelf?`)) return;
+  if (!confirm('Start over with 30 credits and a fresh machine?')) return;
   credits = START_CREDITS; won = 0; spins = 0;
   incoming.length = 0; falling.length = 0;
   machine.fill();
-  claw.collection = {}; claw.misses = 0; claw.held = null; claw.prizes = [];
-  claw.state = 'idle'; claw.x = HOME_X; claw.y = RAIL_Y;
-  stockMachine(STOCK, false);
-  claw.settling = true;
-  for (let i = 0; i < 240; i++) stepPrizes(1 / 120);
-  claw.settling = false;
-  renderShelf();
   save();
   updateHud();
 };
 
-// ======================= CLAW MACHINE =======================
-// Side view of a glass cabinet, in "claw units" (CW x CH). The chute is on the left, behind a low wall.
-const CW = 360;
-const CH = 440;
-const FLOOR = 408;           // top of the prize pit floor
-const CHUTE_X = 84;          // the chute wall
-const CHUTE_TOP = 255;       // top of the chute wall (taller than the pile, so prizes don't spill in)
-const RAIL_Y = 46;           // where the claw rides
-const HOME_X = 46;           // the claw rests over the chute
-const PRONG = 50;            // prong length
-const OPEN_ANGLE = 0.62;     // radians from straight down
-const SHUT_ANGLE = 0.08;
-const CLAW_COST = 5;
-const CLAW_TIME = 15;
-const CLAW_PITY = 6;         // misses in a row before a guaranteed strong grab
-const CLAW_GRIP = 0.42;                // base chance to hold a centered prize all the way
-const STOCK = 15;            // prizes in a full machine
-const PRIZE_GRAVITY = 1300;
+// ---------- Coin machine: free coins once a day ----------
+const DAILY_BASE = 50;      // coins on day 1 of a streak
+const STREAK_BONUS = 10;    // extra coins per consecutive day
+const STREAK_MAX = 7;       // the bonus stops growing after a week
+let daily = { last: '', streak: 0 };
+let dispensing = false;
 
-const PRIZES = [
-  { id: 'bear',    emoji: '🧸', name: 'Teddy',   rarity: 'common', r: 27, weight: 1,    chance: 12 },
-  { id: 'bunny',   emoji: '🐰', name: 'Bunny',   rarity: 'common', r: 25, weight: 1,    chance: 12 },
-  { id: 'cat',     emoji: '🐱', name: 'Kitty',   rarity: 'common', r: 25, weight: 1,    chance: 12 },
-  { id: 'dog',     emoji: '🐶', name: 'Puppy',   rarity: 'common', r: 25, weight: 1,    chance: 12 },
-  { id: 'frog',    emoji: '🐸', name: 'Froggy',  rarity: 'common', r: 24, weight: 1,    chance: 10 },
-  { id: 'duck',    emoji: '🐥', name: 'Chick',   rarity: 'common', r: 23, weight: 0.9,  chance: 10 },
-  { id: 'panda',   emoji: '🐼', name: 'Panda',   rarity: 'common', r: 26, weight: 1.05, chance: 8 },
-  { id: 'fox',     emoji: '🦊', name: 'Fox',     rarity: 'common', r: 25, weight: 1,    chance: 8 },
-  { id: 'unicorn', emoji: '🦄', name: 'Unicorn', rarity: 'rare',   r: 28, weight: 1.35, chance: 3 },
-  { id: 'dragon',  emoji: '🐲', name: 'Dragon',  rarity: 'rare',   r: 28, weight: 1.35, chance: 3 },
-  { id: 'octopus', emoji: '🐙', name: 'Octopus', rarity: 'rare',   r: 27, weight: 1.3,  chance: 3 },
-  { id: 'crown',   emoji: '👑', name: 'Crown',   rarity: 'super',  r: 22, weight: 1.8,  chance: 0.8 },
-  { id: 'trophy',  emoji: '🏆', name: 'Trophy',  rarity: 'super',  r: 23, weight: 1.8,  chance: 0.8 },
-];
-const PRIZE_BY_ID = Object.fromEntries(PRIZES.map((p) => [p.id, p]));
-const RARITY_GLOW = { common: null, rare: '#c063ff', super: '#ffd23e' };
+const dayKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function todayKey() { return dayKey(new Date()); }
+function yesterdayKey() { const d = new Date(); d.setDate(d.getDate() - 1); return dayKey(d); }
+const canClaim = () => daily.last !== todayKey();
+// the streak you'd be on if you claimed today
+function nextStreak() { return daily.last === yesterdayKey() ? daily.streak + 1 : 1; }
+// the streak still alive right now (claimed today or yesterday)
+function liveStreak() { return daily.last === todayKey() || daily.last === yesterdayKey() ? daily.streak : 0; }
+const payout = (streak) => DAILY_BASE + STREAK_BONUS * (Math.min(streak, STREAK_MAX) - 1);
 
-const clawCanvas = $('claw');
-const cctx = clawCanvas.getContext('2d');
-let ccw = 0, cch = 0, cs = 1;
-
-const claw = {
-  prizes: [],
-  x: HOME_X, y: RAIL_Y, vx: 0, vy: 0,
-  angle: OPEN_ANGLE,
-  state: 'idle',            // idle, aim, drop, close, lift, carry, release, home
-  timer: 0,
-  held: null,
-  slipAt: Infinity,         // seconds after the grab when a weak grip lets go
-  grabT: 0,
-  wonThisPlay: false,
-  slipped: false,
-  move: 0,                  // -1, 0, 1 from the buttons/keys
-  dragX: null,
-  misses: 0,
-  collection: {},
-  popups: [],               // prizes coming out of the door
-  stateT: 0,
-};
-
-// pre-rendered emoji so they're crisp and cheap to draw
-const prizeSprites = {};
-function prizeSprite(id) {
-  if (prizeSprites[id]) return prizeSprites[id];
-  const [c, g] = makeCanvas(128, 128);
-  g.font = '100px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText(PRIZE_BY_ID[id].emoji, 64, 70);
-  return (prizeSprites[id] = c);
-}
-
-function pickPrize() {
-  const total = PRIZES.reduce((s, p) => s + p.chance, 0);
-  let r = Math.random() * total;
-  for (const p of PRIZES) { r -= p.chance; if (r < 0) return p; }
-  return PRIZES[0];
-}
-
-function addPrize(type, x, y) {
-  claw.prizes.push({ id: type.id, r: type.r, w: type.weight, x, y, px: x, py: y, vx: 0, vy: 0, a: (Math.random() - 0.5) * 1.2, onFloor: false });
-}
-
-function stockMachine(n, fromTop) {
-  for (let i = 0; i < n; i++) {
-    const t = pickPrize();
-    const x = CHUTE_X + t.r + 24 + Math.random() * (CW - CHUTE_X - 2 * t.r - 40);
-    addPrize(t, x, fromTop ? -40 - i * 50 : FLOOR - t.r - Math.random() * 180);
+function renderChanger() {
+  const ready = canClaim();
+  const screen = $('changerScreen');
+  if (dispensing) {
+    // the screen is counting down the payout; leave it alone
+  } else if (ready) {
+    screen.innerHTML = `<div class="label">TODAY'S FREE COINS</div><div class="amount">${payout(nextStreak())}</div>`;
+  } else {
+    const mid = new Date(); mid.setHours(24, 0, 0, 0);
+    const left = Math.max(0, Math.ceil((mid - Date.now()) / 1000));
+    const hms = [Math.floor(left / 3600), Math.floor(left / 60) % 60, left % 60].map((n) => String(n).padStart(2, '0')).join(':');
+    screen.innerHTML = `<div class="label">NEXT FREE COINS IN</div><div class="wait">${hms}</div>`;
   }
-}
-
-function clawResize() {
-  const w = clawCanvas.parentElement.clientWidth;
-  if (!w) return;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  ccw = w;
-  cch = Math.round(w * CH / CW);
-  clawCanvas.width = ccw * dpr;
-  clawCanvas.height = cch * dpr;
-  clawCanvas.style.height = cch + 'px';
-  cs = ccw / CW;
-  cctx.setTransform(dpr * cs, 0, 0, dpr * cs, 0, 0);
-}
-
-// ---------- Claw geometry ----------
-function prongTips() {
-  const a = claw.angle;
-  const hubY = claw.y + 14;
-  return [
-    { x: claw.x - 9 - Math.sin(a) * PRONG, y: hubY + Math.cos(a) * PRONG, bx: claw.x - 9, by: hubY },
-    { x: claw.x + 9 + Math.sin(a) * PRONG, y: hubY + Math.cos(a) * PRONG, bx: claw.x + 9, by: hubY },
-  ];
-}
-
-function pushOutOfSegment(p, ax, ay, bx, by, extra = 0, maxPush = Infinity) {
-  const dx = bx - ax, dy = by - ay;
-  const len2 = dx * dx + dy * dy || 1;
-  const t = clamp(((p.x - ax) * dx + (p.y - ay) * dy) / len2, 0, 1);
-  const cx = ax + dx * t, cy = ay + dy * t;
-  let ox = p.x - cx, oy = p.y - cy;
-  const d = Math.hypot(ox, oy);
-  const min = p.r + extra;
-  if (d >= min) return false;
-  if (d < 1e-4) { ox = p.x < ax ? -1 : 1; oy = 0; } else { ox /= d; oy /= d; }
-  const push = Math.min(min - d, maxPush);
-  p.x += ox * push;
-  p.y += oy * push;
-  return true;
-}
-
-// ---------- Prize physics ----------
-function stepPrizes(dt) {
-  const list = claw.prizes;
-  for (const p of list) {
-    p.px = p.x; p.py = p.y;
-    if (p === claw.held) continue;
-    p.vy += PRIZE_GRAVITY * dt;
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
+  const shown = ready ? nextStreak() : liveStreak();
+  const lit = ready ? shown - 1 : shown;
+  const pips = [];
+  for (let i = 1; i <= STREAK_MAX; i++) {
+    const cls = i <= Math.min(lit, STREAK_MAX) ? 'on' : (ready && i === Math.min(shown, STREAK_MAX) ? 'next' : '');
+    pips.push(`<i class="${cls}">${i === STREAK_MAX ? '★' : i}</i>`);
   }
-  const tips = prongTips();
-  for (let it = 0; it < 5; it++) {
-    for (let i = 0; i < list.length; i++) {
-      for (let j = i + 1; j < list.length; j++) {
-        const a = list[i], b = list[j];
-        let dx = b.x - a.x, dy = b.y - a.y;
-        const min = (a.r + b.r) * 0.9;            // plush squishes a little
-        const d2 = dx * dx + dy * dy;
-        if (d2 >= min * min) continue;
-        let d = Math.sqrt(d2);
-        if (d < 1e-4) { dx = 0.01; dy = 1; d = 1; }
-        const corr = Math.min((min - d) * 0.5, 1.5);   // gentle, so a squeeze never launches anything
-        const ha = a === claw.held, hb = b === claw.held;
-        const wa = ha ? 0 : 1 / a.w, wb = hb ? 0 : 1 / b.w;
-        if (wa + wb === 0) continue;
-        const nx = dx / d, ny = dy / d;
-        a.x -= nx * corr * 2 * wa / (wa + wb); a.y -= ny * corr * 2 * wa / (wa + wb);
-        b.x += nx * corr * 2 * wb / (wa + wb); b.y += ny * corr * 2 * wb / (wa + wb);
-      }
+  $('streak').innerHTML = pips.join('');
+  $('streakLabel').textContent = liveStreak() > 0 ? `DAILY STREAK: ${liveStreak()} DAY${liveStreak() > 1 ? 'S' : ''}` : 'DAILY STREAK';
+  $('dispense').disabled = !ready || dispensing;
+  $('dispense').textContent = dispensing ? 'DISPENSING…' : ready ? 'DISPENSE' : 'CLAIMED TODAY ✓';
+  $('freeReady').classList.toggle('show', ready && !dispensing);
+}
+
+function dispense() {
+  if (!canClaim() || dispensing) return;
+  const streak = nextStreak();
+  const amount = payout(streak);
+  daily = { last: todayKey(), streak };
+  dispensing = true;
+  save();
+  renderChanger();
+
+  const chute = $('chute');
+  chute.innerHTML = '';
+  const screen = $('changerScreen');
+  const visible = Math.min(amount, 40);   // tokens drawn in the tray
+  const perCoin = 1400 / amount;
+  let paid = 0;
+  const tick = setInterval(() => {
+    paid++;
+    credits++;
+    if (paid % Math.ceil(amount / visible) === 0 || paid === amount) {
+      const tok = document.createElement('div');
+      tok.className = 'tok';
+      tok.textContent = '★';
+      const w = chute.clientWidth, h = chute.clientHeight;
+      tok.style.left = `${w / 2 - 11 + (Math.random() - 0.5) * (w - 30)}px`;
+      tok.style.setProperty('--land', `${h - 4 - Math.random() * Math.min(h - 24, 6 + chute.children.length * 1.2)}px`);
+      tok.style.setProperty('--rot', `${Math.round((Math.random() - 0.5) * 300)}deg`);
+      chute.appendChild(tok);
+      jingle(2, { base: 2400, spread: 0.05, vol: 0.04 });
     }
-    for (const p of list) {
-      if (p === claw.held) continue;
-      // prongs and hub shove prizes around, except on the way down, when the open prongs
-      // slide into the plush instead of knocking it aside
-      if (claw.state !== 'drop') {
-        // pushed gently: closing prongs squeeze plush, they don't bat it across the machine
-        for (const t of tips) pushOutOfSegment(p, t.bx, t.by, t.x, t.y, 3, 0.5);
-        pushOutOfSegment(p, claw.x - 16, claw.y + 8, claw.x + 16, claw.y + 8, 2, 0.8);
-      }
-      // cabinet
-      p.onFloor = false;
-      if (p.x > CHUTE_X) {
-        if (p.y > FLOOR - p.r) { p.y = FLOOR - p.r; p.onFloor = true; }
-        if (p.x > CW - 12 - p.r) p.x = CW - 12 - p.r;
-      } else if (p.x < 12 + p.r) p.x = 12 + p.r;
-      pushOutOfSegment(p, CHUTE_X, CHUTE_TOP, CHUTE_X, FLOOR + 40);
-      // never squeeze through the chute wall: a prize that was in the pit stays in the pit
-      if (p.px >= CHUTE_X && p.y > CHUTE_TOP - p.r * 0.2 && p.x < CHUTE_X + p.r) p.x = CHUTE_X + p.r;
-    }
-  }
-  // velocity from motion; plush doesn't bounce much and drags on the floor
-  for (const p of list) {
-    if (p === claw.held) { p.vx = (p.x - p.px) / dt; p.vy = (p.y - p.py) / dt; continue; }
-    p.vx = clamp((p.x - p.px) / dt, -220, 220) * 0.985;
-    p.vy = clamp((p.y - p.py) / dt, -220, 900);
-    if (p.onFloor) { p.vx *= 0.82; if (p.vy > 0) p.vy = 0; }
-    p.a += ((p.x - p.px) / p.r) * 0.8;
-  }
-  // through the chute's hole = won
-  for (let i = list.length - 1; i >= 0; i--) {
-    const p = list[i];
-    if (p.x < CHUTE_X && p.y > FLOOR + p.r) {
-      list.splice(i, 1);
-      if (p === claw.held) claw.held = null;
-      if (!claw.settling) winPrize(p);
-    } else if (p.y > CH + 200) list.splice(i, 1);
-  }
-}
-
-// ---------- Playing ----------
-function clawPlay() {
-  if (claw.state === 'idle') {
-    if (credits < CLAW_COST) { banner('NEED 5', 'CREDITS', '#ff4d6d', $('clawBanner')); sfx.miss(); return; }
-    credits -= CLAW_COST;
+    screen.innerHTML = `<div class="label">DISPENSING</div><div class="amount">+${paid}</div>`;
     updateHud();
-    sfx.insert();
-    claw.state = 'aim';
-    claw.timer = CLAW_TIME;
-    claw.wonThisPlay = false;
-    claw.slipped = false;
-    save();
-  } else if (claw.state === 'aim') {
-    clawSetState('drop');
-    tone(500, { dur: 0.5, type: 'triangle', vol: 0.06, slide: 0.5 });
-  }
-}
-
-function clawSetState(s) {
-  claw.state = s;
-  claw.stateT = 0;
-}
-
-function decideGrab() {
-  // the prize most centered between the prongs, low enough to be caught
-  const hubY = claw.y + 14;
-  let best = null, bestD = Infinity;
-  for (const p of claw.prizes) {
-    const dx = Math.abs(p.x - claw.x);
-    if (dx > p.r * 0.95 + 6) continue;
-    if (p.y < hubY - 6 || p.y > hubY + PRONG + p.r * 0.65) continue;
-    if (dx < bestD) { bestD = dx; best = p; }
-  }
-  if (!best) return;
-  const t = PRIZE_BY_ID[best.id];
-  const offset = bestD / best.r;
-  const chance = claw.misses >= CLAW_PITY ? 1 : clamp((CLAW_GRIP * (1 - 0.75 * offset)) / t.weight, 0.04, 0.92);
-  claw.held = best;
-  best.gx = best.x - claw.x;
-  best.gy = Math.max(best.y - claw.y, 14 + best.r * 0.55);
-  claw.grabT = 0;
-  // a weak grip gives up somewhere on the way up or over to the chute
-  claw.slipAt = Math.random() < chance ? Infinity : 0.25 + Math.random() * 2.2;
-  clink(900, { vol: 0.06, decay: 0.2 });
-  tone(160, { dur: 0.12, type: 'square', vol: 0.05 });
-}
-
-function releaseHeld() {
-  const p = claw.held;
-  if (!p) return;
-  claw.held = null;
-  p.vx = claw.vx * 0.9;
-  p.vy = Math.max(claw.vy, 0);
-}
-
-function winPrize(p) {
-  const t = PRIZE_BY_ID[p.id];
-  claw.collection[t.id] = (claw.collection[t.id] || 0) + 1;
-  claw.wonThisPlay = true;
-  claw.misses = 0;
-  claw.popups.push({ id: t.id, t: 0 });
-  const color = t.rarity === 'super' ? '#ffd23e' : t.rarity === 'rare' ? '#c063ff' : '#2ef2ff';
-  banner(t.rarity === 'super' ? 'SUPER RARE!' : t.rarity === 'rare' ? 'RARE WIN!' : 'YOU WON!', t.name.toUpperCase(), color, $('clawBanner'));
-  sfx.fanfare(t.rarity !== 'common');
-  jingle(4, { base: 2800, vol: 0.05 });
-  renderShelf(t.id);
-  updateHud();
-  save();
-}
-
-function clawUpdate(dt) {
-  claw.stateT += dt;
-  const ox = claw.x, oy = claw.y;
-  const SPEED_X = 130;
-
-  switch (claw.state) {
-    case 'idle':
-    case 'aim': {
-      if (claw.state === 'aim') {
-        claw.timer -= dt;
-        if (claw.timer <= 0) { claw.timer = 0; clawSetState('drop'); tone(500, { dur: 0.5, type: 'triangle', vol: 0.06, slide: 0.5 }); break; }
-        let dir = claw.move;
-        if (claw.dragX !== null) dir = Math.abs(claw.dragX - claw.x) < 3 ? 0 : Math.sign(claw.dragX - claw.x);
-        claw.x = clamp(claw.x + dir * SPEED_X * dt, HOME_X, CW - 40);
-        if (dir && Math.random() < dt * 8) tone(120 + Math.random() * 20, { dur: 0.05, type: 'sawtooth', vol: 0.012 });
-      }
-      claw.angle += (OPEN_ANGLE - claw.angle) * Math.min(1, dt * 8);
-      break;
+    const box = $('credits').parentElement;
+    box.classList.remove('creditsbump'); void box.offsetWidth; box.classList.add('creditsbump');
+    if (paid >= amount) {
+      clearInterval(tick);
+      sfx.fanfare(streak >= STREAK_MAX);
+      banner(`+${amount}`, streak > 1 ? `DAY ${streak} STREAK!` : 'FREE DAILY COINS', '#ffd23e');
+      setTimeout(() => { dispensing = false; save(); renderChanger(); }, 1200);
+      setTimeout(() => { chute.innerHTML = ''; }, 6000);
     }
-    case 'drop': {
-      claw.angle += (OPEN_ANGLE - claw.angle) * Math.min(1, dt * 8);
-      claw.y += 150 * dt;
-      // stop when a prong tip or the hub lands on something
-      const tips = prongTips();
-      let hit = tips.some((t) => t.y >= FLOOR - 2) || claw.y > FLOOR - PRONG - 10;
-      for (const p of claw.prizes) {
-        if (hit) break;
-        // the hub comes to rest on the prize right underneath it; the prong tips sink into
-        // the plush around it (only stop if a tip is driven deep into something)
-        if (Math.abs(p.x - claw.x) < p.r * 0.8 && claw.y + 18 > p.y - p.r * 0.75) hit = true;
-        for (const t of tips) if (Math.hypot(t.x - p.x, t.y - p.y) < p.r * 0.3) hit = true;
-      }
-      if (hit || claw.stateT > 3) { clawSetState('close'); tone(220, { dur: 0.25, type: 'square', vol: 0.04, slide: 0.8 }); }
-      break;
-    }
-    case 'close': {
-      claw.angle += (SHUT_ANGLE - claw.angle) * Math.min(1, dt * 5);
-      // the claw sinks a little as the prongs dig into the plush
-      if (claw.y < FLOOR - PRONG - 18) claw.y += 34 * dt;
-      if (claw.stateT > 0.6) { decideGrab(); clawSetState('lift'); }
-      break;
-    }
-    case 'lift': {
-      claw.y = Math.max(RAIL_Y, claw.y - 110 * dt);
-      if (claw.y <= RAIL_Y) clawSetState('carry');
-      break;
-    }
-    case 'carry': {
-      const dx = HOME_X - claw.x;
-      claw.x += Math.sign(dx) * Math.min(Math.abs(dx), SPEED_X * dt);
-      if (Math.abs(dx) < 0.5) clawSetState('release');
-      break;
-    }
-    case 'release': {
-      claw.angle += (OPEN_ANGLE - claw.angle) * Math.min(1, dt * 6);
-      if (claw.held && claw.stateT > 0.15) releaseHeld();
-      if (claw.stateT > 1.4) {
-        if (!claw.wonThisPlay) {
-          claw.misses++;
-          const near = claw.slipped;
-          banner(near ? 'SO CLOSE!' : 'MISSED', claw.misses >= CLAW_PITY ? 'NEXT GRAB IS STRONG!' : 'TRY AGAIN', '#ff4d6d', $('clawBanner'));
-          sfx.miss();
-        }
-        clawSetState('idle');
-        claw.timer = 0;
-        save();
-      }
-      break;
-    }
-  }
-
-  // held prize: hangs from the prongs, swaying a little; a weak grip lets go
-  if (claw.held) {
-    claw.grabT += dt;
-    if (claw.grabT > claw.slipAt) {
-      claw.slipped = true;
-      releaseHeld();
-      claw.angle = Math.min(OPEN_ANGLE, claw.angle + 0.25);
-      tone(330, { dur: 0.4, type: 'triangle', vol: 0.06, slide: 0.55 });
-    } else {
-      const p = claw.held;
-      p.gx *= 1 - Math.min(1, dt * 2);         // settles toward the middle as it's lifted
-      p.x = claw.x + p.gx + Math.sin(claw.grabT * 5) * 1.5;
-      p.y = claw.y + p.gy;
-      claw.angle = Math.max(claw.angle, Math.asin(clamp((p.r * 0.75 - 9) / PRONG, 0, 0.9)));
-    }
-  }
-
-  claw.vx = (claw.x - ox) / dt;
-  claw.vy = (claw.y - oy) / dt;
-
-  // physics in small steps
-  const n = Math.ceil(dt / (1 / 120));
-  for (let i = 0; i < n; i++) stepPrizes(dt / n);
-
-  // restock when running low and nobody is playing
-  if (claw.state === 'idle' && claw.prizes.length < STOCK - 6) {
-    stockMachine(STOCK - claw.prizes.length, true);
-    banner('RESTOCKED!', 'NEW PRIZES', '#2ef2ff', $('clawBanner'));
-  }
-
-  for (let i = claw.popups.length - 1; i >= 0; i--) {
-    claw.popups[i].t += dt;
-    if (claw.popups[i].t > 2.2) claw.popups.splice(i, 1);
-  }
-
-  $('clawTime').textContent = claw.state === 'aim' ? String(Math.ceil(claw.timer)).padStart(2, '0') : '--';
-  const g = $('grab');
-  const playing = claw.state !== 'idle';
-  g.innerHTML = claw.state === 'aim' ? 'GRAB<small>OR SPACE</small>' : playing ? '···<small>&nbsp;</small>' : `PLAY<small>${CLAW_COST} CREDITS</small>`;
-  g.disabled = (playing && claw.state !== 'aim') || (!playing && credits < CLAW_COST);
-  $('clawLeft').disabled = $('clawRight').disabled = claw.state !== 'aim';
+  }, perCoin);
 }
-
-// ---------- Drawing ----------
-const clawBg = (() => {
-  const [c, g] = makeCanvas(CW * 2, CH * 2);
-  g.scale(2, 2);
-  const back = g.createLinearGradient(0, 0, 0, CH);
-  back.addColorStop(0, '#2a1250');
-  back.addColorStop(1, '#14082a');
-  g.fillStyle = back;
-  g.fillRect(0, 0, CW, CH);
-  // polka-dot back panel
-  for (let y = 70; y < FLOOR; y += 26) {
-    for (let x = (y / 26) % 2 ? 13 : 0; x < CW; x += 26) {
-      g.fillStyle = 'rgba(255,62,165,.08)';
-      g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill();
-    }
-  }
-  // neon strip at the top
-  g.shadowColor = '#2ef2ff';
-  g.shadowBlur = 14;
-  g.fillStyle = '#9ff8ff';
-  g.fillRect(14, 16, CW - 28, 4);
-  g.shadowBlur = 0;
-  // rail
-  const rail = g.createLinearGradient(0, RAIL_Y - 30, 0, RAIL_Y - 20);
-  rail.addColorStop(0, '#f2f4fa');
-  rail.addColorStop(1, '#6d7387');
-  g.fillStyle = rail;
-  g.fillRect(10, RAIL_Y - 30, CW - 20, 9);
-  // floor of the pit
-  const floor = g.createLinearGradient(0, FLOOR, 0, CH);
-  floor.addColorStop(0, '#3a1d66');
-  floor.addColorStop(1, '#1a0d30');
-  g.fillStyle = floor;
-  g.fillRect(CHUTE_X, FLOOR, CW - CHUTE_X, CH - FLOOR);
-  g.fillStyle = 'rgba(255,255,255,.12)';
-  g.fillRect(CHUTE_X, FLOOR, CW - CHUTE_X, 2);
-  // chute: a dark hole with a glowing rim
-  g.fillStyle = '#05020c';
-  g.fillRect(12, CHUTE_TOP - 4, CHUTE_X - 12, CH - CHUTE_TOP + 4);
-  const hole = g.createLinearGradient(0, FLOOR, 0, CH);
-  hole.addColorStop(0, '#000');
-  hole.addColorStop(1, '#1a0d30');
-  g.fillStyle = hole;
-  g.fillRect(12, FLOOR, CHUTE_X - 12, CH - FLOOR);
-  g.fillStyle = 'rgba(255,210,62,.85)';
-  g.font = '900 13px system-ui, sans-serif';
-  g.textAlign = 'center';
-  g.fillText('PRIZE', (12 + CHUTE_X) / 2, CHUTE_TOP + 30);
-  g.font = '900 18px system-ui, sans-serif';
-  g.fillText('▼', (12 + CHUTE_X) / 2, CHUTE_TOP + 52);
-  return c;
-})();
-
-function drawPrize(p) {
-  const t = PRIZE_BY_ID[p.id];
-  const glow = RARITY_GLOW[t.rarity];
-  // shadow on the floor
-  if (p.x > CHUTE_X) {
-    const h = clamp((FLOOR - p.y - p.r) / 200, 0, 1);
-    cctx.fillStyle = `rgba(0,0,0,${0.35 * (1 - h)})`;
-    cctx.beginPath(); cctx.ellipse(p.x, FLOOR + 1, p.r * (1 - h * 0.4), 4, 0, 0, Math.PI * 2); cctx.fill();
-  }
-  if (glow) {
-    cctx.save();
-    cctx.globalCompositeOperation = 'lighter';
-    const g = cctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 1.6);
-    g.addColorStop(0, glow + '88');
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    cctx.globalAlpha = 0.55 + 0.25 * Math.sin(now / 250 + p.x);
-    cctx.fillStyle = g;
-    cctx.fillRect(p.x - p.r * 1.6, p.y - p.r * 1.6, p.r * 3.2, p.r * 3.2);
-    cctx.restore();
-  }
-  cctx.save();
-  cctx.translate(p.x, p.y);
-  cctx.rotate(p.a);
-  const size = p.r * 2.25;
-  cctx.drawImage(prizeSprite(p.id), -size / 2, -size / 2, size, size);
-  cctx.restore();
-}
-
-function drawClaw() {
-  const g = cctx;
-  // trolley on the rail and the cable
-  g.fillStyle = '#c9cfdf';
-  g.fillRect(claw.x - 16, RAIL_Y - 34, 32, 16);
-  g.fillStyle = '#ff3ea5';
-  g.fillRect(claw.x - 16, RAIL_Y - 20, 32, 3);
-  g.strokeStyle = '#9aa1b3';
-  g.lineWidth = 2;
-  g.beginPath(); g.moveTo(claw.x, RAIL_Y - 18); g.lineTo(claw.x, claw.y); g.stroke();
-  // prongs
-  const tips = prongTips();
-  for (const [i, t] of tips.entries()) {
-    const side = i === 0 ? -1 : 1;
-    const grad = g.createLinearGradient(t.bx, t.by, t.x, t.y);
-    grad.addColorStop(0, '#f4f6fb');
-    grad.addColorStop(1, '#7d8597');
-    g.strokeStyle = grad;
-    g.lineWidth = 5;
-    g.lineCap = 'round';
-    g.beginPath();
-    g.moveTo(t.bx, t.by);
-    g.lineTo(t.x, t.y);
-    // hooked tip curling inward
-    g.lineTo(t.x - side * 9 * Math.cos(claw.angle), t.y + 4);
-    g.stroke();
-  }
-  // middle prong, seen edge-on
-  g.strokeStyle = '#8a92a5';
-  g.lineWidth = 4;
-  g.beginPath(); g.moveTo(claw.x, claw.y + 14); g.lineTo(claw.x, claw.y + 14 + PRONG * Math.cos(claw.angle) * 0.85); g.stroke();
-  // hub
-  const hub = g.createLinearGradient(claw.x - 18, 0, claw.x + 18, 0);
-  hub.addColorStop(0, '#7d8597');
-  hub.addColorStop(0.5, '#f4f6fb');
-  hub.addColorStop(1, '#7d8597');
-  g.fillStyle = hub;
-  roundRect(g, claw.x - 18, claw.y, 36, 18, 6);
-  g.fill();
-  g.fillStyle = '#ffd23e';
-  g.beginPath(); g.arc(claw.x, claw.y + 9, 3.5, 0, Math.PI * 2); g.fill();
-}
-
-function clawDraw() {
-  if (!ccw) clawResize();
-  const g = cctx;
-  g.drawImage(clawBg, 0, 0, CW, CH);
-
-  // aim guide while steering
-  if (claw.state === 'aim') {
-    g.strokeStyle = 'rgba(255,210,62,.35)';
-    g.setLineDash([5, 6]);
-    g.lineWidth = 1.5;
-    g.beginPath(); g.moveTo(claw.x, claw.y + 70); g.lineTo(claw.x, FLOOR); g.stroke();
-    g.setLineDash([]);
-  }
-
-  for (const p of claw.prizes) if (p !== claw.held) drawPrize(p);
-  drawClaw();
-  if (claw.held) drawPrize(claw.held);
-
-  // chute wall: clear acrylic with a chrome top
-  g.fillStyle = 'rgba(180,220,255,.16)';
-  g.fillRect(CHUTE_X - 4, CHUTE_TOP, 8, FLOOR - CHUTE_TOP);
-  g.fillStyle = '#e9ecf5';
-  g.fillRect(CHUTE_X - 5, CHUTE_TOP - 4, 10, 5);
-  // the chute's front panel, over anything falling inside it
-  g.fillStyle = 'rgba(255,62,165,.12)';
-  g.fillRect(12, CHUTE_TOP, CHUTE_X - 16, FLOOR - CHUTE_TOP);
-
-  // glass glare
-  const glare = g.createLinearGradient(0, 0, CW, CH);
-  glare.addColorStop(0.2, 'rgba(255,255,255,0)');
-  glare.addColorStop(0.27, 'rgba(255,255,255,.07)');
-  glare.addColorStop(0.31, 'rgba(255,255,255,0)');
-  g.fillStyle = glare;
-  g.fillRect(0, 0, CW, CH);
-
-  // prizes popping out of the door
-  for (const pu of claw.popups) {
-    const k2 = Math.min(1, pu.t / 0.5);
-    const y = CH - 30 - Math.sin(k2 * Math.PI) * 30 - k2 * 20;
-    const size = 40 + 30 * (1 - Math.abs(1 - k2));
-    g.globalAlpha = Math.min(1, (2.2 - pu.t) * 2);
-    g.drawImage(prizeSprite(pu.id), (12 + CHUTE_X) / 2 - size / 2 + k2 * 30, y - size / 2, size, size);
-    g.globalAlpha = 1;
-  }
-
-  if (claw.state === 'idle' && Math.floor(now / 500) % 2 === 0) {
-    g.fillStyle = '#ffd23e';
-    g.shadowColor = '#ffd23e';
-    g.shadowBlur = 10;
-    g.font = '900 16px system-ui, sans-serif';
-    g.textAlign = 'center';
-    g.fillText(credits >= CLAW_COST ? 'PRESS PLAY' : `INSERT ${CLAW_COST} CREDITS`, CW / 2 + 30, 92);
-    g.shadowBlur = 0;
-  }
-}
-
-// ---------- Prize shelf ----------
-function renderShelf(popId) {
-  const box = $('shelf');
-  box.innerHTML = '';
-  let total = 0;
-  for (const t of PRIZES) {
-    const n = claw.collection[t.id] || 0;
-    total += n;
-    const el = document.createElement('div');
-    el.className = `shelf-item ${t.rarity}${n ? '' : ' locked'}${t.id === popId ? ' pop' : ''}`;
-    el.title = n ? `${t.name} ×${n}` : '???';
-    el.innerHTML = `<span>${t.emoji}</span>${n ? `<b>×${n}</b>` : ''}`;
-    box.appendChild(el);
-  }
-  $('prizeCount').textContent = String(total).padStart(3, '0');
-}
-
-// ---------- Controls ----------
-function holdButton(id, dir) {
-  const el = $(id);
-  el.addEventListener('pointerdown', (e) => { e.preventDefault(); claw.move = dir; el.classList.add('pressed'); });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => el.addEventListener(ev, () => {
-    if (claw.move === dir) claw.move = 0;
-    el.classList.remove('pressed');
-  }));
-}
-holdButton('clawLeft', -1);
-holdButton('clawRight', 1);
-$('grab').addEventListener('click', clawPlay);
-clawCanvas.addEventListener('pointerdown', (e) => {
-  clawCanvas.setPointerCapture(e.pointerId);
-  const r = clawCanvas.getBoundingClientRect();
-  claw.dragX = (e.clientX - r.left) / cs;
-});
-clawCanvas.addEventListener('pointermove', (e) => {
-  if (claw.dragX === null) return;
-  const r = clawCanvas.getBoundingClientRect();
-  claw.dragX = (e.clientX - r.left) / cs;
-});
-['pointerup', 'pointercancel'].forEach((ev) => clawCanvas.addEventListener(ev, () => { claw.dragX = null; }));
-
-// ---------- Switching machines ----------
-let mode = 'pusher';
-function setMode(m) {
-  mode = m;
-  $('pusherView').hidden = m !== 'pusher';
-  $('clawView').hidden = m !== 'claw';
-  $('tabPusher').classList.toggle('active', m === 'pusher');
-  $('tabClaw').classList.toggle('active', m === 'claw');
-  $('tabPusher').setAttribute('aria-selected', m === 'pusher');
-  $('tabClaw').setAttribute('aria-selected', m === 'claw');
-  $('title').innerHTML = m === 'pusher' ? 'COIN <span>PUSHER</span>' : 'CLAW <span>MACHINE</span>';
-  stopHold();
-  claw.move = 0;
-  if (m === 'pusher') resize(); else clawResize();
-  acc = 0;
-}
-$('tabPusher').onclick = () => setMode('pusher');
-$('tabClaw').onclick = () => setMode('claw');
+$('dispense').onclick = dispense;
+$('freeReady').onclick = () => {
+  $('changer').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  $('changer').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)' }, { transform: 'scale(1)' }], { duration: 500, delay: 300 });
+};
 
 // ---------- Save / load ----------
-let startMode = 'pusher';
 const TYPE_LIST = ['coin', 'big', 'star', 'gem'];
 function save() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      credits, won, spins, soundOn, t: machine.t, mode,
-      claw: { collection: claw.collection, misses: claw.misses },
-      coins: machine.coins.map((c) => [Math.round(c.x * 10) / 10, Math.round(c.y * 10) / 10, c.layer, TYPE_LIST.indexOf(c.type), Math.round(c.z * 10) / 10]),
+      credits, won, spins, soundOn, daily, t: machine.t,
+      coins: machine.coins.map((c) => [Math.round(c.x * 10) / 10, Math.round(c.y * 10) / 10, c.layer, TYPE_LIST.indexOf(c.type)]),
     }));
   } catch (e) { /* storage unavailable */ }
 }
@@ -2371,37 +1458,23 @@ function load() {
     won = Number(s.won) || 0;
     spins = Number(s.spins) || 0;
     soundOn = s.soundOn !== false;
-    if (s.claw && typeof s.claw === 'object') {
-      claw.collection = s.claw.collection && typeof s.claw.collection === 'object' ? s.claw.collection : {};
-      claw.misses = Number(s.claw.misses) || 0;
-    }
-    if (s.mode === 'claw') startMode = 'claw';
+    if (s.daily && typeof s.daily.last === 'string') daily = { last: s.daily.last, streak: Number(s.daily.streak) || 0 };
     machine.t = Number(s.t) || 0;
     machine.front = machine.frontAt(machine.t);
     machine.coins = [];
-    for (const [x, y, layer, ti, z] of s.coins) machine.add(x, y, layer, TYPE_LIST[ti] || 'coin', Number(z) || 0);
-    // let piles find their supports again
-    const t = machine.t;
-    for (let i = 0; i < 30; i++) machine.step(1 / 60, () => {});
-    machine.t = t;
-    machine.front = machine.frontAt(t);
+    for (const [x, y, layer, ti] of s.coins) machine.add(x, y, layer, TYPE_LIST[ti] || 'coin');
     return true;
   } catch (e) { return false; }
 }
 
 // ---------- Start ----------
 if (!load()) machine.fill();
-// fill the claw machine and let the prizes settle into a pile
-stockMachine(STOCK, false);
-claw.settling = true;
-for (let i = 0; i < 240; i++) stepPrizes(1 / 120);
-claw.settling = false;
-renderShelf();
 $('sound').textContent = soundOn ? '🔊' : '🔇';
 resize();
-window.addEventListener('resize', () => { resize(); clawResize(); });
-setMode(startMode);
+window.addEventListener('resize', resize);
 updateHud();
+renderChanger();
+setInterval(renderChanger, 1000);
 setInterval(save, 3000);
 window.addEventListener('pagehide', save);
 document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
