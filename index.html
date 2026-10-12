@@ -87,14 +87,26 @@ button { font: inherit; color: inherit; cursor: pointer; }
   display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0 8px;
 }
 .reel {
-  width: 58px; height: 58px; border-radius: 10px; display: grid; place-items: center;
-  background: linear-gradient(180deg, #ddd 0%, #fff 30%, #fff 70%, #ccc 100%);
+  width: 58px; height: 58px; border-radius: 10px; position: relative; overflow: hidden;
+  background: #fff; perspective: 160px;
   box-shadow: inset 0 0 0 2px #000, 0 0 0 3px #b38a1f, 0 0 12px rgba(255,210,62,.35);
-  font-size: 32px; overflow: hidden; color: #c4121a; font-weight: 900;
+  font-size: 32px; color: #c4121a; font-weight: 900;
 }
-.reel.spin span { animation: blurSpin .08s linear infinite; }
+/* each reel is a six-sided drum turning toward you */
+.drum { position: absolute; inset: 0; transform-style: preserve-3d; }
+.drum b {
+  position: absolute; inset: 0; display: grid; place-items: center; backface-visibility: hidden;
+  background: linear-gradient(180deg, #e8e8e8, #fff 30%, #fff 70%, #e0e0e0);
+  transform: rotateX(calc(var(--i) * -60deg)) translateZ(50px);
+}
+.reel.blur .drum { filter: blur(1.2px); }
+/* the drum curves away top and bottom */
+.reel::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 10px;
+  background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,.55));
+  box-shadow: inset 0 0 0 2px #000;
+}
 .reel.hit { animation: hit .5s ease-in-out 3; }
-@keyframes blurSpin { 0% { transform: translateY(-40%); filter: blur(1.5px); } 100% { transform: translateY(40%); filter: blur(1.5px); } }
 @keyframes hit { 50% { box-shadow: inset 0 0 0 2px #000, 0 0 0 3px var(--neon-yellow), 0 0 26px var(--neon-yellow); } }
 .spins {
   margin-left: 6px; text-align: center; font-size: .65rem; letter-spacing: .12em; color: var(--muted);
@@ -111,6 +123,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: #07040e;
 }
 canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
+.playfield canvas.fx { position: absolute; left: 0; top: 0; pointer-events: none; }
+.loading {
+  position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
+  font-weight: 900; letter-spacing: .2em; font-size: .85rem; color: var(--muted);
+}
+.loading.gone { display: none; }
+.attract {
+  position: absolute; left: 0; right: 0; top: 16%; text-align: center; pointer-events: none; opacity: 0;
+  font-weight: 900; letter-spacing: .08em; color: var(--neon-yellow); text-shadow: 0 0 10px var(--neon-yellow), 0 2px 0 #000;
+}
+.attract.show { animation: attractBlink 1s steps(1) infinite; }
+@keyframes attractBlink { 0% { opacity: 1; } 50% { opacity: 0; } }
 .banner {
   position: absolute; left: 0; right: 0; top: 34%; text-align: center; pointer-events: none;
   font-weight: 900; font-size: clamp(1.6rem, 9vw, 2.6rem); letter-spacing: .06em; opacity: 0;
@@ -223,6 +247,7 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
   content: ''; position: absolute; left: 35%; right: 35%; top: 0; height: 8px; border-radius: 0 0 6px 6px;
   background: #000; box-shadow: 0 0 0 2px #2c5570;
 }
+.chute canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: default; }
 .chute .tok {
   position: absolute; top: -20px; width: 22px; height: 22px; border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #fff3b0, #f5c53a 55%, #b07a12);
@@ -247,10 +272,11 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
 .claw-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; margin: 10px 0 8px; }
 .led.small span { font-size: clamp(1.1rem, 5vw, 1.4rem); }
 .claw-price { text-align: center; font-size: .7rem; letter-spacing: .14em; color: var(--neon-yellow); text-shadow: 0 0 8px rgba(255,210,62,.5); line-height: 1.4; }
-.claw-panel { grid-template-columns: minmax(0, 1fr) auto; }
-.claw-controls { display: flex; align-items: center; gap: 10px; }
+.claw-panel { display: flex; justify-content: center; align-items: center; gap: 28px; }
+.dpad { display: grid; grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px); gap: 4px; }
+#clawUp { grid-area: 1 / 2; } #clawLeft { grid-area: 2 / 1; } #clawRight { grid-area: 2 / 3; } #clawDown { grid-area: 3 / 2; }
 .arrow {
-  width: 56px; height: 56px; border-radius: 14px; border: 0; font-size: 1.4rem; color: #fff;
+  width: 46px; height: 46px; border-radius: 12px; border: 0; font-size: 1.1rem; color: #fff;
   background: linear-gradient(180deg, #4b5cff, #2a35a8);
   box-shadow: 0 5px 0 #18206b, 0 0 14px rgba(75,92,255,.45);
   transition: transform .06s, box-shadow .06s; touch-action: none;
@@ -302,14 +328,16 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
     </header>
 
     <div class="slot" aria-label="Lucky slot">
-      <div class="reel" id="reel0"><span>7</span></div>
-      <div class="reel" id="reel1"><span>7</span></div>
-      <div class="reel" id="reel2"><span>7</span></div>
+      <div class="reel" id="reel0"></div>
+      <div class="reel" id="reel1"></div>
+      <div class="reel" id="reel2"></div>
       <div class="spins">SPINS<b id="spins">0</b></div>
     </div>
 
     <div class="playfield" id="playfield">
       <canvas id="game" aria-label="Coin pusher playfield. Tap to drop a coin."></canvas>
+      <canvas class="fx" id="fx"></canvas>
+      <div class="loading" id="pusherLoading">LOADING…</div>
       <div class="banner" id="banner"></div>
     </div>
 
@@ -350,20 +378,23 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
     </header>
       <div class="claw-top">
         <div class="led small"><label>TIME</label><span id="clawTime">--</span></div>
-        <div class="claw-price">5 CREDITS<br>PER PLAY</div>
+        <div class="led small"><label>CREDITS</label><span id="clawCredits">000</span></div>
         <div class="led small won"><label>PRIZES</label><span id="prizeCount">0</span></div>
       </div>
       <div class="playfield">
         <canvas id="claw" aria-label="Claw machine. Move the claw, then grab a prize."></canvas>
+        <div class="loading" id="clawLoading">LOADING…</div>
+        <div class="attract" id="clawAttract"></div>
         <div class="banner" id="clawBanner"></div>
       </div>
       <div class="panel claw-panel">
-        <div class="led"><label>CREDITS</label><span id="clawCredits">000</span></div>
-        <div class="claw-controls">
+        <div class="dpad">
+          <button class="arrow" id="clawUp" aria-label="Move claw back">▲</button>
           <button class="arrow" id="clawLeft" aria-label="Move claw left">◀</button>
-          <button class="drop-btn grab" id="grab">PLAY<small>5 CREDITS</small></button>
           <button class="arrow" id="clawRight" aria-label="Move claw right">▶</button>
+          <button class="arrow" id="clawDown" aria-label="Move claw forward">▼</button>
         </div>
+        <button class="drop-btn grab" id="grab">PLAY<small>5 CREDITS</small></button>
       </div>
       <section class="shelf">
         <h2>Prize Shelf</h2>
@@ -376,178 +407,42 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
     <div class="streak-label" id="streakLabel">DAILY STREAK</div>
     <div class="streak" id="streak"></div>
     <button class="dispense-btn" id="dispense">DISPENSE</button>
-    <div class="chute" id="chute" aria-hidden="true"></div>
+    <div class="chute" id="chute" aria-hidden="true"><canvas id="chuteCanvas"></canvas></div>
     <div class="hint">One free payout per day. Resets at midnight.</div>
   </section>
 
     <details class="help">
       <summary>How to play</summary>
       <ul>
-        <li>Spend 5 credits for a play. Move the claw with ◀ ▶ (or drag on the machine, or the arrow keys) and press <b>GRAB</b> (or Space) before the 15 seconds run out.</li>
-        <li>The claw is weak, like a real one: grab prizes near their middle, and watch out for slips on the way to the chute. Miss 6 times in a row and the next grab is guaranteed strong.</li>
+        <li>Spend 5 credits for a play. Steer the claw left, right, back and forward with the pad (or drag on the machine, or the arrow keys) and press <b>GRAB</b> (or Space) before the 20 seconds run out. Its shadow shows where it will land.</li>
+        <li>The claw is weak, like a real one: grab prizes near their middle, and watch out for slips on the way to the prize hole in the front corner. Miss 6 times in a row and the next grab is guaranteed strong.</li>
         <li>Prizes you win go on your <b>Prize Shelf</b>. Rare prizes are heavier and harder to hold.</li>
       </ul>
     </details>
   </section>
   </main>
 
-  <script>
-// ======================= SIM-START =======================
-// The physics runs in "table units": x across (0..W), y from the back wall (0) to the front edge (L).
-const W = 300;
-const L = 360;
-const DECK_H = 16;          // height of the sliding shelf
-const FRONT_MIN = 45;       // shelf front edge, fully retracted
-const FRONT_MAX = 115;      // shelf front edge, fully extended
-const PERIOD = 3.2;         // seconds per push cycle
-const SIDE_WALL_END = 290;  // past this depth the sides are open and coins can fall off
-const ITERATIONS = 6;
-const SLOPE_START = 270;    // the front strip rises toward the edge, so loose coins slide back
-const SLOPE_H = 26;         // ramp height at the front lip
-const SLOPE_PULL = 8;       // how fast coins slide back down the ramp (units/sec)
-const LIP_START = L - 14;   // a short, steep kicker lip right at the front edge
-const LIP_H = 10;           // extra height the lip adds at the very edge
-const LIP_PULL = 40;        // coins on the lip slide back much faster
-const slopeH = (y) => (y <= SLOPE_START ? 0 : SLOPE_H * Math.min(1, (y - SLOPE_START) / (LIP_START - SLOPE_START)));
-const rampH = (y) => slopeH(y) + (y <= LIP_START ? 0 : LIP_H * Math.min(1, (y - LIP_START) / (L - LIP_START)));
-
-const TYPES = {
-  coin: { r: 13, value: 1 },
-  big:  { r: 19, value: 10 },
-  star: { r: 15, value: 0 },
-  gem:  { r: 15, value: 0 },
-};
-
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-
-class Machine {
-  constructor() {
-    this.coins = [];
-    this.t = 0;
-    this.front = FRONT_MIN;
-  }
-
-  frontAt(t) {
-    return FRONT_MIN + (FRONT_MAX - FRONT_MIN) * (0.5 - 0.5 * Math.cos((2 * Math.PI * t) / PERIOD));
-  }
-
-  add(x, y, layer, type = 'coin') {
-    const c = { x, y, layer, type, r: TYPES[type].r, elev: layer ? DECK_H : 0 };
-    this.coins.push(c);
-    return c;
-  }
-
-  // layer 1 = riding on the shelf, layer 0 = on the table
-  step(dt, onOut) {
-    this.t += dt;
-    const next = this.frontAt(this.t);
-    const df = next - this.front;
-    this.front = next;
-
-    for (const c of this.coins) {
-      if (c.layer === 1) c.y += df;
-      else if (c.y > LIP_START) c.y -= LIP_PULL * dt;       // the lip kicks coins back
-      else if (c.y > SLOPE_START) c.y -= SLOPE_PULL * dt;   // gravity on the ramp
-    }
-
-    for (let i = 0; i < ITERATIONS; i++) {
-      this.constrain();
-      this.collide();
-    }
-    this.constrain();
-
-    const keep = [];
-    for (const c of this.coins) {
-      if (c.layer === 1 && c.y > this.front) {
-        // slid off the front of the shelf onto the table
-        c.layer = 0;
-        c.y = this.front + c.r;
-      }
-      if (c.layer === 0 && c.y > L) { onOut(c, 'win'); continue; }
-      if (c.layer === 0 && (c.x < 0 || c.x > W)) { onOut(c, 'lost'); continue; }
-      keep.push(c);
-    }
-    this.coins = keep;
-  }
-
-  constrain() {
-    const f = this.front;
-    for (const c of this.coins) {
-      const r = c.r;
-      if (c.layer === 1) {
-        if (c.y < r) c.y = r;                       // back wall
-        c.x = clamp(c.x, r, W - r);
-      } else {
-        if (c.y < f + r) c.y = f + r;               // shelf front face
-        if (c.y < SIDE_WALL_END) c.x = clamp(c.x, r, W - r);
-      }
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+      "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.12.0/+esm"
     }
   }
+  </script>
+  <script type="module">
+// Everything is real 3D: three.js draws the machines and Rapier runs their physics.
+// Distances are in metres-ish scene units, with y up and +z toward the player.
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
+import RAPIER from 'rapier';
 
-  collide() {
-    const cell = 40;
-    const grid = new Map();
-    const coins = this.coins;
-    for (let i = 0; i < coins.length; i++) {
-      const c = coins[i];
-      const key = c.layer * 1e6 + (Math.floor(c.x / cell) + 50) * 1000 + (Math.floor(c.y / cell) + 50);
-      let list = grid.get(key);
-      if (!list) grid.set(key, (list = []));
-      list.push(i);
-    }
-    for (let i = 0; i < coins.length; i++) {
-      const a = coins[i];
-      const gx = Math.floor(a.x / cell) + 50;
-      const gy = Math.floor(a.y / cell) + 50;
-      for (let ox = -1; ox <= 1; ox++) {
-        for (let oy = -1; oy <= 1; oy++) {
-          const list = grid.get(a.layer * 1e6 + (gx + ox) * 1000 + (gy + oy));
-          if (!list) continue;
-          for (const j of list) {
-            if (j <= i) continue;
-            const b = coins[j];
-            let dx = b.x - a.x;
-            let dy = b.y - a.y;
-            const min = a.r + b.r;
-            let d2 = dx * dx + dy * dy;
-            if (d2 >= min * min) continue;
-            let d = Math.sqrt(d2);
-            if (d < 1e-4) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d = Math.hypot(dx, dy); }
-            const push = Math.min((min - d) * 0.5, 2.5);
-            const nx = dx / d;
-            const ny = dy / d;
-            a.x -= nx * push; a.y -= ny * push;
-            b.x += nx * push; b.y += ny * push;
-          }
-        }
-      }
-    }
-  }
-
-  // A full table so the pushing starts right away
-  fill() {
-    this.coins = [];
-    const r = TYPES.coin.r;
-    let row = 0;
-    for (let y = FRONT_MAX + r + 2; y < L - r - 4; y += r * 1.8, row++) {
-      for (let x = r + (row % 2 ? r : 2); x < W - r; x += r * 2.05) {
-        this.add(x + (Math.random() - 0.5) * 3, y + (Math.random() - 0.5) * 3, 0);
-      }
-    }
-    for (let i = 0; i < 14; i++) this.add(r + Math.random() * (W - 2 * r), r + Math.random() * 60, 1);
-    // a couple of prizes to aim for
-    this.coins.splice(Math.floor(this.coins.length * 0.5), 1);
-    this.add(W * 0.35, L * 0.62, 0, 'big');
-    this.add(W * 0.68, L * 0.5, 0, 'star');
-  }
-}
-// ======================= SIM-END =======================
-
-// ---------- Setup ----------
 const $ = (id) => document.getElementById(id);
-const canvas = $('game');
-const ctx = canvas.getContext('2d');
-const machine = new Machine();
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const rand = (a, b) => a + Math.random() * (b - a);
+
 const SAVE_KEY = 'coinPusher_v1';
 const START_CREDITS = 30;
 const REFILL_BELOW = 5;
@@ -559,6 +454,7 @@ let won = 0;
 let spins = 0;
 let soundOn = true;
 let refillTimer = REFILL_SECS;
+let now = 0;
 
 // ---------- Sound ----------
 let audio;
@@ -642,344 +538,656 @@ const sfx = {
   miss: () => tone(200, { dur: 0.25, type: 'sawtooth', vol: 0.04, slide: 0.7 }),
 };
 
-// ---------- Projection (table units -> screen pixels) ----------
-let cw = 0, ch = 0, k = 1, yTop = 0, cx0 = 0;
-const TILT = 0.85;
-function resize() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  cw = canvas.parentElement.clientWidth;
-  ch = Math.round(cw * 1.18);
-  canvas.width = cw * dpr;
-  canvas.height = ch * dpr;
-  canvas.style.height = ch + 'px';
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  k = (cw * 0.84) / W;
-  cx0 = cw / 2;
-  yTop = cw * 0.25;
-}
-function depthScale(y) { return 0.62 + 0.38 * (y / L); }
-function proj(x, y, elev = 0) {
-  const s = depthScale(y);
-  return {
-    x: cx0 + (x - W / 2) * k * s,
-    y: yTop + k * TILT * (0.62 * y + 0.19 * (y * y) / L) - elev * k * s * 0.9,
-    s,
-  };
-}
-function unprojectX(px) {
-  // the chute sits above the back wall (y = 0)
-  return W / 2 + (px - cx0) / (k * depthScale(0));
-}
 
-// ---------- Coin sprites ----------
-// Coins are drawn as real discs: a face ellipse plus a milled edge, at whatever angle the
-// face is turned to the camera. psi is the angle (degrees) between the visible face and the
-// view: positive tips the face up so the edge shows below it, negative tips it down so the
-// top of the edge shows above it, and ±90 is edge-on. A coin lying flat sits at FLAT_PSI.
-const SPRITE_RX = 44, SPRITE_W = 100, SPRITE_H = 124, SPRITE_CY = 62;
-const COIN_T = 13;          // edge thickness, in sprite units
-const FLAT_PSI = 54;
-const PSI_STEP = 6;
-const COIN_LIFT = 0.24;     // a flat coin's face sits this far (x radius) above what it rests on
-const spriteCache = {};
-function coinSprite(type, psi) {
-  const q = clamp(Math.round(psi / PSI_STEP) * PSI_STEP, -90, 90);
-  const key = type + q;
-  return spriteCache[key] || (spriteCache[key] = makeSprite(type, q));
+// ---------- 3D helpers ----------
+const UP = new THREE.Vector3(0, 1, 0);
+const dpr = () => Math.min(window.devicePixelRatio || 1, 2);
+
+function makeRenderer(canvas) {
+  const r = new THREE.WebGLRenderer({ canvas, antialias: true });
+  r.setPixelRatio(dpr());
+  r.outputColorSpace = THREE.SRGBColorSpace;
+  r.toneMapping = THREE.ACESFilmicToneMapping;
+  r.toneMappingExposure = 0.95;
+  r.shadowMap.enabled = true;
+  r.shadowMap.type = THREE.PCFSoftShadowMap;
+  return r;
 }
-function makeSprite(type, psi) {
-  // drawn at 2x and scaled down when used, so the details stay crisp
+// soft studio reflections, so metal looks like metal
+function studioEnv(renderer) {
+  const pm = new THREE.PMREMGenerator(renderer);
+  const tex = pm.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  pm.dispose();
+  return tex;
+}
+function canvasTex(w, h, draw, { color = true, repeat = null } = {}) {
   const c = document.createElement('canvas');
-  c.width = SPRITE_W * 2; c.height = SPRITE_H * 2;
-  const g = c.getContext('2d');
-  g.scale(2, 2);
-  const a = psi * Math.PI / 180;
-  const cx = 50, cy = SPRITE_CY, rx = SPRITE_RX, ry = Math.max(0.01, rx * Math.cos(a));
-  const dy = COIN_T * Math.sin(a);              // where the back face sits relative to the front
-  const top = Math.min(cy, cy + dy), bot = Math.max(cy, cy + dy);
-  const pal = {
-    coin: ['#fff6c8', '#f5c53a', '#b07a12', '#6a4204'],
-    big:  ['#ffffff', '#d9dde6', '#8b93a6', '#3f4556'],
-    star: ['#e2f9ff', '#39b8ff', '#2160c9', '#123068'],
-    gem:  ['#ffe6f5', '#ff58b6', '#b0136b', '#5c0837'],
-  }[type];
-  const hull = () => {
-    g.beginPath();
-    g.ellipse(cx, bot, rx, ry, 0, 0, Math.PI);
-    g.lineTo(cx - rx, top);
-    g.ellipse(cx, top, rx, ry, 0, Math.PI, Math.PI * 2);
-    g.closePath();
-  };
-
-  // edge: a short cylinder, lit from the upper left
-  const side = g.createLinearGradient(cx - rx, 0, cx + rx, 0);
-  side.addColorStop(0, pal[3]);
-  side.addColorStop(0.18, pal[2]);
-  side.addColorStop(0.32, pal[1]);
-  side.addColorStop(0.42, pal[0]);
-  side.addColorStop(0.55, pal[1]);
-  side.addColorStop(0.8, pal[2]);
-  side.addColorStop(1, pal[3]);
-  g.fillStyle = side;
-  hull();
-  g.fill();
-  // the underside of the edge falls into shade; the top of the edge catches the light
-  const shade = g.createLinearGradient(0, top - ry, 0, bot + ry);
-  if (dy >= 0) {
-    shade.addColorStop(0.5, 'rgba(0,0,0,0)');
-    shade.addColorStop(1, 'rgba(0,0,0,.45)');
-  } else {
-    shade.addColorStop(0, 'rgba(255,255,255,.3)');
-    shade.addColorStop(0.5, 'rgba(255,255,255,0)');
-  }
-  g.fillStyle = shade;
-  hull();
-  g.fill();
-  // milled ridges across the visible part of the edge
-  if (Math.abs(dy) > 1.5) {
-    g.lineWidth = 0.9;
-    const from = dy > 0 ? 0.06 : Math.PI + 0.06;
-    for (let t = from; t < from + Math.PI - 0.1; t += 0.075) {
-      const x = cx + rx * Math.cos(t);
-      const y = cy + ry * Math.sin(t);
-      g.strokeStyle = `rgba(0,0,0,${0.14 + 0.22 * Math.abs(Math.cos(t))})`;
-      g.beginPath(); g.moveTo(x, y + Math.sign(dy) * 0.8); g.lineTo(x, y + dy - Math.sign(dy) * 0.6); g.stroke();
-      g.strokeStyle = 'rgba(255,255,255,.12)';
-      g.beginPath(); g.moveTo(x + 0.9, y + Math.sign(dy) * 0.8); g.lineTo(x + 0.9, y + dy - Math.sign(dy) * 0.6); g.stroke();
-    }
-  }
-  // dark outline round the whole disc, heaviest where it meets the surface below
-  g.lineWidth = 1.2;
-  g.strokeStyle = 'rgba(0,0,0,.35)';
-  hull();
-  g.stroke();
-  if (dy > 0) {
-    g.strokeStyle = 'rgba(0,0,0,.55)';
-    g.lineWidth = 1.4;
-    g.beginPath(); g.ellipse(cx, bot, rx, ry, 0, 0.05, Math.PI - 0.05); g.stroke();
-  }
-
-  // face
-  const face = g.createRadialGradient(cx - rx * 0.4, cy - ry * 0.6, 2, cx, cy, rx * 1.15);
-  face.addColorStop(0, pal[0]);
-  face.addColorStop(0.45, pal[1]);
-  face.addColorStop(1, pal[2]);
-  g.fillStyle = face;
-  g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fill();
-  // crisp line where the face turns into the edge
-  g.lineWidth = 1;
-  g.strokeStyle = 'rgba(0,0,0,.4)';
-  g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.stroke();
-  if (ry < 3) return c;   // nearly edge-on: no room for the details
-
-  // bevelled lip: bright on the upper left, shaded on the lower right
-  const lip = Math.min(2.2, ry * 0.15);
-  g.lineWidth = 2.2;
-  g.strokeStyle = 'rgba(255,255,255,.6)';
-  g.beginPath(); g.ellipse(cx, cy, rx - lip, ry - lip, 0, Math.PI * 0.6, Math.PI * 1.45); g.stroke();
-  g.strokeStyle = 'rgba(0,0,0,.3)';
-  g.beginPath(); g.ellipse(cx, cy, rx - lip, ry - lip, 0, -Math.PI * 0.4, Math.PI * 0.4); g.stroke();
-
-  // raised border ring: light on top-left, shadow on bottom-right
-  const ringR = 0.78, f = ry / 26;
-  g.lineWidth = 3.2;
-  g.strokeStyle = 'rgba(0,0,0,.32)';
-  g.beginPath(); g.ellipse(cx + 0.7, cy + 1.1 * f, rx * ringR, ry * ringR, 0, 0, Math.PI * 2); g.stroke();
-  g.strokeStyle = 'rgba(255,255,255,.6)';
-  g.lineWidth = 1.8;
-  g.beginPath(); g.ellipse(cx - 0.5, cy - 0.9 * f, rx * ringR, ry * ringR, 0, Math.PI * 0.9, Math.PI * 1.9); g.stroke();
-  // recessed field inside the ring
-  const field = g.createRadialGradient(cx + rx * 0.2, cy + ry * 0.3, 1, cx, cy, rx * ringR);
-  field.addColorStop(0, 'rgba(0,0,0,0)');
-  field.addColorStop(1, 'rgba(0,0,0,.2)');
-  g.fillStyle = field;
-  g.beginPath(); g.ellipse(cx, cy, rx * ringR - 1.5, Math.max(0.01, ry * ringR - 1.5 * f), 0, 0, Math.PI * 2); g.fill();
-
-  // embossed emblem
-  g.save();
-  g.translate(cx, cy);
-  g.scale(1, ry / rx);
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.font = type === 'coin' ? '900 28px system-ui, sans-serif' : '900 34px system-ui, sans-serif';
-  const emblem = { coin: '★', big: '10', star: '★', gem: '◆' }[type];
-  g.fillStyle = 'rgba(0,0,0,.4)';
-  g.fillText(emblem, 1.4, 2.8);
-  g.fillStyle = 'rgba(255,255,255,.75)';
-  g.fillText(emblem, -0.9, -1.4);
-  g.fillStyle = type === 'coin' ? '#f2c84a' : '#fff';
-  g.fillText(emblem, 0, 0);
-  g.restore();
-
-  // specular glint
-  g.save();
-  g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.clip();
-  const glint = g.createLinearGradient(cx - rx, cy - ry, cx + rx * 0.2, cy + ry * 0.3);
-  glint.addColorStop(0.25, 'rgba(255,255,255,0)');
-  glint.addColorStop(0.38, 'rgba(255,255,255,.5)');
-  glint.addColorStop(0.46, 'rgba(255,255,255,0)');
-  g.fillStyle = glint;
-  g.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
-  g.restore();
-  return c;
+  c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  if (color) t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+  return t;
 }
-// soft contact shadow, drawn under every coin resting on something
-const shadowSprite = (() => {
-  const c = document.createElement('canvas');
-  c.width = 100; c.height = 70;
-  const g = c.getContext('2d');
-  g.translate(50, 36);
-  g.scale(1, 26 / 44);
-  const grad = g.createRadialGradient(0, 0, 20, 0, 0, 50);
-  grad.addColorStop(0, 'rgba(0,0,0,.6)');
-  grad.addColorStop(0.6, 'rgba(0,0,0,.28)');
-  grad.addColorStop(1, 'rgba(0,0,0,0)');
+const glowTex = canvasTex(128, 128, (g) => {
+  const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.35, 'rgba(255,255,255,.45)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = grad;
-  g.beginPath(); g.arc(0, 0, 50, 0, Math.PI * 2); g.fill();
-  return c;
-})();
-function drawCoinShadow(type, x, y, surface, lift = 0) {
-  const p = proj(x, y, surface);
-  const rx = TYPES[type].r * k * p.s;
-  const sc = rx / SPRITE_RX;
-  const spread = 1 + Math.min(lift, 60) / 60;          // higher coins cast bigger, fainter shadows
-  ctx.globalAlpha = 0.85 / spread;
-  const w = 100 * sc * spread, h = 70 * sc * spread;
-  ctx.drawImage(shadowSprite, p.x - w / 2 + 3 * sc + lift * 0.15 * sc, p.y - h / 2 + 10 * sc, w, h);
-  ctx.globalAlpha = 1;
+  g.fillRect(0, 0, 128, 128);
+});
+function glowSprite(color, size) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+  s.scale.setScalar(size);
+  return s;
 }
-['coin', 'big', 'star', 'gem'].forEach((t) => coinSprite(t, FLAT_PSI));
+function textTex(text, { w = 256, h = 64, font = '900 44px system-ui, sans-serif', color = '#fff', glow = null, bg = null } = {}) {
+  return canvasTex(w, h, (g) => {
+    if (bg) { g.fillStyle = bg; g.fillRect(0, 0, w, h); }
+    g.font = font;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    if (glow) { g.shadowColor = glow; g.shadowBlur = 14; }
+    g.fillStyle = color;
+    g.fillText(text, w / 2, h / 2 + 2);
+    g.fillText(text, w / 2, h / 2 + 2);
+  });
+}
+const neonMat = (color, intensity = 2.5) => new THREE.MeshStandardMaterial({ color: '#000', emissive: color, emissiveIntensity: intensity });
+const chromeMat = new THREE.MeshStandardMaterial({ color: '#e6e9f2', metalness: 1, roughness: 0.18 });
+const darkMetal = new THREE.MeshStandardMaterial({ color: '#2a2338', metalness: 0.6, roughness: 0.5 });
+const glassMat = new THREE.MeshStandardMaterial({ color: '#bfefff', transparent: true, opacity: 0.12, roughness: 0.05, metalness: 0.1, depthWrite: false, side: THREE.DoubleSide });
 
-// draws a coin whose face centre is at (px, py) on screen; any psi works, it wraps round
-// to whichever face is showing
-function drawCoinAt(type, px, py, rx, psi) {
-  psi = (((psi + 90) % 180) + 180) % 180 - 90;
-  const sc = rx / SPRITE_RX;
-  ctx.drawImage(coinSprite(type, psi), px - 50 * sc, py - SPRITE_CY * sc, SPRITE_W * sc, SPRITE_H * sc);
+function shadowed(m, cast = true, receive = true) { m.castShadow = cast; m.receiveShadow = receive; return m; }
+function box(w, h, d, mat, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z);
+  return m;
 }
-// y is where the coin's centre ends up once it's lying flat. stand tips it up onto its edge
-// (0 = flat, 1 = upright facing the player), pivoting on its front edge, so as it falls
-// forward the face we see turns away through edge-on and the other face comes up.
-function drawCoin(type, x, y, elev, alpha = 1, extraScale = 1, stand = 0) {
-  const r = TYPES[type].r * extraScale;
-  const th = stand * Math.PI / 2;
-  const p = proj(x, y - r * (1 - Math.cos(th)), elev + r * Math.sin(th) + COIN_LIFT * r * Math.cos(th));
-  const rx = r * k * p.s;
-  if (alpha !== 1) ctx.globalAlpha = alpha;
-  drawCoinAt(type, p.x, p.y, rx, FLAT_PSI + stand * 90);
-  if (alpha !== 1) ctx.globalAlpha = 1;
-  if (type !== 'coin') {
-    // special items glow so they're easy to spot
-    const glow = { big: '#e6ecff', star: '#39b8ff', gem: '#ff58b6' }[type];
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.25 + 0.15 * Math.sin(now / 200);
-    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rx * 1.6);
-    g.addColorStop(0, glow);
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(p.x - rx * 1.6, p.y - rx * 1.6, rx * 3.2, rx * 3.2);
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
+
+// render a scene only while its canvas is on screen
+function watchVisible(el, target) {
+  target.visible = true;
+  if (!('IntersectionObserver' in window)) return;
+  new IntersectionObserver((es) => { for (const e of es) target.visible = e.isIntersecting; }).observe(el);
+}
+
+// ---------- Coins ----------
+const TYPES = {
+  coin: { r: 0.13, h: 0.045, value: 1,  color: '#f2bf45', metal: 1,   rough: 0.3,  emblem: '★' },
+  big:  { r: 0.19, h: 0.06,  value: 10, color: '#e8ecf4', metal: 1,   rough: 0.22, emblem: '10' },
+  star: { r: 0.15, h: 0.05,  value: 0,  color: '#2f9bff', metal: 0.5, rough: 0.3,  emblem: '★', glow: '#39b8ff' },
+  gem:  { r: 0.15, h: 0.05,  value: 0,  color: '#ff4fae', metal: 0.4, rough: 0.25, emblem: '◆', glow: '#ff58b6' },
+};
+const TYPE_LIST = ['coin', 'big', 'star', 'gem'];
+const COIN_ROUND = 0.008;   // rounded edge on the physics shape, so stacks sit still
+
+// raised rim, recessed field and an embossed emblem, as a bump map
+function coinFaceTex(emblem, asBump) {
+  return canvasTex(256, 256, (g) => {
+    const lo = asBump ? '#4a4a4a' : '#c9c9c9', hi = '#ffffff';
+    g.fillStyle = lo; g.fillRect(0, 0, 256, 256);
+    const lip = g.createRadialGradient(128, 128, 98, 128, 128, 128);
+    lip.addColorStop(0, lo);
+    lip.addColorStop(0.45, hi);
+    lip.addColorStop(0.8, hi);
+    lip.addColorStop(1, asBump ? '#9a9a9a' : '#d8d8d8');
+    g.fillStyle = lip;
+    g.beginPath(); g.arc(128, 128, 128, 0, Math.PI * 2); g.fill();
+    g.fillStyle = lo;
+    g.beginPath(); g.arc(128, 128, 100, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = asBump ? '#cfcfcf' : '#f0f0f0';
+    g.lineWidth = 7;
+    g.beginPath(); g.arc(128, 128, 86, 0, Math.PI * 2); g.stroke();
+    g.filter = asBump ? 'blur(2px)' : 'none';
+    g.fillStyle = hi;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.font = `900 ${emblem.length > 1 ? 104 : 132}px system-ui, sans-serif`;
+    g.fillText(emblem, 128, 138);
+  }, { color: !asBump });
+}
+// milled ridges round the edge
+const edgeBump = canvasTex(1024, 16, (g) => {
+  g.fillStyle = '#404040'; g.fillRect(0, 0, 1024, 16);
+  g.fillStyle = '#ffffff';
+  for (let i = 0; i < 140; i++) g.fillRect(i * 1024 / 140, 0, 3, 16);
+}, { color: false });
+
+const coinLooks = {};
+function coinLook(type) {
+  if (coinLooks[type]) return coinLooks[type];
+  const t = TYPES[type];
+  const geo = new THREE.CylinderGeometry(t.r, t.r, t.h, 56, 1);
+  const common = { color: t.color, metalness: t.metal, emissive: t.glow || '#000', emissiveIntensity: 0 };
+  const edge = new THREE.MeshStandardMaterial({ ...common, roughness: t.rough + 0.08, bumpMap: edgeBump, bumpScale: 2 });
+  const face = new THREE.MeshStandardMaterial({ ...common, roughness: t.rough, map: coinFaceTex(t.emblem, false), bumpMap: coinFaceTex(t.emblem, true), bumpScale: 3 });
+  return (coinLooks[type] = { geo, mats: [edge, face, face] });
+}
+// one instanced mesh per coin type
+function coinMeshes(scene, capacity) {
+  const meshes = {};
+  for (const type of TYPE_LIST) {
+    const look = coinLook(type);
+    const m = new THREE.InstancedMesh(look.geo, look.mats, capacity);
+    m.castShadow = m.receiveShadow = true;
+    m.frustumCulled = false;
+    m.count = 0;
+    scene.add(m);
+    meshes[type] = m;
+  }
+  return meshes;
+}
+const _m4 = new THREE.Matrix4(), _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1);
+function writeInstances(meshes, items) {
+  const n = {};
+  for (const type of TYPE_LIST) n[type] = 0;
+  for (const it of items) {
+    const m = meshes[it.type];
+    if (n[it.type] >= m.instanceMatrix.count) continue;
+    _p.set(it.p.x, it.p.y, it.p.z);
+    _q.set(it.q.x, it.q.y, it.q.z, it.q.w);
+    _m4.compose(_p, _q, _s);
+    m.setMatrixAt(n[it.type]++, _m4);
+  }
+  for (const type of TYPE_LIST) {
+    meshes[type].count = n[type];
+    meshes[type].instanceMatrix.needsUpdate = true;
   }
 }
+const STAND_Q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);  // on its edge, facing you
 
-// ---------- Moving parts ----------
-let now = 0;
-let chuteX = W / 2;
+
+// ======================= COIN PUSHER =======================
+// The table runs from the back wall (z = 0) to the front edge (z = TL), x across the middle.
+const TW = 3.0;              // table width
+const TL = 3.6;              // table depth
+const DECK_H = 0.16;         // height of the sliding shelf
+const SHELF_LEN = 2.2;
+const FRONT_MIN = 0.45;      // shelf front edge, fully retracted
+const FRONT_MAX = 1.15;      // shelf front edge, fully extended
+const PERIOD = 3.2;          // seconds per push cycle
+const SIDE_WALL_END = 3.25;  // past this depth the sides are open and coins can fall off
+const SLOPE_START = 2.7;     // the front strip rises toward the edge, so loose coins slide back
+const LIP_START = 3.46;      // and a short, steep kicker lip right at the edge kicks them back again
+const SLOPE_H = 0.045;
+const LIP_H = 0.025;
+const WALL_TOP = 1.25;       // top of the back wall
+const TUBE_BOTTOM = DECK_H + 0.4;   // paid coins fall down a glass tube on the wall and out of here
+const GATE_Y = 0.86;         // the LUCKY window's height on the wall
+const GATE_HALF = 0.13;
+const GRAVITY = 16;
+const STEP = 1 / 120;
+const PUSH_STEP = 1 / 60;    // the pusher's pile is big, so it steps less often
+
+const slopeH = (z) => (z <= SLOPE_START ? 0 : SLOPE_H * Math.min(1, (z - SLOPE_START) / (LIP_START - SLOPE_START)));
+const rampH = (z) => slopeH(z) + (z <= LIP_START ? 0 : LIP_H * Math.min(1, (z - LIP_START) / (TL - LIP_START)));
+const frontAt = (t) => FRONT_MIN + (FRONT_MAX - FRONT_MIN) * (0.5 - 0.5 * Math.cos((2 * Math.PI * t) / PERIOD));
+
+const pusher = {
+  world: null, shelf: null, coins: [], t: 0, front: FRONT_MIN, acc: 0,
+  scene: null, camera: null, renderer: null, meshes: null, visible: true,
+};
+let chuteX = 0;
 let aimX = null;          // where the player is pointing, if anywhere
 let aimUntil = 0;
-const CHUTE_ELEV = 92;
-const GATE_ELEV = 52;
-const GATE_HALF = 12;
-const MOUTH_ELEV = DECK_H + 16;  // middle of the slot coins come out of onto the shelf
-const MOUTH_TOP = DECK_H + 32;   // tall enough for a coin standing on its edge
-const MOUTH_HALF = 17;
-const TUBE_HALF = 15;            // the glass tube the coin falls down
-// Paid coins drop into the chute on their edge, fall down a glass tube in the back wall
-// (and past the LUCKY window), slide out of a slot at its foot and topple forward onto the
-// shelf. Bonus coins rain in from above.
-// y is where the coin will lie once flat; elev is the surface under it (for a standing coin,
-// its bottom edge); stand: 0 = lying flat, 1 = standing on its edge.
-const IN_SLOT = 0.46, SLID_OUT = 0.62, LANDED = 0.88;   // fractions of the drop
-const DROP_FROM = CHUTE_ELEV + 34;
-const IN_TUBE = CHUTE_ELEV - 12;   // below this the coin is out of sight under the funnel
-function incomingPos(d) {
-  const p = Math.min(d.t / d.dur, 1);
-  const r = TYPES[d.type].r;
-  if (d.free) {
-    const e = p * p;
-    return { stage: 'air', y: d.yLand * e, elev: CHUTE_ELEV + (DECK_H - CHUTE_ELEV) * e, scale: 1 + 0.15 * (1 - p), stand: 0 };
-  }
-  if (p < IN_SLOT) {
-    // one continuous fall, picking up speed, from above the funnel to the floor of the slot
-    const q = p / IN_SLOT;
-    const elev = DROP_FROM + (DECK_H - DROP_FROM) * q * (0.25 + 0.75 * q);
-    return { stage: elev > IN_TUBE ? 'chute' : 'wall', y: r, elev, scale: 1, stand: 1 };
-  }
-  if (p < SLID_OUT) {
-    // slides out of the slot on its edge, slowing down
-    const q = (p - IN_SLOT) / (SLID_OUT - IN_SLOT);
-    return { stage: 'out', y: r + (d.yLand - r) * (1 - (1 - q) * (1 - q)), elev: DECK_H, scale: 1, stand: 1 };
-  }
-  if (p < LANDED) {
-    // then topples forward, speeding up as it falls
-    const q = (p - SLID_OUT) / (LANDED - SLID_OUT);
-    return { stage: 'out', y: d.yLand, elev: DECK_H, scale: 1, stand: Math.cos(q * q * Math.PI / 2) };
-  }
-  // and rocks once as it lands
-  const q = (p - LANDED) / (1 - LANDED);
-  return { stage: 'out', y: d.yLand, elev: DECK_H, scale: 1, stand: 0.07 * Math.sin(q * Math.PI) };
-}
-function gateX(t) { return W / 2 + (W / 2 - 40) * Math.sin(t * 1.4); }
-
-const incoming = [];   // coins in the air on their way to the shelf
-const falling = [];    // coins dropping off the table (won or lost)
-const floaters = [];   // "+1" texts
+const incoming = [];      // paid coins on their way down the tube
+const floaters = [];      // "+1" texts
 const sparks = [];
 
+// ---------- Physics ----------
+function hullPoints(pts) { return new Float32Array(pts.flat()); }
+const RAMP_PTS = (() => {
+  const a = -TW / 2, b = TW / 2;
+  return {
+    ramp: [[a, 0, SLOPE_START], [b, 0, SLOPE_START], [a, 0, LIP_START], [b, 0, LIP_START], [a, SLOPE_H, LIP_START], [b, SLOPE_H, LIP_START]],
+    lip: [[a, 0, LIP_START], [b, 0, LIP_START], [a, SLOPE_H, LIP_START], [b, SLOPE_H, LIP_START], [a, SLOPE_H + LIP_H, TL], [b, SLOPE_H + LIP_H, TL], [a, 0, TL], [b, 0, TL]],
+  };
+})();
+
+function buildPusherWorld() {
+  const w = new RAPIER.World({ x: 0, y: -GRAVITY, z: 0 });
+  w.timestep = PUSH_STEP;
+  const fixed = w.createRigidBody(RAPIER.RigidBodyDesc.fixed());
+  const cuboid = (hx, hy, hz, x, y, z, friction = 0.3) =>
+    w.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z).setFriction(friction), fixed);
+  // table top (runs under the shelf and the back wall too)
+  cuboid(TW / 2, 0.1, (TL + 1) / 2, 0, -0.1, (TL - 1) / 2);
+  // ramp and lip are slippery, so loose coins slide back down them
+  for (const [pts, fr] of [[RAMP_PTS.ramp, 0.1], [RAMP_PTS.lip, 0.06]]) {
+    w.createCollider(RAPIER.ColliderDesc.convexHull(hullPoints(pts)).setFriction(fr)
+      .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min), fixed);
+  }
+  // side walls, as far as they go
+  for (const s of [-1, 1]) cuboid(0.05, 0.6, (SIDE_WALL_END + 0.6) / 2, s * (TW / 2 + 0.05), 0.6, (SIDE_WALL_END - 0.6) / 2);
+  // back wall: its bottom edge clears the shelf by less than a coin's thickness, so it scrapes coins off
+  const wallBot = DECK_H + 0.012;
+  cuboid(TW / 2 + 0.1, (WALL_TOP + 1.5 - wallBot) / 2, 0.15, 0, wallBot + (WALL_TOP + 1.5 - wallBot) / 2, -0.15);
+  // win tray under the front edge
+  cuboid(TW / 2 + 0.3, 0.05, 0.4, 0, -0.75, TL + 0.45);
+  // the shelf, moved by hand every step
+  const shelf = w.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, DECK_H / 2, FRONT_MIN - SHELF_LEN / 2));
+  w.createCollider(RAPIER.ColliderDesc.cuboid(TW / 2, DECK_H / 2, SHELF_LEN / 2).setFriction(0.6), shelf);
+  pusher.world = w;
+  pusher.shelf = shelf;
+  pusher.coins = [];
+}
+
+function addCoin(type, p, q = null, v = null, av = null) {
+  const t = TYPES[type];
+  const desc = RAPIER.RigidBodyDesc.dynamic().setTranslation(p.x, p.y, p.z)
+    .setLinearDamping(0.05).setAngularDamping(0.4).setCcdEnabled(true);
+  if (q) desc.setRotation(q);
+  if (v) desc.setLinvel(v.x, v.y, v.z);
+  if (av) desc.setAngvel(av);
+  const body = pusher.world.createRigidBody(desc);
+  pusher.world.createCollider(RAPIER.ColliderDesc.roundCylinder(t.h / 2 - COIN_ROUND, t.r - COIN_ROUND, COIN_ROUND)
+    .setFriction(0.2).setRestitution(0.05).setDensity(type === 'coin' ? 1 : 1.3), body);
+  const c = { type, body, vy: 0, out: null };
+  pusher.coins.push(c);
+  return c;
+}
+function removeCoin(i) {
+  pusher.world.removeRigidBody(pusher.coins[i].body);
+  pusher.coins.splice(i, 1);
+}
+function clearCoins() {
+  for (let i = pusher.coins.length - 1; i >= 0; i--) removeCoin(i);
+  incoming.length = 0;
+}
+
+// a full table so the pushing starts right away
+function fillPusher() {
+  clearCoins();
+  const { r, h } = TYPES.coin;
+  let row = 0;
+  for (let z = FRONT_MAX + r + 0.03; z < TL - r - 0.05; z += r * 1.8, row++) {
+    for (let x = -TW / 2 + r + (row % 2 ? r : 0.02); x < TW / 2 - r; x += r * 2.05) {
+      if (Math.random() < 0.06) continue;
+      addCoin('coin', { x: x + rand(-0.015, 0.015), y: rampH(z + r) + h / 2 + 0.01, z: z + rand(-0.015, 0.015) });
+    }
+  }
+  // a loose second layer, so the pile is already deep enough to pay out
+  for (let i = 0; i < 150; i++) addCoin('coin', { x: rand(-TW / 2 + r, TW / 2 - r), y: 0.12 + (i % 8) * 0.05, z: rand(FRONT_MAX + r, SLOPE_START) }, new THREE.Quaternion().setFromEuler(new THREE.Euler(rand(-0.2, 0.2), 0, rand(-0.2, 0.2))));
+  for (let i = 0; i < 14; i++) addCoin('coin', { x: rand(-TW / 2 + r, TW / 2 - r), y: DECK_H + h / 2 + 0.02 + i * 0.03, z: rand(r + 0.02, FRONT_MIN - r) });
+  // a couple of prizes to aim for
+  addCoin('big', { x: -TW * 0.15, y: 0.3, z: TL * 0.62 });
+  addCoin('star', { x: TW * 0.18, y: 0.3, z: TL * 0.5 });
+  settlePusher(1.2);
+}
+// let everything drop into place without the shelf moving or anything paying out
+function settlePusher(secs) {
+  for (let i = 0; i < secs / PUSH_STEP; i++) pusher.world.step();
+  for (let i = pusher.coins.length - 1; i >= 0; i--) if (pusher.coins[i].body.translation().y < -0.05) removeCoin(i);
+}
+
+function stepPusher(dt) {
+  pusher.acc += dt;
+  let n = 0;
+  while (pusher.acc >= PUSH_STEP && n < 4) {
+    pusher.t += PUSH_STEP;
+    pusher.front = frontAt(pusher.t);
+    pusher.shelf.setNextKinematicTranslation({ x: 0, y: DECK_H / 2, z: pusher.front - SHELF_LEN / 2 });
+    pusher.world.step();
+    checkCoins();
+    pusher.acc -= PUSH_STEP;
+    n++;
+  }
+  if (n === 4) pusher.acc = 0;
+}
+
+let lastClink = 0;
+function checkCoins() {
+  for (let i = pusher.coins.length - 1; i >= 0; i--) {
+    const c = pusher.coins[i];
+    const p = c.body.translation();
+    const vy = c.body.linvel().y;
+    // a coin that was falling and suddenly stopped hit something
+    if (c.vy < -1.2 && vy > -0.4 && now - lastClink > 30) {
+      lastClink = now;
+      clink(2400 + Math.random() * 1600, { vol: Math.min(0.06, 0.012 * -c.vy), decay: 0.15 + Math.random() * 0.12 });
+    }
+    c.vy = vy;
+    if (!c.out && p.y < -0.12) {
+      c.out = { at: pusher.t };
+      if (p.z > TL - 0.05 && Math.abs(p.x) < TW / 2 + 0.05) coinWon(c, p);
+      else sfx.lost();
+    }
+    if (c.out && (p.y < -1.5 || pusher.t - c.out.at > 1.6)) removeCoin(i);
+    else if (Math.abs(p.x) > 6 || p.z < -2 || p.z > TL + 4) removeCoin(i);
+  }
+}
+
+function coinWon(c, p) {
+  const s = toScreen(p.x, Math.max(p.y, -0.3), p.z);
+  const value = TYPES[c.type].value;
+  if (value) {
+    credits += value;
+    won += value;
+    floaters.push({ text: `+${value}`, x: s.x, y: s.y, t: 0, color: value > 1 ? '#fff' : '#ffd23e', big: value > 1 });
+    sfx.win(Math.min(won % 12, 12));
+    bumpLed();
+  }
+  if (c.type === 'big') { banner('+10!', 'BIG COIN', '#e6ecff'); sfx.fanfare(false); burst(s.x, s.y, '#e6ecff', 30); }
+  if (c.type === 'star') { addSpins(3); banner('BONUS!', '3 FREE SPINS', '#39b8ff'); sfx.fanfare(false); burst(s.x, s.y, '#39b8ff', 40); }
+  if (c.type === 'gem') {
+    credits += 50; won += 50;
+    banner('JACKPOT!', '+50 CREDITS', '#ff58b6'); sfx.fanfare(true); burst(s.x, s.y, '#ff58b6', 80);
+    party(3000);
+  }
+  updateHud();
+}
+
+// ---------- Dropping coins ----------
 let lastDropAt = -Infinity;
 function dropCooldown() {
   return Math.max(0, 1 - (performance.now() - lastDropAt) / DROP_COOLDOWN);
 }
+function gateX(t) { return (TW / 2 - 0.4) * Math.sin(t * 1.4); }
 
-function dropCoin(x, type = 'coin', free = false) {
-  if (!free) {
-    if (dropCooldown() > 0) return false;
-    if (credits < 1) { flashRefill(); return false; }
-    credits -= 1;
-    lastDropAt = performance.now();
-    sfx.insert();
-  }
-  x = clamp(x, TYPES[type].r, W - TYPES[type].r);
-  const yLand = free ? 8 + Math.random() * 30 : TYPES[type].r + 4 + Math.random() * 24;
-  incoming.push({ x, type, t: 0, dur: free ? 0.42 : 1, yLand, free, gateChecked: free });
+// Paid coins drop into the funnel on their edge, fall down the glass tube on the back wall
+// (past the LUCKY window) and tumble out of its mouth onto the shelf.
+function dropCoin(x) {
+  if (dropCooldown() > 0) return false;
+  if (credits < 1) { flashRefill(); return false; }
+  credits -= 1;
+  lastDropAt = performance.now();
+  sfx.insert();
+  incoming.push({ type: 'coin', x, y: WALL_TOP + 0.7, vy: -0.6 });
   updateHud();
   return true;
 }
-
-function onOut(c, kind) {
-  const p = proj(c.x, Math.min(c.y, L), rampH(Math.min(c.y, L)));
-  falling.push({ type: c.type, x: p.x, y: p.y, vx: (c.x < 0 ? -40 : c.x > W ? 40 : 0), vy: 30, s: p.s, kind, t: 0 });
+// bonus coins rain in from above
+function dropFree(type) {
+  const r = TYPES[type].r;
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(rand(-0.5, 0.5), rand(0, 6.3), rand(-0.5, 0.5)));
+  addCoin(type, { x: rand(-TW / 2 + r, TW / 2 - r), y: 2.3, z: rand(0.15, FRONT_MIN) }, q, { x: 0, y: -1, z: rand(0, 0.4) }, { x: rand(-4, 4), y: rand(-4, 4), z: rand(-4, 4) });
 }
 
-function landFalling(f) {
-  if (f.kind !== 'win') { sfx.lost(); return; }
-  const value = TYPES[f.type].value;
-  if (value) {
-    credits += value;
-    won += value;
-    floaters.push({ text: `+${value}`, x: f.x, y: ch - 40, t: 0, color: value > 1 ? '#fff' : '#ffd23e', big: value > 1 });
-    sfx.win(Math.min(won % 12, 12));
-    bumpLed();
+function updateIncoming(dt) {
+  for (let i = incoming.length - 1; i >= 0; i--) {
+    const d = incoming[i];
+    const r = TYPES[d.type].r;
+    // rides along with the moving chute, picking up speed as it falls
+    d.x = clamp(chuteX, -TW / 2 + r + 0.05, TW / 2 - r - 0.05);
+    const prevY = d.y;
+    d.vy -= GRAVITY * 0.55 * dt;
+    d.y += d.vy * dt;
+    if (prevY > GATE_Y && d.y <= GATE_Y && Math.abs(d.x - gateX(now / 1000)) < GATE_HALF) {
+      const s = toScreen(d.x, GATE_Y, 0.1);
+      burst(s.x, s.y, '#ffd23e', 24);
+      floaters.push({ text: 'SPIN!', x: s.x, y: s.y, t: 0, color: '#ffd23e', big: true });
+      sfx.gate();
+      addSpins(1);
+    }
+    if (d.y <= TUBE_BOTTOM + r) {
+      // out of the mouth: from here on it's a real coin
+      incoming.splice(i, 1);
+      clink(2600, { vol: 0.035, decay: 0.15 });
+      addCoin(d.type, { x: d.x, y: TUBE_BOTTOM + r - 0.03, z: 0.06 }, STAND_Q, { x: rand(-0.1, 0.1), y: d.vy * 0.5, z: rand(0.7, 1.1) }, { x: rand(3, 6), y: 0, z: rand(-0.6, 0.6) });
+    }
   }
-  if (f.type === 'big') { banner('+10!', 'BIG COIN', '#e6ecff'); sfx.fanfare(false); burst(f.x, ch - 50, '#e6ecff', 30); }
-  if (f.type === 'star') { addSpins(3); banner('BONUS!', '3 FREE SPINS', '#39b8ff'); sfx.fanfare(false); burst(f.x, ch - 50, '#39b8ff', 40); }
-  if (f.type === 'gem') {
-    credits += 50; won += 50;
-    banner('JACKPOT!', '+50 CREDITS', '#ff58b6'); sfx.fanfare(true); burst(f.x, ch - 50, '#ff58b6', 80);
-    party(3000);
+}
+
+// ---------- Scene ----------
+const pusherParts = {};
+function buildPusherScene() {
+  const canvas = $('game');
+  const renderer = makeRenderer(canvas);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#0d061c');
+  scene.environment = studioEnv(renderer);
+  const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 60);
+  camera.position.set(0, 3.55, 6.65);
+  camera.lookAt(0, 0.12, 1.9);
+
+  scene.add(new THREE.HemisphereLight('#c8b8ff', '#1a0b30', 0.45));
+  const key = new THREE.DirectionalLight('#ffffff', 1.7);
+  key.position.set(1.6, 7, 4.5);
+  key.target.position.set(0, 0, 1.8);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  Object.assign(key.shadow.camera, { left: -2.6, right: 2.6, top: 3, bottom: -3, near: 1, far: 16 });
+  key.shadow.bias = -0.0004;
+  key.shadow.normalBias = 0.02;
+  scene.add(key, key.target);
+  const spot = new THREE.SpotLight('#9ff0ff', 7, 9, 0.55, 0.7, 1.2);
+  spot.position.set(0, 4.2, 2.6);
+  spot.target.position.set(0, 0, 2.2);
+  scene.add(spot, spot.target);
+  const pinkL = new THREE.PointLight('#ff3ea5', 6, 5, 1.5); pinkL.position.set(-1.4, 1.6, 0.4);
+  const cyanL = new THREE.PointLight('#2ef2ff', 6, 5, 1.5); cyanL.position.set(1.4, 1.6, 0.4);
+  scene.add(pinkL, cyanL);
+
+  // table: felt with a faint grid
+  const felt = canvasTex(512, 512, (g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, '#08303d'); grad.addColorStop(1, '#0d4c5f');
+    g.fillStyle = grad; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 4000; i++) { g.fillStyle = `rgba(255,255,255,${Math.random() * 0.04})`; g.fillRect(Math.random() * w, Math.random() * h, 1, 1); }
+    g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 2;
+    for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, h); g.stroke(); g.beginPath(); g.moveTo(0, i * 64); g.lineTo(w, i * 64); g.stroke(); }
+  });
+  const feltMat = new THREE.MeshStandardMaterial({ map: felt, roughness: 0.92 });
+  const table = box(TW, 0.2, TL + 1, [darkMetal, darkMetal, feltMat, darkMetal, darkMetal, darkMetal], 0, -0.1, (TL - 1) / 2);
+  table.receiveShadow = true;
+  scene.add(table);
+  const rampMat = new THREE.MeshStandardMaterial({ color: '#0f5f75', roughness: 0.6, metalness: 0.2 });
+  scene.add(shadowed(new THREE.Mesh(new ConvexGeometry(RAMP_PTS.ramp.map((p) => new THREE.Vector3(...p))), rampMat), false));
+  scene.add(shadowed(new THREE.Mesh(new ConvexGeometry(RAMP_PTS.lip.map((p) => new THREE.Vector3(...p))), chromeMat), false));
+  // neon edge along the front and a win tray under it
+  scene.add(box(TW, 0.025, 0.025, neonMat('#2ef2ff', 3), 0, -0.03, TL + 0.015));
+  const tray = box(TW + 0.6, 0.1, 0.8, new THREE.MeshStandardMaterial({ color: '#1b0f33', roughness: 0.8 }), 0, -0.75, TL + 0.45);
+  tray.receiveShadow = true;
+  scene.add(tray);
+  const winLabel = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.35), new THREE.MeshBasicMaterial({ map: textTex('WIN', { font: '900 54px system-ui, sans-serif', color: 'rgba(46,242,255,.85)', glow: '#2ef2ff' }), transparent: true, depthWrite: false }));
+  winLabel.rotation.x = -Math.PI / 2;
+  winLabel.position.set(0, -0.695, TL + 0.5);
+  scene.add(winLabel);
+  scene.add(box(TW + 0.6, 0.18, 0.04, neonMat('#ff3ea5', 0.6), 0, -0.62, TL + 0.86));
+
+  // side walls: glass with a chrome rail, ending where the sides open up
+  for (const s of [-1, 1]) {
+    const glass = box(0.02, 0.6, SIDE_WALL_END + 0.3, glassMat, s * (TW / 2 + 0.02), 0.3, (SIDE_WALL_END - 0.3) / 2);
+    scene.add(glass);
+    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, SIDE_WALL_END + 0.3, 16), chromeMat);
+    rail.rotation.x = Math.PI / 2;
+    rail.position.set(s * (TW / 2 + 0.02), 0.6, (SIDE_WALL_END - 0.3) / 2);
+    scene.add(shadowed(rail));
+    // red marker where the open side starts
+    const post = box(0.06, 0.62, 0.06, neonMat('#ff2d55', 2), s * (TW / 2 + 0.02), 0.31, SIDE_WALL_END);
+    scene.add(post);
+    // the cabinet's side panels
+    const side = box(0.12, 2.6, TL + 2, new THREE.MeshStandardMaterial({ color: '#1b0d33', roughness: 0.7 }), s * (TW / 2 + 0.55), 0.5, TL / 2 - 0.3);
+    side.receiveShadow = true;
+    scene.add(side);
+    scene.add(box(0.03, 0.03, TL + 1.4, neonMat(s < 0 ? '#ff3ea5' : '#2ef2ff', 2), s * (TW / 2 + 0.48), 1.6, TL / 2 - 0.2));
   }
-  updateHud();
+  // dark pit beside the table that lost coins fall into
+  scene.add(box(TW + 4, 0.1, TL + 4, new THREE.MeshStandardMaterial({ color: '#07030f', roughness: 1 }), 0, -1.6, TL / 2));
+
+  // back wall with a row of bulbs
+  const seams = canvasTex(512, 256, (g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, '#3a1d6b'); grad.addColorStop(1, '#1c0d36');
+    g.fillStyle = grad; g.fillRect(0, 0, w, h);
+    for (let i = 1; i < 6; i++) {
+      g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(i * w / 6, 0, 3, h);
+      g.fillStyle = 'rgba(255,255,255,.08)'; g.fillRect(i * w / 6 + 3, 0, 1, h);
+    }
+  });
+  const wallMat = new THREE.MeshStandardMaterial({ map: seams, roughness: 0.6, metalness: 0.2 });
+  const wallH = WALL_TOP - DECK_H - 0.012;
+  const wall = box(TW + 0.2, wallH, 0.3, [wallMat, wallMat, darkMetal, darkMetal, wallMat, wallMat], 0, DECK_H + 0.012 + wallH / 2, -0.15);
+  scene.add(shadowed(wall));
+  scene.add(box(TW + 0.2, 0.06, 0.34, chromeMat, 0, WALL_TOP + 0.03, -0.15));
+  scene.add(box(TW + 1.4, 2.4, 0.1, new THREE.MeshStandardMaterial({ color: '#12082a', roughness: 0.8 }), 0, WALL_TOP + 1.2, -0.6));
+  pusherParts.bulbs = [];
+  for (let i = 0; i <= 14; i++) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 8), new THREE.MeshStandardMaterial({ color: '#5a3d1a', emissive: '#ffd23e', emissiveIntensity: 0 }));
+    m.position.set(-TW / 2 + 0.1 + i * (TW - 0.2) / 14, WALL_TOP - 0.08, 0.01);
+    scene.add(m);
+    pusherParts.bulbs.push(m);
+  }
+
+  // the chute carriage: funnel on top, glass tube down the wall, mouth at the bottom
+  const chute = new THREE.Group();
+  const funnel = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.08, 0.24, 28, 1, true), new THREE.MeshStandardMaterial({ color: '#cfd5e4', metalness: 1, roughness: 0.25, side: THREE.DoubleSide }));
+  funnel.position.set(0, WALL_TOP + 0.16, 0.06);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.018, 8, 32), neonMat('#ff3ea5', 3));
+  rim.rotation.x = Math.PI / 2;
+  rim.position.set(0, WALL_TOP + 0.28, 0.06);
+  const tubeH = WALL_TOP - TUBE_BOTTOM;
+  const back = box(0.32, tubeH, 0.01, new THREE.MeshStandardMaterial({ color: '#0a0416', roughness: 0.5 }), 0, TUBE_BOTTOM + tubeH / 2, 0.006);
+  const tube = box(0.32, tubeH, 0.11, new THREE.MeshStandardMaterial({ color: '#ff9bd0', transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0.2, depthWrite: false }), 0, TUBE_BOTTOM + tubeH / 2, 0.065);
+  const edgeL = box(0.018, tubeH, 0.018, neonMat('#ff3ea5', 2.2), -0.16, TUBE_BOTTOM + tubeH / 2, 0.12);
+  const edgeR = edgeL.clone(); edgeR.position.x = 0.16;
+  const mouth = box(0.36, 0.022, 0.022, neonMat('#ff3ea5', 3), 0, TUBE_BOTTOM, 0.125);
+  chute.add(funnel, rim, back, tube, edgeL, edgeR, mouth);
+  scene.add(chute);
+  pusherParts.chute = chute;
+
+  // LUCKY window sliding across the wall in front of the tube
+  const gate = new THREE.Group();
+  const gm = neonMat('#ffd23e', 2.6);
+  const gs = GATE_HALF * 2 + 0.06;
+  gate.add(box(gs, 0.03, 0.03, gm, 0, 0.15, 0), box(gs, 0.03, 0.03, gm, 0, -0.15, 0), box(0.03, 0.3, 0.03, gm, -gs / 2, 0, 0), box(0.03, 0.3, 0.03, gm, gs / 2, 0, 0));
+  const lucky = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.085), new THREE.MeshBasicMaterial({ map: textTex('LUCKY', { glow: '#ffd23e', color: '#ffd23e' }), transparent: true, depthWrite: false }));
+  lucky.position.set(0, 0.21, 0);
+  gate.add(lucky);
+  gate.position.set(0, GATE_Y, 0.14);
+  scene.add(gate);
+  pusherParts.gate = gate;
+  pusherParts.gateGlow = gm;
+
+  // the shelf: brushed steel on top, hazard stripes on its face
+  const brushed = canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = '#6f7790'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '0,0,0'},${Math.random() * 0.08})`; g.fillRect(0, Math.random() * h, w, 1 + Math.random()); }
+  });
+  const hazard = canvasTex(256, 32, (g, w, h) => {
+    g.fillStyle = '#1a1405'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#ffc928';
+    for (let x = -h; x < w + h; x += 32) { g.beginPath(); g.moveTo(x, h); g.lineTo(x + 16, h); g.lineTo(x + 16 + h, 0); g.lineTo(x + h, 0); g.fill(); }
+  }, { repeat: [5, 1] });
+  const shelfTop = new THREE.MeshStandardMaterial({ map: brushed, metalness: 0.85, roughness: 0.35 });
+  const shelfFace = new THREE.MeshStandardMaterial({ map: hazard, roughness: 0.5, metalness: 0.3 });
+  const shelf = box(TW, DECK_H, SHELF_LEN, [darkMetal, darkMetal, shelfTop, darkMetal, shelfFace, darkMetal]);
+  scene.add(shadowed(shelf));
+  pusherParts.shelf = shelf;
+
+  pusher.meshes = coinMeshes(scene, 700);
+  pusher.scene = scene;
+  pusher.camera = camera;
+  pusher.renderer = renderer;
+  watchVisible($('playfield'), pusher);
+}
+
+let cw = 0, ch = 0;
+function resizePusher() {
+  cw = $('game').parentElement.clientWidth;
+  ch = Math.round(cw * 1.18);
+  pusher.renderer.setPixelRatio(dpr());
+  pusher.renderer.setSize(cw, ch, false);
+  $('game').style.height = ch + 'px';
+  pusher.camera.aspect = cw / ch;
+  pusher.camera.updateProjectionMatrix();
+  const fx = $('fx');
+  fx.width = cw * dpr();
+  fx.height = ch * dpr();
+  fx.style.width = cw + 'px';
+  fx.style.height = ch + 'px';
+  fxCtx.setTransform(dpr(), 0, 0, dpr(), 0, 0);
+}
+const _v = new THREE.Vector3();
+function toScreen(x, y, z) {
+  _v.set(x, y, z).project(pusher.camera);
+  return { x: (_v.x * 0.5 + 0.5) * cw, y: (-_v.y * 0.5 + 0.5) * ch };
+}
+
+const fxCtx = $('fx').getContext('2d');
+const coinItems = [];
+function renderPusher() {
+  if (!pusher.visible) return;
+  const t = now / 1000;
+  pusherParts.shelf.position.set(0, DECK_H / 2, pusher.front - SHELF_LEN / 2);
+  pusherParts.chute.position.x = clamp(chuteX, -TW / 2 + 0.18, TW / 2 - 0.18);
+  pusherParts.gate.position.x = gateX(t);
+  pusherParts.gateGlow.emissiveIntensity = 2.2 + 0.8 * Math.sin(t * 6);
+  pusherParts.bulbs.forEach((b, i) => {
+    b.material.emissiveIntensity = (Math.floor(t * (now < partyUntil ? 14 : 5)) + i) % 3 === 0 ? 3 : 0;
+  });
+  for (const type of ['star', 'gem']) for (const m of coinLook(type).mats) m.emissiveIntensity = 0.25 + 0.2 * Math.sin(now / 200);
+
+  coinItems.length = 0;
+  for (const c of pusher.coins) coinItems.push({ type: c.type, p: c.body.translation(), q: c.body.rotation() });
+  for (const d of incoming) coinItems.push({ type: d.type, p: { x: d.x, y: d.y, z: 0.065 }, q: STAND_Q });
+  writeInstances(pusher.meshes, coinItems);
+  pusher.renderer.render(pusher.scene, pusher.camera);
+
+  // sparks and "+1"s on a 2D layer on top
+  fxCtx.clearRect(0, 0, cw, ch);
+  fxCtx.globalCompositeOperation = 'lighter';
+  for (const s of sparks) {
+    fxCtx.globalAlpha = Math.max(0, 1 - s.t / s.life);
+    fxCtx.fillStyle = s.color;
+    fxCtx.beginPath(); fxCtx.arc(s.x, s.y, 2.5, 0, Math.PI * 2); fxCtx.fill();
+  }
+  fxCtx.globalCompositeOperation = 'source-over';
+  fxCtx.textAlign = 'center';
+  for (const fl of floaters) {
+    fxCtx.globalAlpha = Math.max(0, 1 - fl.t / 0.9);
+    fxCtx.fillStyle = fl.color;
+    fxCtx.font = `900 ${fl.big ? 26 : 18}px system-ui, sans-serif`;
+    fxCtx.shadowColor = fl.color;
+    fxCtx.shadowBlur = 8;
+    fxCtx.fillText(fl.text, fl.x, fl.y - fl.t * 50);
+    fxCtx.shadowBlur = 0;
+  }
+  fxCtx.globalAlpha = 1;
+}
+
+
+let lastShove = 0;
+function updatePusher(dt) {
+  const t = now / 1000;
+  // chute follows the player's aim, otherwise sweeps on its own
+  const target = aimX !== null && now < aimUntil ? aimX : (TW / 2 - 0.25) * Math.sin(t * 1.3);
+  chuteX += (target - chuteX) * Math.min(1, dt * 12);
+
+  updateIncoming(dt);
+  const before = pusher.front;
+  stepPusher(dt);
+  // the pile grinds and tinkles as the shelf pushes
+  if (pusher.front > before && Math.random() < dt * 3 && now - lastShove > 120) { lastShove = now; sfx.shove(); }
+
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.t += dt; s.vy += 400 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
+    if (s.t > s.life) sparks.splice(i, 1);
+  }
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    floaters[i].t += dt;
+    if (floaters[i].t > 0.9) floaters.splice(i, 1);
+  }
+
+  $('drop').style.setProperty('--cd', dropCooldown().toFixed(3));
+
+  // free credits when running low
+  if (credits < REFILL_BELOW) {
+    refillTimer -= dt;
+    if (refillTimer <= 0) {
+      credits++;
+      refillTimer = REFILL_SECS;
+      updateHud();
+    }
+    $('refill').textContent = `Free credit in ${Math.ceil(refillTimer)}s`;
+  } else {
+    refillTimer = REFILL_SECS;
+    $('refill').textContent = '';
+  }
 }
 
 // ---------- Lucky slot ----------
@@ -994,6 +1202,36 @@ const OUTCOMES = [
   { sym: null, weight: 55 },
 ];
 let spinning = false;
+
+// each reel is a six-sided drum; showing symbol i means turning it to i * 60 degrees
+const reels = [0, 1, 2].map((i) => {
+  const el = $('reel' + i);
+  el.innerHTML = `<div class="drum">${SYMBOLS.map((s, j) => `<b style="--i:${j}">${s}</b>`).join('')}</div>`;
+  const r = { el, drum: el.firstElementChild, angle: 0, speed: 0, tween: null };
+  setReel(r, 0);
+  return r;
+});
+function setReel(r, a) {
+  r.angle = a;
+  r.drum.style.transform = `translateZ(-50px) rotateX(${a}deg)`;
+}
+function updateReels(dt) {
+  for (const r of reels) {
+    if (r.tween) {
+      // ease into the final symbol with a little overshoot, like a drum catching its stop
+      const tw = r.tween;
+      tw.t = Math.min(1, tw.t + dt / tw.dur);
+      const OVER = 7;
+      if (tw.t < 0.8) setReel(r, tw.from + (tw.to + OVER - tw.from) * (1 - Math.pow(1 - tw.t / 0.8, 3)));
+      else setReel(r, tw.to + OVER * Math.cos(((tw.t - 0.8) / 0.2) * Math.PI / 2));
+      if (tw.t >= 1) { r.tween = null; setReel(r, tw.to % 360); }
+    } else if (r.speed) {
+      const before = Math.floor(r.angle / 60);
+      setReel(r, r.angle + r.speed * dt);
+      if (Math.floor(r.angle / 60) !== before && r === reels[0]) sfx.tick();
+    }
+  }
+}
 
 function addSpins(n) {
   spins = Math.min(spins + n, 20);
@@ -1020,23 +1258,21 @@ function spinSlot() {
     do { final = [0, 1, 2].map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]); }
     while (final[0] === final[1] && final[1] === final[2]);
   }
-  const reels = [0, 1, 2].map((i) => $('reel' + i));
-  reels.forEach((r) => { r.classList.remove('hit'); r.classList.add('spin'); });
-  const ticker = setInterval(() => {
-    reels.forEach((r) => {
-      if (r.classList.contains('spin')) r.firstElementChild.textContent = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-    });
-    sfx.tick();
-  }, 70);
+  reels.forEach((r) => { r.el.classList.remove('hit'); r.el.classList.add('blur'); r.tween = null; r.speed = rand(1000, 1250); });
   reels.forEach((r, i) => setTimeout(() => {
-    r.classList.remove('spin');
-    r.firstElementChild.textContent = final[i];
-    sfx.stop();
+    const idx = SYMBOLS.indexOf(final[i]);
+    let to = Math.ceil(r.angle / 360) * 360 + idx * 60;
+    while (to < r.angle + 240) to += 360;
+    r.speed = 0;
+    r.tween = { from: r.angle, to, t: 0, dur: 0.55 };
+    r.el.classList.remove('blur');
+    setTimeout(() => sfx.stop(), 380);
     if (i === 2) {
-      clearInterval(ticker);
-      if (outcome.sym) { reels.forEach((x) => x.classList.add('hit')); outcome.run(); }
-      else sfx.miss();
-      setTimeout(() => { spinning = false; spinSlot(); }, outcome.sym ? 1800 : 500);
+      setTimeout(() => {
+        if (outcome.sym) { reels.forEach((x) => x.el.classList.add('hit')); outcome.run(); }
+        else sfx.miss();
+        setTimeout(() => { spinning = false; spinSlot(); }, outcome.sym ? 1800 : 500);
+      }, 550);
     }
   }, 700 + i * 350));
 }
@@ -1045,7 +1281,7 @@ function shower(n) {
   for (let i = 0; i < n; i++) queueDrop('coin', 250 + i * 110);
 }
 function queueDrop(type, delay) {
-  setTimeout(() => dropCoin(TYPES[type].r + Math.random() * (W - 2 * TYPES[type].r), type, true), delay);
+  setTimeout(() => dropFree(type), delay);
 }
 
 // ---------- Effects ----------
@@ -1076,589 +1312,6 @@ function bumpLed() {
   box.classList.add('bump');
 }
 
-// ---------- Rendering ----------
-function quad(a, b, c, d) {
-  ctx.beginPath();
-  ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y);
-  ctx.closePath();
-}
-
-function drawScene() {
-  const t = now / 1000;
-  ctx.clearRect(0, 0, cw, ch);
-
-  // cabinet interior
-  const bg = ctx.createLinearGradient(0, 0, 0, ch);
-  bg.addColorStop(0, '#1b0d33');
-  bg.addColorStop(1, '#05030a');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, cw, ch);
-
-  // table
-  const t0 = proj(0, 0), t1 = proj(W, 0), t2 = proj(W, L), t3 = proj(0, L);
-  quad(t0, t1, t2, t3);
-  const felt = ctx.createLinearGradient(0, t0.y, 0, t3.y);
-  felt.addColorStop(0, '#0d3b4a');
-  felt.addColorStop(1, '#14607a');
-  ctx.fillStyle = felt;
-  ctx.fill();
-  ctx.save();
-  quad(t0, t1, t2, t3);
-  ctx.clip();
-  // overhead spotlight on the middle of the table
-  const mid = proj(W / 2, L * 0.55);
-  const spot = ctx.createRadialGradient(mid.x, mid.y, 0, mid.x, mid.y, (t2.x - t3.x) * 0.75);
-  spot.addColorStop(0, 'rgba(120,230,255,.22)');
-  spot.addColorStop(1, 'rgba(120,230,255,0)');
-  ctx.fillStyle = spot;
-  ctx.fillRect(0, 0, cw, ch);
-  // perspective grid: rows get wider apart and columns converge toward the back
-  ctx.lineWidth = 1;
-  for (let y = 30; y < L; y += 30) {
-    const a = proj(0, y), b = proj(W, y);
-    ctx.strokeStyle = `rgba(255,255,255,${0.03 + 0.05 * (y / L)})`;
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-  }
-  ctx.strokeStyle = 'rgba(255,255,255,.05)';
-  for (let x = 30; x < W; x += 30) {
-    const a = proj(x, 0), b = proj(x, L);
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-  }
-  // shade where the table meets the side walls
-  [0, W].forEach((x) => {
-    const a = proj(x, 0), b = proj(x, L), ia = proj(x + (x ? -26 : 26), 0), ib = proj(x + (x ? -26 : 26), L);
-    const g = ctx.createLinearGradient(a.x, 0, ia.x, 0);
-    g.addColorStop(0, 'rgba(0,0,0,.45)');
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g;
-    quad(a, b, ib, ia);
-    ctx.fill();
-  });
-  // back of the table falls into shadow
-  const depth = ctx.createLinearGradient(0, t0.y, 0, t3.y);
-  depth.addColorStop(0, 'rgba(0,0,0,.5)');
-  depth.addColorStop(0.45, 'rgba(0,0,0,0)');
-  ctx.fillStyle = depth;
-  ctx.fillRect(0, 0, cw, ch);
-  ctx.restore();
-
-  // the slanted front ramp: rises toward the edge
-  const r0 = proj(0, SLOPE_START), r1 = proj(W, SLOPE_START), r2 = proj(W, LIP_START, SLOPE_H), r3 = proj(0, LIP_START, SLOPE_H);
-  quad(r0, r1, r2, r3);
-  const ramp = ctx.createLinearGradient(0, r0.y, 0, r3.y);
-  ramp.addColorStop(0, '#16566c');
-  ramp.addColorStop(1, '#2a8fae');
-  ctx.fillStyle = ramp;
-  ctx.fill();
-  // the slope catches more light the higher it rises
-  const sheen = ctx.createLinearGradient(r0.x, 0, r1.x, 0);
-  sheen.addColorStop(0, 'rgba(0,0,0,.3)');
-  sheen.addColorStop(0.35, 'rgba(255,255,255,.08)');
-  sheen.addColorStop(0.5, 'rgba(255,255,255,.12)');
-  sheen.addColorStop(1, 'rgba(0,0,0,.3)');
-  quad(r0, r1, r2, r3);
-  ctx.fillStyle = sheen;
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(46,242,255,.45)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(r0.x, r0.y); ctx.lineTo(r1.x, r1.y); ctx.stroke();
-  // chevrons pointing back down the slope
-  ctx.strokeStyle = 'rgba(255,255,255,.12)';
-  ctx.lineWidth = 2;
-  for (let x = 30; x < W; x += 60) {
-    const a = proj(x - 12, L - 30, rampH(L - 30)), b = proj(x, L - 48, rampH(L - 48)), c2 = proj(x + 12, L - 30, rampH(L - 30));
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c2.x, c2.y); ctx.stroke();
-  }
-  // the kicker lip at the edge, angled up so coins have to climb it
-  const k0 = proj(0, L, SLOPE_H + LIP_H), k1 = proj(W, L, SLOPE_H + LIP_H);
-  quad(r3, r2, k1, k0);
-  const lip = ctx.createLinearGradient(0, r3.y, 0, k0.y);
-  lip.addColorStop(0, '#6d7387');
-  lip.addColorStop(1, '#e9ecf5');
-  ctx.fillStyle = lip;
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,.35)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(r3.x, r3.y); ctx.lineTo(r2.x, r2.y); ctx.stroke();
-  // front face under the lip
-  const l0 = proj(0, L), l1 = proj(W, L);
-  quad(k0, k1, l1, l0);
-  ctx.fillStyle = '#0a2e3a';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(46,242,255,.8)';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(k0.x, k0.y); ctx.lineTo(k1.x, k1.y); ctx.stroke();
-
-  // open side gutters (lost coins) near the front
-  [0, W].forEach((x) => {
-    const dir = x === 0 ? -1 : 1;
-    const a = proj(x, SIDE_WALL_END, rampH(SIDE_WALL_END)), b = proj(x, L, SLOPE_H + LIP_H);
-    ctx.fillStyle = 'rgba(255,40,60,.18)';
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(b.x + dir * 10, b.y); ctx.lineTo(a.x + dir * 8, a.y);
-    ctx.fill();
-    // little warning lights
-    for (let y = SIDE_WALL_END + 12; y < L; y += 26) {
-      const p = proj(x, y, rampH(y));
-      const on = Math.floor(t * 4 + y / 26) % 2 === 0;
-      ctx.fillStyle = on ? '#ff3b4f' : '#55141c';
-      ctx.beginPath(); ctx.arc(p.x + dir * 5 * p.s, p.y, 2.2 * p.s * k / 1.2, 0, Math.PI * 2); ctx.fill();
-    }
-  });
-
-  // back wall
-  const w0 = proj(0, 0, 0), w1 = proj(W, 0, 0), w2 = proj(W, 0, CHUTE_ELEV + 18), w3 = proj(0, 0, CHUTE_ELEV + 18);
-  quad(w0, w1, w2, w3);
-  const wall = ctx.createLinearGradient(0, w3.y, 0, w0.y);
-  wall.addColorStop(0, '#3a1a63');
-  wall.addColorStop(1, '#1c0d33');
-  ctx.fillStyle = wall;
-  ctx.fill();
-  // panel seams with a lit edge, and a dark crease along the base
-  for (let i = 1; i < 6; i++) {
-    const x = (W / 6) * i;
-    const a = proj(x, 0, DECK_H), b = proj(x, 0, CHUTE_ELEV + 18);
-    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(a.x + 1.5, a.y); ctx.lineTo(b.x + 1.5, b.y); ctx.stroke();
-  }
-  const wallBase = ctx.createLinearGradient(0, proj(0, 0, DECK_H + 26).y, 0, w0.y);
-  wallBase.addColorStop(0, 'rgba(0,0,0,0)');
-  wallBase.addColorStop(1, 'rgba(0,0,0,.55)');
-  ctx.fillStyle = wallBase;
-  quad(w0, w1, proj(W, 0, DECK_H + 26), proj(0, 0, DECK_H + 26));
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,.12)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(w3.x, w3.y); ctx.lineTo(w2.x, w2.y); ctx.stroke();
-  // wall bulbs
-  for (let i = 0; i <= 14; i++) {
-    const p = proj((W / 14) * i, 0, CHUTE_ELEV + 10);
-    const on = (Math.floor(t * (now < partyUntil ? 14 : 5)) + i) % 3 === 0;
-    ctx.fillStyle = on ? '#ffd23e' : '#5a3d1a';
-    if (on) { ctx.shadowColor = '#ffd23e'; ctx.shadowBlur = 8; }
-    ctx.beginPath(); ctx.arc(p.x, p.y, 2.6 * k * 0.62, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0;
-  }
-
-  // the glass coin tube down the wall and the slot at its foot, with any coin falling
-  // through them
-  const u0 = proj(chuteX - TUBE_HALF, 0, CHUTE_ELEV), u1 = proj(chuteX + TUBE_HALF, 0, MOUTH_TOP);
-  const m0 = proj(chuteX - MOUTH_HALF, 0, DECK_H + 1), m1 = proj(chuteX + MOUTH_HALF, 0, MOUTH_TOP);
-  const tubeBg = ctx.createLinearGradient(u0.x, 0, u1.x, 0);
-  tubeBg.addColorStop(0, 'rgba(10,4,24,.9)');
-  tubeBg.addColorStop(0.5, 'rgba(40,12,52,.75)');
-  tubeBg.addColorStop(1, 'rgba(10,4,24,.9)');
-  ctx.fillStyle = tubeBg;
-  ctx.fillRect(u0.x, u0.y, u1.x - u0.x, u1.y - u0.y);
-  ctx.fillStyle = '#05020c';
-  roundRect(m0.x, m1.y, m1.x - m0.x, m0.y - m1.y, 4);
-  ctx.fill();
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(u0.x, u0.y, u1.x - u0.x, u1.y - u0.y + 2);
-  ctx.rect(m0.x, m1.y, m1.x - m0.x, m0.y - m1.y);
-  ctx.clip();
-  for (const d of incoming) {
-    const ip = incomingPos(d);
-    if (ip.stage === 'wall') drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale, ip.stand);
-  }
-  ctx.restore();
-  // glass: a pink tint, a bright streak down one side and neon edges
-  const tubeGlass = ctx.createLinearGradient(u0.x, 0, u1.x, 0);
-  tubeGlass.addColorStop(0, 'rgba(255,62,165,.28)');
-  tubeGlass.addColorStop(0.18, 'rgba(255,255,255,.22)');
-  tubeGlass.addColorStop(0.3, 'rgba(255,62,165,.06)');
-  tubeGlass.addColorStop(0.8, 'rgba(255,62,165,.06)');
-  tubeGlass.addColorStop(1, 'rgba(255,62,165,.3)');
-  ctx.fillStyle = tubeGlass;
-  ctx.fillRect(u0.x, u0.y, u1.x - u0.x, u1.y - u0.y);
-  ctx.strokeStyle = 'rgba(255,62,165,.55)';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.moveTo(u0.x, u0.y); ctx.lineTo(u0.x, u1.y);
-  ctx.moveTo(u1.x, u0.y); ctx.lineTo(u1.x, u1.y);
-  ctx.stroke();
-  ctx.strokeStyle = '#ff3ea5';
-  ctx.lineWidth = 2;
-  ctx.shadowColor = '#ff3ea5';
-  ctx.shadowBlur = 8;
-  roundRect(m0.x, m1.y, m1.x - m0.x, m0.y - m1.y, 4);
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-
-  // lucky gate on the back wall
-  const gx = gateX(t);
-  const g0 = proj(gx - GATE_HALF, 0, GATE_ELEV - 14), g1 = proj(gx + GATE_HALF, 0, GATE_ELEV + 14);
-  ctx.fillStyle = '#0a0414';
-  ctx.strokeStyle = '#ffd23e';
-  ctx.lineWidth = 2;
-  ctx.shadowColor = '#ffd23e';
-  ctx.shadowBlur = 10 + 6 * Math.sin(t * 6);
-  roundRect(g0.x, g1.y, g1.x - g0.x, g0.y - g1.y, 5);
-  ctx.fill();
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = '#ffd23e';
-  ctx.font = `900 ${Math.max(8, 7 * k * 0.62)}px system-ui, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('LUCKY', (g0.x + g1.x) / 2, (g0.y + g1.y) / 2);
-  // coins rolling down inside the wall show through the gate window
-  ctx.save();
-  roundRect(g0.x, g1.y, g1.x - g0.x, g0.y - g1.y, 5);
-  ctx.clip();
-  for (const d of incoming) {
-    const ip = incomingPos(d);
-    if (ip.stage === 'wall') drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale, ip.stand);
-  }
-  ctx.restore();
-
-  // shelf (pusher) top and front face
-  const f = machine.front;
-  // the shelf casts a shadow onto the table in front of it
-  const sh0 = proj(0, f), sh1 = proj(W, f), sh2 = proj(W, f + 22), sh3 = proj(0, f + 22);
-  const shelfShadow = ctx.createLinearGradient(0, sh0.y, 0, sh3.y);
-  shelfShadow.addColorStop(0, 'rgba(0,0,0,.55)');
-  shelfShadow.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = shelfShadow;
-  quad(sh0, sh1, sh2, sh3);
-  ctx.fill();
-  const d0 = proj(0, 0, DECK_H), d1 = proj(W, 0, DECK_H), d2 = proj(W, f, DECK_H), d3 = proj(0, f, DECK_H);
-  quad(d0, d1, d2, d3);
-  const deck = ctx.createLinearGradient(0, d0.y, 0, d3.y);
-  deck.addColorStop(0, '#4f5468');
-  deck.addColorStop(0.7, '#a3abc1');
-  deck.addColorStop(1, '#c9d0e2');
-  ctx.fillStyle = deck;
-  ctx.fill();
-  // brushed-metal sheen across the deck, plus plate seams running front to back
-  ctx.save();
-  quad(d0, d1, d2, d3);
-  ctx.clip();
-  const brushed = ctx.createLinearGradient(d3.x, 0, d2.x, 0);
-  brushed.addColorStop(0, 'rgba(0,0,0,.25)');
-  brushed.addColorStop(0.3, 'rgba(255,255,255,.18)');
-  brushed.addColorStop(0.55, 'rgba(255,255,255,0)');
-  brushed.addColorStop(0.8, 'rgba(255,255,255,.1)');
-  brushed.addColorStop(1, 'rgba(0,0,0,.25)');
-  ctx.fillStyle = brushed;
-  ctx.fillRect(0, 0, cw, ch);
-  for (let x = 50; x < W; x += 50) {
-    const a = proj(x, 0, DECK_H), b = proj(x, f, DECK_H);
-    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-  }
-  ctx.restore();
-  const e0 = proj(0, f, 0), e1 = proj(W, f, 0);
-  quad(d3, d2, e1, e0);
-  const face = ctx.createLinearGradient(0, d3.y, 0, e0.y);
-  face.addColorStop(0, '#ffcf3e');
-  face.addColorStop(1, '#c98a08');
-  ctx.fillStyle = face;
-  ctx.fill();
-  // hazard stripes on the face
-  ctx.save();
-  quad(d3, d2, e1, e0);
-  ctx.clip();
-  ctx.fillStyle = 'rgba(20,10,0,.55)';
-  const stripeW = 14 * k * d3.s;
-  for (let x = d3.x - 40; x < d2.x + 40; x += stripeW * 2) {
-    ctx.beginPath();
-    ctx.moveTo(x, e0.y); ctx.lineTo(x + stripeW, e0.y); ctx.lineTo(x + stripeW + (e0.y - d3.y), d3.y); ctx.lineTo(x + (e0.y - d3.y), d3.y);
-    ctx.fill();
-  }
-  // rounded face: light along the top, darker toward the table
-  const curve = ctx.createLinearGradient(0, d3.y, 0, e0.y);
-  curve.addColorStop(0, 'rgba(255,255,255,.35)');
-  curve.addColorStop(0.25, 'rgba(255,255,255,0)');
-  curve.addColorStop(1, 'rgba(0,0,0,.35)');
-  ctx.fillStyle = curve;
-  ctx.fillRect(0, 0, cw, ch);
-  ctx.restore();
-  // bevel highlight on the shelf's front edge
-  ctx.strokeStyle = 'rgba(255,255,255,.75)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(d3.x, d3.y); ctx.lineTo(d2.x, d2.y); ctx.stroke();
-
-  // coins on the shelf, then on the table, back to front
-  // (shadows first, so a coin's shadow never darkens the coin in front of it)
-  const deckCoins = machine.coins.filter((c) => c.layer === 1).sort((a, b) => a.y - b.y);
-  for (const c of deckCoins) drawCoinShadow(c.type, c.x, c.y, DECK_H);
-  for (const c of deckCoins) drawCoin(c.type, c.x, c.y, DECK_H);
-  const tableCoins = machine.coins.filter((c) => c.layer === 0).sort((a, b) => a.y - b.y);
-  for (const c of tableCoins) drawCoinShadow(c.type, c.x, c.y, rampH(c.y), Math.max(0, c.elev - rampH(c.y)));
-  for (const c of tableCoins) drawCoin(c.type, c.x, c.y, Math.max(c.elev, rampH(c.y)));
-
-  // chrome rim on top of the kicker lip, in front of the coins climbing it
-  const top = SLOPE_H + LIP_H;
-  const n0 = proj(0, L, top), n1 = proj(W, L, top), n2 = proj(W, L, top - 6), n3 = proj(0, L, top - 6);
-  quad(n0, n1, n2, n3);
-  const rim = ctx.createLinearGradient(0, n0.y, 0, n3.y);
-  rim.addColorStop(0, '#ffffff');
-  rim.addColorStop(0.4, '#c3c9da');
-  rim.addColorStop(1, '#5d6378');
-  ctx.fillStyle = rim;
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(46,242,255,.8)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(n0.x, n0.y); ctx.lineTo(n1.x, n1.y); ctx.stroke();
-
-  // side walls (chrome rails)
-  [0, W].forEach((x) => {
-    const a = proj(x, -2, 0), b = proj(x, SIDE_WALL_END, rampH(SIDE_WALL_END)), c = proj(x, SIDE_WALL_END, 14 + rampH(SIDE_WALL_END)), d = proj(x, -2, 14);
-    quad(a, b, c, d);
-    const rail = ctx.createLinearGradient(0, d.y, 0, a.y);
-    rail.addColorStop(0, '#f4f6fb');
-    rail.addColorStop(0.3, '#b7bdcc');
-    rail.addColorStop(0.55, '#6d7387');
-    rail.addColorStop(1, '#3b4050');
-    ctx.fillStyle = rail;
-    ctx.fill();
-    // top of the rail, so it reads as a solid bar with thickness
-    const out = x === 0 ? -8 : 8;
-    const tc = proj(x + out, SIDE_WALL_END, 14 + rampH(SIDE_WALL_END)), td = proj(x + out, -2, 14);
-    quad(d, c, tc, td);
-    const cap = ctx.createLinearGradient(d.x, 0, td.x, 0);
-    cap.addColorStop(0, '#ffffff');
-    cap.addColorStop(1, '#8a90a2');
-    ctx.fillStyle = cap;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,.9)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(c.x, c.y); ctx.stroke();
-    // end cap facing the player
-    quad(b, c, tc, proj(x + out, SIDE_WALL_END, rampH(SIDE_WALL_END)));
-    ctx.fillStyle = '#4b5062';
-    ctx.fill();
-  });
-
-  // front edge: the win line
-  const glow = 0.55 + 0.45 * Math.sin(t * 5);
-  ctx.strokeStyle = `rgba(46,242,255,${0.5 + glow * 0.5})`;
-  ctx.shadowColor = '#2ef2ff';
-  ctx.shadowBlur = 14;
-  ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(t3.x, t3.y + 2); ctx.lineTo(t2.x, t2.y + 2); ctx.stroke();
-  ctx.shadowBlur = 0;
-
-  // payout tray
-  const trayTop = t3.y + 12;
-  const tray = ctx.createLinearGradient(0, trayTop, 0, ch);
-  tray.addColorStop(0, '#120a20');
-  tray.addColorStop(1, '#2a1748');
-  ctx.fillStyle = tray;
-  roundRect(cw * 0.06, trayTop, cw * 0.88, ch - trayTop - 8, 12);
-  ctx.fill();
-  ctx.fillStyle = 'rgba(46,242,255,.18)';
-  ctx.font = `900 ${cw * 0.07}px system-ui, sans-serif`;
-  ctx.fillText('WIN', cw / 2, (trayTop + ch) / 2);
-
-  // chute, with any coin being dropped into it behind its front face
-  const cp = proj(chuteX, 0, CHUTE_ELEV);
-  const cs = k * 0.62;
-  ctx.save();
-  ctx.beginPath(); ctx.rect(0, 0, cw, cp.y - 14 * cs); ctx.clip();   // gone once it's in the funnel
-  for (const d of incoming) {
-    const ip = incomingPos(d);
-    if (ip.stage === 'chute') drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale, ip.stand);
-  }
-  ctx.restore();
-  ctx.fillStyle = '#c9cfdf';
-  ctx.beginPath();
-  ctx.moveTo(cp.x - 22 * cs, cp.y - 14 * cs);
-  ctx.lineTo(cp.x + 22 * cs, cp.y - 14 * cs);
-  ctx.lineTo(cp.x + 10 * cs, cp.y + 4 * cs);
-  ctx.lineTo(cp.x - 10 * cs, cp.y + 4 * cs);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = '#ff3ea5';
-  ctx.fillRect(cp.x - 22 * cs, cp.y - 17 * cs, 44 * cs, 4 * cs);
-  // aim line
-  ctx.strokeStyle = 'rgba(255,62,165,.35)';
-  ctx.setLineDash([4, 5]);
-  ctx.lineWidth = 1.5;
-  const land = proj(chuteX, 22, DECK_H), mouth = proj(chuteX, 0, MOUTH_ELEV);
-  ctx.beginPath(); ctx.moveTo(mouth.x, mouth.y); ctx.lineTo(land.x, land.y); ctx.stroke();
-  ctx.setLineDash([]);
-
-  // coins in the air or sliding out of the wall slot
-  const slotL = proj(chuteX - MOUTH_HALF, 0, DECK_H), slotR = proj(chuteX + MOUTH_HALF, 0, MOUTH_TOP);
-  for (const d of incoming) {
-    const ip = incomingPos(d);
-    if (ip.stage === 'air') drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale);
-    else if (ip.stage === 'out') {
-      // while it's still partly inside the wall, only the bit in the slot shows
-      const inSlot = ip.stand === 1 && ip.y < TYPES[d.type].r + 3;
-      if (inSlot) { ctx.save(); ctx.beginPath(); ctx.rect(slotL.x, slotR.y, slotR.x - slotL.x, ch); ctx.clip(); }
-      drawCoin(d.type, d.x, ip.y, ip.elev, 1, ip.scale, ip.stand);
-      if (inSlot) ctx.restore();
-    }
-  }
-
-  // coins falling off the table
-  for (const fc of falling) {
-    const rx = TYPES[fc.type].r * k * fc.s;
-    ctx.globalAlpha = fc.kind === 'win' ? 1 : Math.max(0, 1 - fc.t * 2);
-    ctx.save();
-    ctx.translate(fc.x, fc.y);
-    ctx.rotate(fc.t * (fc.kind === 'win' ? 3 : -4));
-    drawCoinAt(fc.type, 0, 0, rx, FLAT_PSI + fc.t * (fc.kind === 'win' ? 540 : -720));   // tumbling
-    ctx.restore();
-    ctx.globalAlpha = 1;
-  }
-
-  // the cabinet's front glass: a faint diagonal reflection
-  const glass = ctx.createLinearGradient(0, 0, cw, ch * 0.8);
-  glass.addColorStop(0.0, 'rgba(255,255,255,0)');
-  glass.addColorStop(0.18, 'rgba(255,255,255,.06)');
-  glass.addColorStop(0.24, 'rgba(255,255,255,0)');
-  glass.addColorStop(0.3, 'rgba(255,255,255,.035)');
-  glass.addColorStop(0.34, 'rgba(255,255,255,0)');
-  ctx.fillStyle = glass;
-  ctx.fillRect(0, 0, cw, ch);
-
-  // sparks
-  ctx.globalCompositeOperation = 'lighter';
-  for (const s of sparks) {
-    ctx.globalAlpha = Math.max(0, 1 - s.t / s.life);
-    ctx.fillStyle = s.color;
-    ctx.beginPath(); ctx.arc(s.x, s.y, 2.2, 0, Math.PI * 2); ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = 'source-over';
-
-  // +1 texts
-  for (const fl of floaters) {
-    ctx.globalAlpha = Math.max(0, 1 - fl.t / 0.9);
-    ctx.fillStyle = fl.color;
-    ctx.font = `900 ${fl.big ? 26 : 18}px system-ui, sans-serif`;
-    ctx.shadowColor = fl.color;
-    ctx.shadowBlur = 8;
-    ctx.fillText(fl.text, fl.x, fl.y - fl.t * 50);
-    ctx.shadowBlur = 0;
-  }
-  ctx.globalAlpha = 1;
-}
-
-function roundRect(x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
-
-// ---------- Update ----------
-const STEP = 1 / 120;
-let acc = 0;
-let last = performance.now();
-let lastShove = 0;
-
-function update(dt) {
-  const t = now / 1000;
-  // chute follows the player's aim, otherwise sweeps on its own
-  const target = aimX !== null && now < aimUntil ? aimX : W / 2 + (W / 2 - 25) * Math.sin(t * 1.3);
-  chuteX += (target - chuteX) * Math.min(1, dt * 12);
-
-  acc += dt;
-  let steps = 0;
-  const onShelf = () => machine.coins.reduce((n, c) => n + c.layer, 0);
-  const shelfBefore = onShelf();
-  let wentOut = 0;
-  while (acc >= STEP && steps < 12) {
-    const before = machine.coins.length;
-    machine.step(STEP, onOut);
-    wentOut += before - machine.coins.length;
-    acc -= STEP;
-    steps++;
-  }
-  if (steps === 12) acc = 0;
-  // coins tumbling off the shelf onto the table tinkle against the pile
-  const tumbled = shelfBefore - onShelf();
-  if (tumbled > 0 && now - lastShove > 70) { lastShove = now; sfx.shove(); }
-  else if (wentOut === 0 && machine.front > machine.frontAt(machine.t - 0.05) && Math.random() < dt * 2.5) sfx.shove();
-
-  for (const c of machine.coins) if (c.elev > 0 && c.layer === 0) c.elev = Math.max(0, c.elev - dt * 90);
-
-  for (let i = incoming.length - 1; i >= 0; i--) {
-    const d = incoming[i];
-    d.t += dt;
-    // until it leaves the wall slot, a coin rides along with the moving chute
-    if (!d.free && incomingPos(d).stage !== 'out') d.x = clamp(chuteX, TYPES[d.type].r, W - TYPES[d.type].r);
-    // a coin earns a spin if the LUCKY window is in front of it as it rolls past
-    if (!d.gateChecked && incomingPos(d).elev <= GATE_ELEV - 14) {   // coin centred in the window
-      d.gateChecked = true;
-      if (Math.abs(d.x - gateX(now / 1000)) < GATE_HALF) {
-        const p = proj(d.x, 0, GATE_ELEV);
-        burst(p.x, p.y, '#ffd23e', 24);
-        floaters.push({ text: 'SPIN!', x: p.x, y: p.y, t: 0, color: '#ffd23e', big: true });
-        sfx.gate();
-        addSpins(1);
-      }
-    }
-    if (!d.free && !d.inSlot && incomingPos(d).stage === 'out') { d.inSlot = true; clink(2600, { vol: 0.035, decay: 0.15 }); }
-    if (d.t >= d.dur) {
-      incoming.splice(i, 1);
-      machine.add(d.x, d.yLand, 1, d.type);
-      sfx.land();
-    }
-  }
-
-  const trayY = ch - 30;
-  for (let i = falling.length - 1; i >= 0; i--) {
-    const fc = falling[i];
-    fc.t += dt;
-    fc.vy += 900 * dt;
-    fc.x += fc.vx * dt;
-    fc.y += fc.vy * dt;
-    if ((fc.kind === 'win' && fc.y >= trayY) || fc.t > 0.6) {
-      falling.splice(i, 1);
-      landFalling(fc);
-    }
-  }
-
-  for (let i = sparks.length - 1; i >= 0; i--) {
-    const s = sparks[i];
-    s.t += dt; s.vy += 400 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
-    if (s.t > s.life) sparks.splice(i, 1);
-  }
-  for (let i = floaters.length - 1; i >= 0; i--) {
-    floaters[i].t += dt;
-    if (floaters[i].t > 0.9) floaters.splice(i, 1);
-  }
-
-  $('drop').style.setProperty('--cd', dropCooldown().toFixed(3));
-
-  // free credits when running low
-  if (credits < REFILL_BELOW) {
-    refillTimer -= dt;
-    if (refillTimer <= 0) {
-      credits++;
-      refillTimer = REFILL_SECS;
-      updateHud();
-    }
-    $('refill').textContent = `Free credit in ${Math.ceil(refillTimer)}s`;
-  } else {
-    refillTimer = REFILL_SECS;
-    $('refill').textContent = '';
-  }
-}
-
-function frame(ts) {
-  const dt = Math.min((ts - last) / 1000, 0.1);
-  last = ts;
-  now = ts;
-  update(dt);
-  drawScene();
-  clawUpdate(dt);
-  clawDraw();
-  requestAnimationFrame(frame);
-}
-
 // ---------- HUD ----------
 const pad = (n) => String(Math.max(0, Math.floor(n))).padStart(3, '0');
 function updateHud() {
@@ -1666,7 +1319,7 @@ function updateHud() {
   $('won').textContent = pad(won);
   $('spins').textContent = spins;
   $('drop').disabled = credits < 1;
-  if ($('clawCredits')) $('clawCredits').textContent = pad(credits);
+  $('clawCredits').textContent = pad(credits);
 }
 function flashRefill() {
   const r = $('refill');
@@ -1686,18 +1339,29 @@ function stopHold() {
   holdTimer = null;
 }
 
-function pointerToX(e) {
-  const rect = canvas.getBoundingClientRect();
-  return clamp(unprojectX(e.clientX - rect.left), 14, W - 14);
+// where on the table (or the back wall) the pointer is, as a chute position
+const raycaster = new THREE.Raycaster();
+const _hit = new THREE.Vector3();
+const TABLE_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.1);
+const WALL_PLANE = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.1);
+function pointerToX(e, canvasEl, camera) {
+  const rect = canvasEl.getBoundingClientRect();
+  raycaster.setFromCamera({ x: ((e.clientX - rect.left) / rect.width) * 2 - 1, y: -((e.clientY - rect.top) / rect.height) * 2 + 1 }, camera);
+  if (raycaster.ray.intersectPlane(TABLE_PLANE, _hit) && _hit.z > 0.1) return clamp(_hit.x, -TW / 2 + 0.15, TW / 2 - 0.15);
+  if (raycaster.ray.intersectPlane(WALL_PLANE, _hit)) return clamp(_hit.x, -TW / 2 + 0.15, TW / 2 - 0.15);
+  return chuteX;
 }
+const canvas = $('game');
 canvas.addEventListener('pointermove', (e) => {
-  aimX = pointerToX(e);
+  if (!pusher.camera) return;
+  aimX = pointerToX(e, canvas, pusher.camera);
   aimUntil = now + 1500;
 });
 canvas.addEventListener('pointerdown', (e) => {
   e.preventDefault();
+  if (!pusher.camera) return;
   canvas.setPointerCapture(e.pointerId);
-  aimX = pointerToX(e);
+  aimX = pointerToX(e, canvas, pusher.camera);
   aimUntil = now + 2000;
   chuteX = aimX;
   startHold(() => { aimUntil = now + 2000; dropCoin(chuteX); });
@@ -1705,24 +1369,26 @@ canvas.addEventListener('pointerdown', (e) => {
 ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => canvas.addEventListener(ev, stopHold));
 
 const dropBtn = $('drop');
-dropBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); startHold(() => dropCoin(chuteX)); });
+dropBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); if (pusher.world) startHold(() => dropCoin(chuteX)); });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => dropBtn.addEventListener(ev, stopHold));
 
 let spaceDown = false;
 window.addEventListener('keydown', (e) => {
   if (claw.state === 'aim') {
-    if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { e.preventDefault(); claw.move = e.code === 'ArrowLeft' ? -1 : 1; }
+    const k = { ArrowLeft: ['x', -1], ArrowRight: ['x', 1], ArrowUp: ['z', -1], ArrowDown: ['z', 1] }[e.code];
+    if (k) { e.preventDefault(); claw.move[k[0]] = k[1]; }
     if (e.code === 'Space' && !e.repeat) { e.preventDefault(); clawPlay(); }
     return;
   }
-  if (e.code !== 'Space' || spaceDown) return;
+  if (e.code !== 'Space' || spaceDown || !pusher.world) return;
   e.preventDefault();
   spaceDown = true;
   dropBtn.classList.add('pressed');
   startHold(() => dropCoin(chuteX));
 });
 window.addEventListener('keyup', (e) => {
-  if ((e.code === 'ArrowLeft' && claw.move < 0) || (e.code === 'ArrowRight' && claw.move > 0)) claw.move = 0;
+  const k = { ArrowLeft: ['x', -1], ArrowRight: ['x', 1], ArrowUp: ['z', -1], ArrowDown: ['z', 1] }[e.code];
+  if (k && claw.move[k[0]] === k[1]) claw.move[k[0]] = 0;
   if (e.code !== 'Space') return;
   spaceDown = false;
   dropBtn.classList.remove('pressed');
@@ -1737,12 +1403,13 @@ $('sound').onclick = () => {
 $('reset').onclick = () => {
   if (!confirm(`Start over with ${START_CREDITS} credits, fresh machines and an empty prize shelf?`)) return;
   credits = START_CREDITS; won = 0; spins = 0;
-  incoming.length = 0; falling.length = 0;
-  machine.fill();
+  pusher.t = 0;
+  fillPusher();
   resetClaw();
   save();
   updateHud();
 };
+
 
 // ---------- Coin machine: free coins once a day ----------
 const DAILY_BASE = 50;      // coins on day 1 of a streak
@@ -1797,24 +1464,16 @@ function dispense() {
   save();
   renderChanger();
 
-  const chute = $('chute');
-  chute.innerHTML = '';
+  clearTray();
   const screen = $('changerScreen');
-  const visible = Math.min(amount, 40);   // tokens drawn in the tray
+  const visible = Math.min(amount, 40);   // coins that actually pour into the tray
   const perCoin = 1400 / amount;
   let paid = 0;
   const tick = setInterval(() => {
     paid++;
     credits++;
     if (paid % Math.ceil(amount / visible) === 0 || paid === amount) {
-      const tok = document.createElement('div');
-      tok.className = 'tok';
-      tok.textContent = '★';
-      const w = chute.clientWidth, h = chute.clientHeight;
-      tok.style.left = `${w / 2 - 11 + (Math.random() - 0.5) * (w - 30)}px`;
-      tok.style.setProperty('--land', `${h - 4 - Math.random() * Math.min(h - 24, 6 + chute.children.length * 1.2)}px`);
-      tok.style.setProperty('--rot', `${Math.round((Math.random() - 0.5) * 300)}deg`);
-      chute.appendChild(tok);
+      trayCoin();
       jingle(2, { base: 2400, spread: 0.05, vol: 0.04 });
     }
     screen.innerHTML = `<div class="label">DISPENSING</div><div class="amount">+${paid}</div>`;
@@ -1826,7 +1485,7 @@ function dispense() {
       sfx.fanfare(streak >= STREAK_MAX);
       banner(`+${amount}`, streak > 1 ? `DAY ${streak} STREAK!` : 'FREE DAILY COINS', '#ffd23e');
       setTimeout(() => { dispensing = false; save(); renderChanger(); }, 1200);
-      setTimeout(() => { chute.innerHTML = ''; }, 6000);
+      setTimeout(clearTray, 6000);
     }
   }, perCoin);
 }
@@ -1836,84 +1495,358 @@ $('freeReady').onclick = () => {
   $('changer').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)' }, { transform: 'scale(1)' }], { duration: 500, delay: 300 });
 };
 
+// the tray under the coin machine: real coins pour out of the slot and pile up
+const tray = { world: null, coins: [], scene: null, camera: null, renderer: null, meshes: null, activeUntil: 0, acc: 0, visible: true };
+const TRAY_W = 0.95, TRAY_D = 0.3;
+function buildTray() {
+  const canvas = $('chuteCanvas');
+  const renderer = makeRenderer(canvas);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#050b12');
+  scene.environment = studioEnv(renderer);
+  const camera = new THREE.PerspectiveCamera(30, 2.5, 0.05, 20);
+  camera.position.set(0, 1.05, 1.32);
+  camera.lookAt(0, 0.04, 0);
+  const key = new THREE.DirectionalLight('#ffffff', 2);
+  key.position.set(0.6, 3, 1.5);
+  key.castShadow = true;
+  Object.assign(key.shadow.camera, { left: -1.2, right: 1.2, top: 1, bottom: -1, near: 0.5, far: 6 });
+  scene.add(key, new THREE.HemisphereLight('#bfe9ff', '#0a1622', 0.8));
+  const floorMat = new THREE.MeshStandardMaterial({ color: '#0d1b28', roughness: 0.6, metalness: 0.4 });
+  scene.add(shadowed(box(TRAY_W * 2 + 0.2, 0.05, TRAY_D * 2 + 0.2, floorMat, 0, -0.025, 0), false));
+  scene.add(shadowed(box(TRAY_W * 2 + 0.2, 0.5, 0.05, floorMat, 0, 0.25, -TRAY_D - 0.025), false));
+  for (const s of [-1, 1]) scene.add(shadowed(box(0.05, 0.3, TRAY_D * 2, floorMat, s * (TRAY_W + 0.025), 0.15, 0), false));
+  scene.add(box(TRAY_W * 2 + 0.2, 0.04, 0.04, neonMat('#2ef2ff', 1.5), 0, 0.02, TRAY_D + 0.02));
+  tray.meshes = coinMeshes(scene, 60);
+
+  const w = new RAPIER.World({ x: 0, y: -GRAVITY, z: 0 });
+  w.timestep = STEP;
+  const fixed = w.createRigidBody(RAPIER.RigidBodyDesc.fixed());
+  const cuboid = (hx, hy, hz, x, y, z) => w.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z).setFriction(0.4), fixed);
+  cuboid(TRAY_W + 0.2, 0.05, TRAY_D + 0.2, 0, -0.05, 0);
+  cuboid(TRAY_W + 0.2, 0.6, 0.05, 0, 0.6, -TRAY_D - 0.05);
+  cuboid(TRAY_W + 0.2, 0.6, 0.05, 0, 0.6, TRAY_D + 0.05);
+  for (const s of [-1, 1]) cuboid(0.05, 0.6, TRAY_D + 0.1, s * (TRAY_W + 0.05), 0.6, 0);
+  Object.assign(tray, { world: w, scene, camera, renderer });
+  watchVisible($('chute'), tray);
+}
+function resizeTray() {
+  const el = $('chute');
+  const w = el.clientWidth, h = el.clientHeight;
+  if (!w || !h) return;
+  tray.renderer.setPixelRatio(dpr());
+  tray.renderer.setSize(w, h, false);
+  tray.camera.aspect = w / h;
+  tray.camera.updateProjectionMatrix();
+  tray.activeUntil = Math.max(tray.activeUntil, now + 50);
+}
+function trayCoin() {
+  if (!tray.world) return;
+  const { r, h } = TYPES.coin;
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(rand(0, 3), rand(0, 6), rand(0, 3)));
+  const body = tray.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(rand(-0.15, 0.15), 0.75, rand(-0.12, 0)).setRotation(q)
+    .setLinvel(rand(-1.2, 1.2), -1.5, rand(0, 0.4)).setAngvel({ x: rand(-8, 8), y: rand(-8, 8), z: rand(-8, 8) }).setCcdEnabled(true));
+  tray.world.createCollider(RAPIER.ColliderDesc.roundCylinder(h / 2 - COIN_ROUND, r - COIN_ROUND, COIN_ROUND).setFriction(0.4).setRestitution(0.2), body);
+  tray.coins.push(body);
+  tray.activeUntil = now + 4000;
+}
+function clearTray() {
+  if (!tray.world) return;
+  for (const b of tray.coins) tray.world.removeRigidBody(b);
+  tray.coins = [];
+  tray.activeUntil = now + 50;
+}
+const trayItems = [];
+function updateTray(dt) {
+  if (!tray.world || now > tray.activeUntil) return;
+  tray.acc += dt;
+  for (let n = 0; tray.acc >= STEP && n < 8; n++) { tray.world.step(); tray.acc -= STEP; }
+  if (tray.acc > STEP) tray.acc = 0;
+  if (!tray.visible) return;
+  trayItems.length = 0;
+  for (const b of tray.coins) trayItems.push({ type: 'coin', p: b.translation(), q: b.rotation() });
+  writeInstances(tray.meshes, trayItems);
+  tray.renderer.render(tray.scene, tray.camera);
+}
+
+
 // ======================= CLAW MACHINE =======================
-// Side view of a glass cabinet, in "claw units" (CW x CH). The chute is on the left, behind a low wall.
-const CW = 360;
-const CH = 440;
-const FLOOR = 408;           // top of the prize pit floor
-const CHUTE_X = 84;          // the chute wall
-const CHUTE_TOP = 255;       // top of the chute wall (taller than the pile, so prizes don't spill in)
-const RAIL_Y = 46;           // where the claw rides
-const HOME_X = 46;           // the claw rests over the chute
-const PRONG = 50;            // prong length
+// A glass cabinet seen from the front. The claw hangs from a gantry and moves left/right
+// (x) and back/forward (z); the prize hole is in the front-left corner behind a low guard.
+const CAB = { x0: -1.6, x1: 1.6, z0: -1.15, z1: 1.15, top: 3.75 };
+const HOLE = { x0: -1.6, x1: -0.74, z0: 0.29, z1: 1.15 };
+const GUARD_H = 0.72;        // the acrylic guard round the hole, taller than the pile edge
+const RAIL_Y = 3.35;         // the gantry
+const REST_Y = 2.8;          // hub height while steering and carrying
+const PRONG = 0.56;          // prong length
+const PRONG_R = 0.035;
+const HINGE_R = 0.1;         // prongs hinge this far out from the middle of the hub
+const HUB_DROP = 0.07;       // and this far below its centre
 const OPEN_ANGLE = 0.62;     // radians from straight down
-const SHUT_ANGLE = 0.08;
+const SHUT_ANGLE = 0.05;
+const HOME = { x: (HOLE.x0 + HOLE.x1) / 2, z: (HOLE.z0 + HOLE.z1) / 2 };   // over the hole
+const AIM = { x0: CAB.x0 + 0.34, x1: CAB.x1 - 0.34, z0: CAB.z0 + 0.34, z1: CAB.z1 - 0.34 };
 const CLAW_COST = 5;
-const CLAW_TIME = 15;
+const CLAW_TIME = 20;
 const CLAW_PITY = 6;         // misses in a row before a guaranteed strong grab
-const CLAW_GRIP = 0.42;                // base chance to hold a centered prize all the way
-const STOCK = 15;            // prizes in a full machine
-const PRIZE_GRAVITY = 1300;
+const CLAW_GRIP = 0.42;      // base chance to hold a centered prize all the way
+const STOCK = 22;            // prizes in a full machine
+const CLAW_SPEED = 1.15;     // steering speed
 
 const PRIZES = [
-  { id: 'bear',    emoji: '🧸', name: 'Teddy',   rarity: 'common', r: 27, weight: 1,    chance: 12 },
-  { id: 'bunny',   emoji: '🐰', name: 'Bunny',   rarity: 'common', r: 25, weight: 1,    chance: 12 },
-  { id: 'cat',     emoji: '🐱', name: 'Kitty',   rarity: 'common', r: 25, weight: 1,    chance: 12 },
-  { id: 'dog',     emoji: '🐶', name: 'Puppy',   rarity: 'common', r: 25, weight: 1,    chance: 12 },
-  { id: 'frog',    emoji: '🐸', name: 'Froggy',  rarity: 'common', r: 24, weight: 1,    chance: 10 },
-  { id: 'duck',    emoji: '🐥', name: 'Chick',   rarity: 'common', r: 23, weight: 0.9,  chance: 10 },
-  { id: 'panda',   emoji: '🐼', name: 'Panda',   rarity: 'common', r: 26, weight: 1.05, chance: 8 },
-  { id: 'fox',     emoji: '🦊', name: 'Fox',     rarity: 'common', r: 25, weight: 1,    chance: 8 },
-  { id: 'unicorn', emoji: '🦄', name: 'Unicorn', rarity: 'rare',   r: 28, weight: 1.35, chance: 3 },
-  { id: 'dragon',  emoji: '🐲', name: 'Dragon',  rarity: 'rare',   r: 28, weight: 1.35, chance: 3 },
-  { id: 'octopus', emoji: '🐙', name: 'Octopus', rarity: 'rare',   r: 27, weight: 1.3,  chance: 3 },
-  { id: 'crown',   emoji: '👑', name: 'Crown',   rarity: 'super',  r: 22, weight: 1.8,  chance: 0.8 },
-  { id: 'trophy',  emoji: '🏆', name: 'Trophy',  rarity: 'super',  r: 23, weight: 1.8,  chance: 0.8 },
+  { id: 'bear',    emoji: '🧸', name: 'Teddy',   rarity: 'common', r: 0.31, weight: 1,    chance: 12,  look: 'bear',    color: '#b97a45', muzzle: '#f1d2a8' },
+  { id: 'bunny',   emoji: '🐰', name: 'Bunny',   rarity: 'common', r: 0.29, weight: 1,    chance: 12,  look: 'bunny',   color: '#f4eef4' },
+  { id: 'cat',     emoji: '🐱', name: 'Kitty',   rarity: 'common', r: 0.29, weight: 1,    chance: 12,  look: 'cat',     color: '#f6aa4a' },
+  { id: 'dog',     emoji: '🐶', name: 'Puppy',   rarity: 'common', r: 0.29, weight: 1,    chance: 12,  look: 'dog',     color: '#ecd8b8', muzzle: '#fff5e6' },
+  { id: 'frog',    emoji: '🐸', name: 'Froggy',  rarity: 'common', r: 0.28, weight: 1,    chance: 10,  look: 'frog',    color: '#62c457' },
+  { id: 'duck',    emoji: '🐥', name: 'Chick',   rarity: 'common', r: 0.26, weight: 0.9,  chance: 10,  look: 'duck',    color: '#ffd84a' },
+  { id: 'panda',   emoji: '🐼', name: 'Panda',   rarity: 'common', r: 0.3, weight: 1.05, chance: 8,   look: 'panda',   color: '#f7f7f5' },
+  { id: 'fox',     emoji: '🦊', name: 'Fox',     rarity: 'common', r: 0.29, weight: 1,    chance: 8,   look: 'fox',     color: '#f07a2a' },
+  { id: 'unicorn', emoji: '🦄', name: 'Unicorn', rarity: 'rare',   r: 0.32, weight: 1.35, chance: 3,   look: 'unicorn', color: '#fbf0ff' },
+  { id: 'dragon',  emoji: '🐲', name: 'Dragon',  rarity: 'rare',   r: 0.32, weight: 1.35, chance: 3,   look: 'dragon',  color: '#4cb871' },
+  { id: 'octopus', emoji: '🐙', name: 'Octopus', rarity: 'rare',   r: 0.31, weight: 1.3,  chance: 3,   look: 'octopus', color: '#c467dc' },
+  { id: 'crown',   emoji: '👑', name: 'Crown',   rarity: 'super',  r: 0.25, weight: 1.8,  chance: 0.8, look: 'crown',   color: '#ffc93a' },
+  { id: 'trophy',  emoji: '🏆', name: 'Trophy',  rarity: 'super',  r: 0.26, weight: 1.8,  chance: 0.8, look: 'trophy',  color: '#ffc93a' },
 ];
 const PRIZE_BY_ID = Object.fromEntries(PRIZES.map((p) => [p.id, p]));
 const RARITY_GLOW = { common: null, rare: '#c063ff', super: '#ffd23e' };
 
-function makeCanvas(w, h) {
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  return [c, c.getContext('2d')];
+// ---------- Prize models ----------
+// Plush toys are soft balls with a stitched-on face, ears and other bits; the two super
+// rares are gold.
+const plushMat = (color, map = null) => new THREE.MeshPhysicalMaterial({
+  color: map ? '#ffffff' : color, map, roughness: 0.88, sheen: 1, sheenRoughness: 0.45,
+  sheenColor: new THREE.Color(color).lerp(new THREE.Color('#ffffff'), 0.2),
+});
+const goldMat = new THREE.MeshStandardMaterial({ color: '#ffc93a', metalness: 1, roughness: 0.22 });
+const faceTexCache = {};
+function plushFace(t) {
+  if (faceTexCache[t.id]) return faceTexCache[t.id];
+  // equirectangular: the front of the ball (+z) is a quarter of the way across
+  return (faceTexCache[t.id] = canvasTex(512, 256, (g, w, h) => {
+    g.fillStyle = t.color; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 7000; i++) {
+      g.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '0,0,0'},${Math.random() * 0.06})`;
+      g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+    }
+    const fx = 128, fy = 134;
+    const ell = (x, y, rx, ry, col, rot = 0) => { g.fillStyle = col; g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); g.fill(); };
+    const L = t.look;
+    if (L === 'panda') { ell(fx - 26, fy - 2, 16, 21, '#1d1d1f', 0.5); ell(fx + 26, fy - 2, 16, 21, '#1d1d1f', -0.5); }
+    if (L === 'fox') ell(fx, fy + 30, 52, 34, '#fff6ec');
+    if (t.muzzle) ell(fx, fy + 21, 30, 22, t.muzzle);
+    if (L === 'cat') ell(fx, fy + 21, 26, 16, '#fff1dd');
+    if (L === 'octopus') for (let i = 0; i < 14; i++) ell(260 + Math.random() * 230, 30 + Math.random() * 110, 6 + Math.random() * 8, 6 + Math.random() * 8, 'rgba(120,30,150,.35)');
+    if (L === 'dragon') { ell(fx, fy + 62, 48, 30, '#d9f0a8'); }
+    // eyes (the frog's sit on top of its head)
+    if (L !== 'frog') for (const s of [-1, 1]) { ell(fx + s * 26, fy - 3, 9, 11, '#151317'); ell(fx + s * 26 - 3, fy - 7, 3.4, 3.4, '#ffffff'); }
+    // nose
+    if (L === 'bear') ell(fx, fy + 13, 9, 6.5, '#4a2a17');
+    if (L === 'dog' || L === 'fox' || L === 'panda') ell(fx, fy + 13, 8, 6, '#1d1d1f');
+    if (L === 'cat' || L === 'bunny') { g.fillStyle = '#ff8fab'; g.beginPath(); g.moveTo(fx - 6, fy + 11); g.lineTo(fx + 6, fy + 11); g.lineTo(fx, fy + 17); g.fill(); }
+    if (L === 'unicorn' || L === 'dragon') { ell(fx - 7, fy + 16, 2.5, 3.5, '#5a3a4a'); ell(fx + 7, fy + 16, 2.5, 3.5, '#5a3a4a'); }
+    // mouth
+    g.strokeStyle = '#3a1d22'; g.lineWidth = 2.6; g.lineCap = 'round';
+    if (L === 'frog') { g.beginPath(); g.arc(fx, fy - 6, 34, 0.25 * Math.PI, 0.75 * Math.PI); g.stroke(); }
+    else if (L !== 'duck') {
+      g.beginPath(); g.arc(fx - 5, fy + 20, 5, 0.15 * Math.PI, 0.95 * Math.PI); g.stroke();
+      g.beginPath(); g.arc(fx + 5, fy + 20, 5, 0.05 * Math.PI, 0.85 * Math.PI); g.stroke();
+    }
+    if (L === 'cat') {
+      g.strokeStyle = 'rgba(60,30,20,.6)'; g.lineWidth = 1.6;
+      for (const s of [-1, 1]) for (const dy of [-3, 3]) { g.beginPath(); g.moveTo(fx + s * 16, fy + 18 + dy * 0.4); g.lineTo(fx + s * 40, fy + 15 + dy * 2); g.stroke(); }
+    }
+    // rosy cheeks
+    g.globalAlpha = 0.45;
+    ell(fx - 44, fy + 15, 11, 6, '#ff6f91'); ell(fx + 44, fy + 15, 11, 6, '#ff6f91');
+    g.globalAlpha = 1;
+  }));
 }
 
-const clawCanvas = $('claw');
-const cctx = clawCanvas.getContext('2d');
-let ccw = 0, cch = 0, csc = 1;   // claw canvas size and claw-units -> px scale
+const geoCache = {};
+const cachedGeo = (key, make) => geoCache[key] || (geoCache[key] = make());
+function buildPrize(t) {
+  const g = new THREE.Group();
+  const r = t.r;
+  const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x * r, y * r, z * r);
+    m.rotation.set(rx, ry, rz);
+    m.scale.set(sx, sy, sz);
+    m.castShadow = m.receiveShadow = true;
+    g.add(m);
+    return m;
+  };
+  const sphere = (k) => cachedGeo('s' + k, () => new THREE.SphereGeometry(k, 20, 14));
+  const cone = (rad, hgt) => cachedGeo(`c${rad}:${hgt}`, () => new THREE.ConeGeometry(rad, hgt, 16));
+
+  if (t.look === 'crown') {
+    add(new THREE.CylinderGeometry(r * 0.8, r * 0.72, r * 0.55, 32, 1, true), new THREE.MeshStandardMaterial({ color: '#ffc93a', metalness: 1, roughness: 0.22, side: THREE.DoubleSide }), 0, -0.2, 0);
+    add(sphere(r * 0.66), new THREE.MeshPhysicalMaterial({ color: '#c3122f', roughness: 0.7, sheen: 1, sheenColor: new THREE.Color('#ff6b81') }), 0, -0.12, 0, 0, 0, 0, 1, 0.7, 1);
+    add(new THREE.TorusGeometry(r * 0.73, r * 0.06, 8, 32), goldMat, 0, -0.47, 0, Math.PI / 2);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      add(cone(r * 0.16, r * 0.45), goldMat, Math.cos(a) * 0.78, 0.28, Math.sin(a) * 0.78);
+      add(sphere(r * 0.07), new THREE.MeshStandardMaterial({ color: '#ff3355', metalness: 0.3, roughness: 0.1 }), Math.cos(a) * 0.78, 0.53, Math.sin(a) * 0.78);
+      add(sphere(r * 0.08), new THREE.MeshStandardMaterial({ color: '#39b8ff', metalness: 0.3, roughness: 0.1 }), Math.cos(a + 0.6) * 0.8, -0.2, Math.sin(a + 0.6) * 0.8, 0, 0, 0, 1, 1, 0.6);
+    }
+  } else if (t.look === 'trophy') {
+    const prof = [[0, -0.95], [0.55, -0.95], [0.55, -0.78], [0.22, -0.74], [0.12, -0.5], [0.12, -0.18], [0.32, -0.08], [0.62, 0.25], [0.72, 0.72], [0.64, 0.74], [0.55, 0.3], [0.0, 0.06]];
+    add(new THREE.LatheGeometry(prof.map(([x, y]) => new THREE.Vector2(x * r, y * r)), 40), new THREE.MeshStandardMaterial({ color: '#ffc93a', metalness: 1, roughness: 0.2, side: THREE.DoubleSide }), 0, 0, 0);
+    for (const s of [-1, 1]) add(new THREE.TorusGeometry(r * 0.24, r * 0.05, 8, 20, Math.PI), goldMat, s * 0.68, 0.38, 0, 0, 0, s * -Math.PI / 2);
+    add(new THREE.BoxGeometry(r * 0.5, r * 0.18, r * 0.04), new THREE.MeshStandardMaterial({ color: '#1d1d1f', metalness: 0.4, roughness: 0.4 }), 0, -0.86, 0.56);
+  } else {
+    const body = add(cachedGeo('body' + r, () => new THREE.SphereGeometry(r, 40, 28)), plushMat(t.color, plushFace(t)), 0, 0, 0);
+    body.position.set(0, 0, 0);
+    body.scale.set(1, 0.94, 0.96);
+    const fur = plushMat(t.color);
+    const dark = (c) => plushMat(new THREE.Color(c).multiplyScalar(0.7));
+    switch (t.look) {
+      case 'bear':
+        for (const s of [-1, 1]) { add(sphere(r * 0.3), fur, s * 0.62, 0.72, -0.05, 0, 0, 0, 1, 1, 0.7); add(sphere(r * 0.16), plushMat(t.muzzle), s * 0.62, 0.72, 0.12, 0, 0, 0, 1, 1, 0.4); }
+        break;
+      case 'bunny':
+        for (const s of [-1, 1]) { add(sphere(r * 0.2), fur, s * 0.34, 1.12, -0.08, 0, 0, s * -0.18, 1, 3, 0.65); add(sphere(r * 0.11), plushMat('#ffb3c7'), s * 0.36, 1.14, 0.03, 0, 0, s * -0.18, 1, 3, 0.3); }
+        add(sphere(r * 0.22), fur, 0, -0.3, -0.98);
+        break;
+      case 'cat':
+        for (const s of [-1, 1]) add(cone(r * 0.26, r * 0.42), fur, s * 0.55, 0.85, 0, 0, 0, s * -0.42);
+        add(new THREE.TorusGeometry(r * 0.45, r * 0.09, 8, 20, Math.PI * 1.2), fur, 0.2, -0.3, -0.85, 0, 0.4, 0.5);
+        break;
+      case 'dog':
+        for (const s of [-1, 1]) add(sphere(r * 0.3), dark(t.color), s * 0.86, 0.3, -0.02, 0, 0, s * 0.35, 0.55, 1.4, 0.85);
+        break;
+      case 'frog':
+        for (const s of [-1, 1]) {
+          add(sphere(r * 0.3), fur, s * 0.38, 0.78, 0.22);
+          add(sphere(r * 0.21), plushMat('#ffffff'), s * 0.38, 0.82, 0.38);
+          add(sphere(r * 0.11), plushMat('#151317'), s * 0.38, 0.84, 0.55);
+        }
+        break;
+      case 'duck':
+        add(sphere(r * 0.3), plushMat('#ff9a1f'), 0, -0.02, 0.96, 0, 0, 0, 1.25, 0.45, 1);
+        add(cone(r * 0.08, r * 0.3), fur, 0, 1.04, 0, 0, 0, 0.3);
+        for (const s of [-1, 1]) add(sphere(r * 0.32), fur, s * 0.9, -0.1, -0.1, 0, 0, s * 0.5, 0.4, 1, 0.8);
+        break;
+      case 'panda':
+        for (const s of [-1, 1]) add(sphere(r * 0.3), plushMat('#1d1d1f'), s * 0.62, 0.72, -0.05, 0, 0, 0, 1, 1, 0.7);
+        break;
+      case 'fox':
+        for (const s of [-1, 1]) { add(cone(r * 0.28, r * 0.5), fur, s * 0.52, 0.86, 0, 0, 0, s * -0.36); add(cone(r * 0.12, r * 0.2), plushMat('#3a2418'), s * 0.62, 1.12, 0, 0, 0, s * -0.36); }
+        add(sphere(r * 0.32), fur, 0.3, -0.35, -1.0, 0, 0, 0, 1, 1, 1.6);
+        add(sphere(r * 0.16), plushMat('#fff6ec'), 0.3, -0.35, -1.48);
+        break;
+      case 'unicorn':
+        add(cone(r * 0.12, r * 0.7), new THREE.MeshStandardMaterial({ color: '#ffd76a', metalness: 0.7, roughness: 0.3 }), 0, 1.12, 0.32, 0.35);
+        for (const s of [-1, 1]) add(cone(r * 0.14, r * 0.3), fur, s * 0.5, 0.86, -0.05, 0, 0, s * -0.4);
+        ['#ff8fd0', '#b48cff', '#7fd7ff', '#ff8fd0'].forEach((c, i) => add(sphere(r * 0.22), plushMat(c), 0, 0.85 - i * 0.38, -0.55 - i * 0.12));
+        break;
+      case 'dragon':
+        for (const s of [-1, 1]) add(cone(r * 0.12, r * 0.42), plushMat('#fff3c4'), s * 0.36, 1.02, -0.1, 0, 0, s * -0.3);
+        for (let i = 0; i < 4; i++) add(cone(r * 0.13, r * 0.3), plushMat('#ffb547'), 0, 0.8 - i * 0.42, -0.62 - i * 0.12, -0.6 - i * 0.35);
+        for (const s of [-1, 1]) add(sphere(r * 0.3), plushMat('#ffb547'), s * 0.92, 0.3, -0.35, 0, s * 0.6, 0, 0.25, 0.9, 1.2);
+        break;
+      case 'octopus':
+        for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; add(sphere(r * 0.22), fur, Math.cos(a) * 0.7, -0.72, Math.sin(a) * 0.7, 0, -a, 0, 1, 0.7, 1.5); }
+        break;
+    }
+  }
+  const glow = RARITY_GLOW[t.rarity];
+  if (glow) { const s = glowSprite(glow, r * 3.4); s.material.opacity = 0.5; g.add(s); g.userData.glow = s; }
+  return g;
+}
+function disposeModel(g) {
+  g.traverse((o) => {
+    if (o.isMesh && o.geometry && !Object.values(geoCache).includes(o.geometry)) o.geometry.dispose();
+    if (o.material && o.material !== goldMat) o.material.dispose();
+  });
+}
+
+
+// ---------- Claw physics ----------
+const G_PRIZE = 0x0001, G_CLAW = 0x0002, G_WORLD = 0x0004;
+const groups = (member, filter) => (member << 16) | filter;
+const PRIZE_GROUPS = groups(G_PRIZE, G_PRIZE | G_CLAW | G_WORLD);
+const HELD_GROUPS = groups(G_PRIZE, G_PRIZE | G_WORLD);    // a held prize ignores the prongs around it
+const CLAW_GROUPS = groups(G_CLAW, G_PRIZE);
 
 const claw = {
-  prizes: [],
-  x: HOME_X, y: RAIL_Y, vx: 0, vy: 0,
-  angle: OPEN_ANGLE,
-  state: 'idle',            // idle, aim, drop, close, lift, carry, release, home
-  timer: 0,
-  held: null,
-  slipAt: Infinity,         // seconds after the grab when a weak grip lets go
-  swing: 0, swingV: 0,      // pendulum angle of a held prize, and its angular speed
-  contact: [null, null],    // which prize each prong is touching while closing
+  world: null, prizes: [], hub: null, prongs: [],
+  x: HOME.x, y: REST_Y, z: HOME.z, angle: OPEN_ANGLE,
+  prev: null,                 // the pose at the last physics step, to move smoothly between steps
+  state: 'idle',              // idle, aim, drop, close, lift, carry, release
+  timer: 0, stateT: 0,
+  held: null, joint: null,
+  slipAt: Infinity,           // seconds after the grab when a weak grip lets go
   grabT: 0,
-  wonThisPlay: false,
-  slipped: false,
-  move: 0,                  // -1, 0, 1 from the buttons/keys
-  dragX: null,
+  wonThisPlay: false, slipped: false,
+  move: { x: 0, z: 0 },       // -1, 0, 1 per axis from the pad/keys
+  drag: null,                 // where the player is dragging to, if they are
   misses: 0,
   collection: {},
-  popups: [],               // prizes coming out of the door
-  stateT: 0,
+  popups: [],
+  acc: 0, settling: false, releasedT: 0,
+  scene: null, camera: null, renderer: null, parts: {}, visible: true,
 };
+const inHole = (x, z) => x < HOLE.x1 && z > HOLE.z0;
 
-// pre-rendered emoji so they're crisp and cheap to draw
-const prizeSprites = {};
-function prizeSprite(id) {
-  if (prizeSprites[id]) return prizeSprites[id];
-  const [c, g] = makeCanvas(128, 128);
-  g.font = '100px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText(PRIZE_BY_ID[id].emoji, 64, 70);
-  return (prizeSprites[id] = c);
+function buildClawWorld() {
+  const w = new RAPIER.World({ x: 0, y: -12, z: 0 });
+  w.timestep = STEP;
+  const fixed = w.createRigidBody(RAPIER.RigidBodyDesc.fixed());
+  const cuboid = (x0, x1, y0, y1, z0, z1) => w.createCollider(RAPIER.ColliderDesc.cuboid((x1 - x0) / 2, (y1 - y0) / 2, (z1 - z0) / 2)
+    .setTranslation((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2).setFriction(0.8), fixed);
+  // floor, with the prize hole cut out of the front-left corner
+  cuboid(HOLE.x1, CAB.x1, -0.2, 0, CAB.z0, CAB.z1);
+  cuboid(CAB.x0, HOLE.x1, -0.2, 0, CAB.z0, HOLE.z0);
+  // cabinet walls, glass front and ceiling
+  cuboid(CAB.x0 - 0.2, CAB.x0, -1, CAB.top, CAB.z0, CAB.z1);
+  cuboid(CAB.x1, CAB.x1 + 0.2, -1, CAB.top, CAB.z0, CAB.z1);
+  cuboid(CAB.x0, CAB.x1, -1, CAB.top, CAB.z0 - 0.2, CAB.z0);
+  cuboid(CAB.x0, CAB.x1, -1, CAB.top, CAB.z1, CAB.z1 + 0.2);
+  cuboid(CAB.x0, CAB.x1, CAB.top, CAB.top + 0.2, CAB.z0, CAB.z1);
+  // the guard round the hole
+  cuboid(HOLE.x1 - 0.015, HOLE.x1 + 0.015, 0, GUARD_H, HOLE.z0, CAB.z1);
+  cuboid(CAB.x0, HOLE.x1 + 0.015, 0, GUARD_H, HOLE.z0 - 0.015, HOLE.z0 + 0.015);
+
+  // the claw: a hub and three prongs, all moved by hand
+  const kin = () => w.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(claw.x, claw.y, claw.z));
+  claw.hub = kin();
+  w.createCollider(RAPIER.ColliderDesc.ball(0.12).setCollisionGroups(CLAW_GROUPS).setFriction(0.6), claw.hub);
+  claw.prongs = [0, 1, 2].map(() => {
+    const b = kin();
+    w.createCollider(RAPIER.ColliderDesc.capsule(PRONG / 2, PRONG_R).setCollisionGroups(CLAW_GROUPS).setFriction(0.9), b);
+    return b;
+  });
+  claw.world = w;
+  claw.prizes = [];
+}
+
+// where a prong is: it hinges just under the hub and swings out by `angle`
+function prongAt(i, x = claw.x, y = claw.y, z = claw.z, angle = claw.angle) {
+  const phi = Math.PI / 2 + (i * 2 * Math.PI) / 3;
+  const c = Math.cos(phi), s = Math.sin(phi);
+  const hinge = new THREE.Vector3(x + c * HINGE_R, y - HUB_DROP, z + s * HINGE_R);
+  const dir = new THREE.Vector3(Math.sin(angle) * c, -Math.cos(angle), Math.sin(angle) * s);
+  const tip = hinge.clone().addScaledVector(dir, PRONG);
+  return { hinge, dir, tip, c, s, phi };
+}
+const _qa = new THREE.Quaternion();
+function poseRig(x, y, z, angle) {
+  claw.hub.setNextKinematicTranslation({ x, y, z });
+  claw.prongs.forEach((b, i) => {
+    const p = prongAt(i, x, y, z, angle);
+    const mid = p.hinge.clone().addScaledVector(p.dir, PRONG / 2);
+    _qa.setFromUnitVectors(UP, p.dir);
+    b.setNextKinematicTranslation(mid);
+    b.setNextKinematicRotation(_qa);
+  });
+}
+
+function segDist(p, a, b) {
+  const abx = b.x - a.x, aby = b.y - a.y, abz = b.z - a.z;
+  const t = clamp(((p.x - a.x) * abx + (p.y - a.y) * aby + (p.z - a.z) * abz) / (abx * abx + aby * aby + abz * abz || 1), 0, 1);
+  return Math.hypot(p.x - (a.x + abx * t), p.y - (a.y + aby * t), p.z - (a.z + abz * t));
 }
 
 function pickPrize() {
@@ -1922,137 +1855,90 @@ function pickPrize() {
   for (const p of PRIZES) { r -= p.chance; if (r < 0) return p; }
   return PRIZES[0];
 }
-
-function addPrize(type, x, y) {
-  claw.prizes.push({ id: type.id, r: type.r, w: type.weight, x, y, px: x, py: y, vx: 0, vy: 0, a: (Math.random() - 0.5) * 1.2, onFloor: false });
+function addPrize(t, pos) {
+  // facing roughly toward the player
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(rand(-0.3, 0.3), rand(-1.1, 1.1), rand(-0.3, 0.3)));
+  const body = claw.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(pos.x, pos.y, pos.z).setRotation(q)
+    .setLinearDamping(0.3).setAngularDamping(1.6).setCcdEnabled(true));
+  const collider = claw.world.createCollider(RAPIER.ColliderDesc.ball(t.r).setFriction(0.9).setRestitution(0.15)
+    .setDensity(t.weight).setCollisionGroups(PRIZE_GROUPS), body);
+  const model = buildPrize(t);
+  claw.scene.add(model);
+  const p = { id: t.id, t, r: t.r, body, collider, model, out: false, restoreAt: 0 };
+  claw.prizes.push(p);
+  return p;
 }
-
+function removePrize(i) {
+  const p = claw.prizes[i];
+  if (p === claw.held) { claw.held = null; claw.joint = null; }
+  claw.world.removeRigidBody(p.body);
+  claw.scene.remove(p.model);
+  disposeModel(p.model);
+  claw.prizes.splice(i, 1);
+}
+// somewhere on the pit floor, clear of the hole and its guard
+function randomSpot(r) {
+  for (;;) {
+    const x = rand(CAB.x0 + r, CAB.x1 - r), z = rand(CAB.z0 + r, CAB.z1 - r);
+    if (!(x < HOLE.x1 + r + 0.03 && z > HOLE.z0 - r - 0.03)) return { x, z };
+  }
+}
 function stockMachine(n, fromTop) {
   for (let i = 0; i < n; i++) {
     const t = pickPrize();
-    const x = CHUTE_X + t.r + 24 + Math.random() * (CW - CHUTE_X - 2 * t.r - 40);
-    addPrize(t, x, fromTop ? -40 - i * 50 : FLOOR - t.r - Math.random() * 180);
+    const s = randomSpot(t.r);
+    addPrize(t, { x: s.x, y: fromTop ? 3.0 + i * 0.25 : t.r + 0.05 + rand(0, 1.4), z: s.z });
   }
 }
 
-function clawResize() {
-  const w = clawCanvas.parentElement.clientWidth;
-  if (!w) return;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  ccw = w;
-  cch = Math.round(w * CH / CW);
-  clawCanvas.width = ccw * dpr;
-  clawCanvas.height = cch * dpr;
-  clawCanvas.style.height = cch + 'px';
-  csc = ccw / CW;
-  cctx.setTransform(dpr * csc, 0, 0, dpr * csc, 0, 0);
-}
-
-// ---------- Claw geometry ----------
-function prongTips() {
-  const a = claw.angle;
-  const hubY = claw.y + 14;
-  return [
-    { x: claw.x - 9 - Math.sin(a) * PRONG, y: hubY + Math.cos(a) * PRONG, bx: claw.x - 9, by: hubY },
-    { x: claw.x + 9 + Math.sin(a) * PRONG, y: hubY + Math.cos(a) * PRONG, bx: claw.x + 9, by: hubY },
-  ];
-}
-
-function segDist(p, ax, ay, bx, by) {
-  const dx = bx - ax, dy = by - ay;
-  const t = clamp(((p.x - ax) * dx + (p.y - ay) * dy) / (dx * dx + dy * dy || 1), 0, 1);
-  return Math.hypot(p.x - (ax + dx * t), p.y - (ay + dy * t));
-}
-
-function pushOutOfSegment(p, ax, ay, bx, by, extra = 0, maxPush = Infinity) {
-  const dx = bx - ax, dy = by - ay;
-  const len2 = dx * dx + dy * dy || 1;
-  const t = clamp(((p.x - ax) * dx + (p.y - ay) * dy) / len2, 0, 1);
-  const cx = ax + dx * t, cy = ay + dy * t;
-  let ox = p.x - cx, oy = p.y - cy;
-  const d = Math.hypot(ox, oy);
-  const min = p.r + extra;
-  if (d >= min) return false;
-  if (d < 1e-4) { ox = p.x < ax ? -1 : 1; oy = 0; } else { ox /= d; oy /= d; }
-  const push = Math.min(min - d, maxPush);
-  p.x += ox * push;
-  p.y += oy * push;
-  return true;
-}
-
-// ---------- Prize physics ----------
-function stepPrizes(dt) {
-  const list = claw.prizes;
-  for (const p of list) {
-    p.px = p.x; p.py = p.y;
-    if (p === claw.held) continue;
-    p.vy += PRIZE_GRAVITY * dt;
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
+function stepClaw(dt) {
+  claw.acc += dt;
+  const n = Math.min(8, Math.floor(claw.acc / STEP));
+  claw.acc = n === 8 ? 0 : claw.acc - n * STEP;
+  if (!n) return;
+  const a = claw.prev || { x: claw.x, y: claw.y, z: claw.z, angle: claw.angle };
+  for (let k = 1; k <= n; k++) {
+    const f = k / n;
+    poseRig(a.x + (claw.x - a.x) * f, a.y + (claw.y - a.y) * f, a.z + (claw.z - a.z) * f, a.angle + (claw.angle - a.angle) * f);
+    claw.world.step();
+    afterClawStep();
   }
-  const tips = prongTips();
-  for (let it = 0; it < 5; it++) {
-    for (let i = 0; i < list.length; i++) {
-      for (let j = i + 1; j < list.length; j++) {
-        const a = list[i], b = list[j];
-        let dx = b.x - a.x, dy = b.y - a.y;
-        const min = (a.r + b.r) * 0.9;            // plush squishes a little
-        const d2 = dx * dx + dy * dy;
-        if (d2 >= min * min) continue;
-        let d = Math.sqrt(d2);
-        if (d < 1e-4) { dx = 0.01; dy = 1; d = 1; }
-        const corr = Math.min((min - d) * 0.5, 1.5);   // gentle, so a squeeze never launches anything
-        const ha = a === claw.held, hb = b === claw.held;
-        const wa = ha ? 0 : 1 / a.w, wb = hb ? 0 : 1 / b.w;
-        if (wa + wb === 0) continue;
-        const nx = dx / d, ny = dy / d;
-        a.x -= nx * corr * 2 * wa / (wa + wb); a.y -= ny * corr * 2 * wa / (wa + wb);
-        b.x += nx * corr * 2 * wb / (wa + wb); b.y += ny * corr * 2 * wb / (wa + wb);
-      }
-    }
-    for (const p of list) {
-      if (p === claw.held) continue;
-      // prongs and hub are solid, but plush gives: they ease prizes aside a little at a time,
-      // so nothing ever gets batted across the machine
-      if (claw.y > RAIL_Y + 4 || claw.state === 'drop') {
-        // (this runs 5 times a step, 2 steps a frame: 0.15 here is about 1.5 units per frame,
-        // roughly how fast the prongs themselves move)
-        const give = claw.state === 'close' ? 0.15 : 0.1;
-        for (const t of tips) pushOutOfSegment(p, t.bx, t.by, t.x, t.y, 2, give);
-        pushOutOfSegment(p, claw.x - 16, claw.y + 8, claw.x + 16, claw.y + 8, 2, 0.12);
-      }
-      // cabinet
-      p.onFloor = false;
-      if (p.x > CHUTE_X) {
-        if (p.y > FLOOR - p.r) { p.y = FLOOR - p.r; p.onFloor = true; }
-        if (p.x > CW - 12 - p.r) p.x = CW - 12 - p.r;
-      } else if (p.x < 12 + p.r) p.x = 12 + p.r;
-      pushOutOfSegment(p, CHUTE_X, CHUTE_TOP, CHUTE_X, FLOOR + 40);
-      // never squeeze through the chute wall: a prize that was in the pit stays in the pit
-      if (p.px >= CHUTE_X && p.y > CHUTE_TOP - p.r * 0.2 && p.x < CHUTE_X + p.r) p.x = CHUTE_X + p.r;
-    }
-  }
-  // velocity from motion; plush doesn't bounce much and drags on the floor
-  for (const p of list) {
-    if (p === claw.held) { p.vx = (p.x - p.px) / dt; p.vy = (p.y - p.py) / dt; continue; }
-    p.vx = clamp((p.x - p.px) / dt, -220, 220) * 0.985;
-    p.vy = clamp((p.y - p.py) / dt, -220, 900);
-    if (p.onFloor) { p.vx *= 0.82; if (p.vy > 0) p.vy = 0; }
-    p.a += ((p.x - p.px) / p.r) * 0.8;
-  }
-  // through the chute's hole = won
-  for (let i = list.length - 1; i >= 0; i--) {
-    const p = list[i];
-    if (p.x < CHUTE_X && p.y > FLOOR + p.r) {
-      list.splice(i, 1);
-      if (p === claw.held) claw.held = null;
+  claw.prev = { x: claw.x, y: claw.y, z: claw.z, angle: claw.angle };
+}
+function afterClawStep() {
+  for (let i = claw.prizes.length - 1; i >= 0; i--) {
+    const p = claw.prizes[i];
+    const pos = p.body.translation();
+    // a released prize gets solid to the prongs again once it's clear of them
+    if (p.restoreAt && now > p.restoreAt) { p.restoreAt = 0; p.collider.setCollisionGroups(PRIZE_GROUPS); }
+    if (!p.out && pos.y < -0.2 && inHole(pos.x, pos.z)) {
+      p.out = true;
       if (!claw.settling) winPrize(p);
-    } else if (p.y > CH + 200) list.splice(i, 1);
+    }
+    if (pos.y < -1.2 || Math.abs(pos.x) > 4 || Math.abs(pos.z) > 4) removePrize(i);
   }
+}
+
+// fill the machine and let the prizes settle into a pile
+function fillClaw() {
+  for (let i = claw.prizes.length - 1; i >= 0; i--) removePrize(i);
+  stockMachine(STOCK, false);
+  claw.settling = true;
+  poseRig(claw.x, claw.y, claw.z, claw.angle);
+  for (let i = 0; i < 360; i++) { claw.world.step(); afterClawStep(); }
+  claw.settling = false;
+}
+function resetClaw() {
+  releaseHeld(true);
+  claw.collection = {}; claw.misses = 0; claw.move = { x: 0, z: 0 };
+  claw.state = 'idle'; claw.x = HOME.x; claw.y = REST_Y; claw.z = HOME.z; claw.angle = OPEN_ANGLE; claw.prev = null;
+  fillClaw();
+  renderShelf();
 }
 
 // ---------- Playing ----------
 function clawPlay() {
+  if (!claw.world) return;
   if (claw.state === 'idle') {
     if (credits < CLAW_COST) { banner('NEED 5', 'CREDITS', '#ff4d6d', $('clawBanner')); sfx.miss(); return; }
     credits -= CLAW_COST;
@@ -2068,56 +1954,110 @@ function clawPlay() {
     tone(500, { dur: 0.5, type: 'triangle', vol: 0.06, slide: 0.5 });
   }
 }
-
 function clawSetState(s) {
   claw.state = s;
   claw.stateT = 0;
 }
 
-function decideGrab() {
-  // a prize is caught only if both prongs ended up squeezing it
-  const [l, r] = claw.contact;
-  claw.contact = [null, null];
-  if (!l || l !== r) return;
-  const best = l;
-  const t = PRIZE_BY_ID[best.id];
+// highest thing under a point: a prize's top, the floor, or the hole
+function surfaceAt(x, z, skip = null) {
+  let top = inHole(x, z) ? -0.4 : 0;
+  for (const p of claw.prizes) {
+    if (p === skip) continue;
+    const q = p.body.translation();
+    const d = Math.hypot(q.x - x, q.z - z);
+    if (d < p.r) top = Math.max(top, q.y + Math.sqrt(p.r * p.r - d * d));
+  }
+  return top;
+}
+// the claw stops dropping when a prong tip or the hub comes to rest on something
+function dropBlocked() {
+  const prongs = [0, 1, 2].map((i) => prongAt(i));
+  if (prongs.some((p) => p.tip.y <= (inHole(p.tip.x, p.tip.z) ? -0.4 : 0) + 0.03)) return true;
+  for (const pr of claw.prizes) {
+    const q = pr.body.translation();
+    const d = Math.hypot(q.x - claw.x, q.z - claw.z);
+    if (d < pr.r * 0.8 && claw.y - 0.12 < q.y + Math.sqrt(pr.r * pr.r - d * d)) return true;
+    // a tip lands on top of a prize (one beside it just slides down its side)
+    for (const p of prongs) if (p.tip.y > q.y + pr.r * 0.35 && p.tip.distanceTo(q) < pr.r + PRONG_R) return true;
+  }
+  return false;
+}
+// which prizes each prong is touching on its inner side
+function prongContacts() {
+  const counts = new Map();
+  for (let i = 0; i < 3; i++) {
+    const p = prongAt(i);
+    for (const pr of claw.prizes) {
+      if (pr === claw.held) continue;
+      const q = pr.body.translation();
+      const inward = (q.x - p.hinge.x) * -p.c + (q.z - p.hinge.z) * -p.s;
+      if (inward < -pr.r * 0.3) continue;   // it's outside this prong
+      if (segDist(q, p.hinge, p.tip) < pr.r + PRONG_R + 0.025) counts.set(pr, (counts.get(pr) || 0) + 1);
+    }
+  }
+  return counts;
+}
+
+function decideGrab(counts) {
+  // a prize is caught only if at least two prongs ended up squeezing it
+  let best = null, bestN = 1, bestD = Infinity;
+  for (const [pr, n] of counts) {
+    const q = pr.body.translation();
+    const d = Math.hypot(q.x - claw.x, q.z - claw.z);
+    if (n > bestN || (n === bestN && n >= 2 && d < bestD)) { best = pr; bestN = n; bestD = d; }
+  }
+  if (!best) return;
+  const q = best.body.translation();
   // prongs that reach under the prize's belly hold well; pinching just the top slips off
-  const tips = prongTips();
-  const under = clamp(((tips[0].y + tips[1].y) / 2 - best.y) / best.r, -1, 1);
-  const offset = Math.min(1, Math.abs(best.x - claw.x) / best.r);
-  const grip = CLAW_GRIP * (0.55 + 0.6 * under) * (1 - 0.5 * offset);
-  const chance = claw.misses >= CLAW_PITY ? 1 : clamp(grip / t.weight, 0.04, 0.92);
-  claw.held = best;
-  // keep it exactly where it was caught: no snapping into place
-  best.gx = best.x - claw.x;
-  best.gy = best.y - claw.y;
-  claw.swing = 0;
-  claw.swingV = 0;
-  claw.grabT = 0;
-  // a weak grip gives up somewhere on the way up or over to the chute
+  const tipY = [0, 1, 2].reduce((s, i) => s + prongAt(i).tip.y, 0) / 3;
+  const under = clamp((q.y - tipY) / best.r, -1, 1);
+  const offset = Math.min(1, bestD / best.r);
+  const grip = CLAW_GRIP * (0.55 + 0.6 * under) * (1 - 0.5 * offset) * (bestN === 3 ? 1.15 : 1);
+  const chance = claw.misses >= CLAW_PITY ? 1 : clamp(grip / best.t.weight, 0.04, 0.92);
+  hold(best);
+  // a weak grip gives up somewhere on the way up or over to the hole
   claw.slipAt = Math.random() < chance ? Infinity : 0.25 + Math.random() * 2.2;
   clink(900, { vol: 0.06, decay: 0.2 });
   tone(160, { dur: 0.12, type: 'square', vol: 0.05 });
 }
-
-function releaseHeld() {
-  const p = claw.held;
-  if (!p) return;
+// hang the prize from the hub on a ball joint, so it swings; the joint holds it by the point
+// nearest the hub, which draws it up snug between the prongs
+function hold(pr) {
+  const p = pr.body.translation(), r = pr.body.rotation();
+  const anchor = new THREE.Vector3(0, -HUB_DROP - 0.05, 0);
+  const toHub = new THREE.Vector3(claw.x, claw.y, claw.z).add(anchor).sub(p);
+  toHub.setLength(Math.min(toHub.length(), pr.r * 0.95));
+  const local = toHub.applyQuaternion(new THREE.Quaternion(r.x, r.y, r.z, r.w).invert());
+  claw.joint = claw.world.createImpulseJoint(RAPIER.JointData.spherical(anchor, local), claw.hub, pr.body, true);
+  pr.collider.setCollisionGroups(HELD_GROUPS);
+  pr.restoreAt = 0;
+  pr.body.setLinearDamping(1.2);
+  pr.body.setAngularDamping(4);
+  claw.held = pr;
+  claw.grabT = 0;
+}
+function releaseHeld(silent = false) {
+  const pr = claw.held;
+  if (!pr) return;
+  if (claw.joint) claw.world.removeImpulseJoint(claw.joint, true);
+  claw.joint = null;
   claw.held = null;
-  // it leaves with the claw's motion plus whatever its swing was doing
-  const len = Math.hypot(p.gx, p.gy);
-  p.vx = clamp(claw.vx + Math.cos(claw.swing) * claw.swingV * len * 0.5, -220, 220);
-  p.vy = Math.max(claw.vy, 0) + Math.sin(claw.swing) * claw.swingV * len * 0.25;
-  claw.swing = 0;
-  claw.swingV = 0;
+  pr.body.setLinearDamping(0.3);
+  pr.body.setAngularDamping(1.6);
+  pr.body.wakeUp();
+  pr.restoreAt = now + 700;
+  if (silent) pr.collider.setCollisionGroups(PRIZE_GROUPS);
 }
 
 function winPrize(p) {
-  const t = PRIZE_BY_ID[p.id];
+  const t = p.t;
   claw.collection[t.id] = (claw.collection[t.id] || 0) + 1;
   claw.wonThisPlay = true;
   claw.misses = 0;
-  claw.popups.push({ id: t.id, t: 0 });
+  const model = buildPrize(t);
+  claw.scene.add(model);
+  claw.popups.push({ model, t: 0 });
   const color = t.rarity === 'super' ? '#ffd23e' : t.rarity === 'rare' ? '#c063ff' : '#2ef2ff';
   banner(t.rarity === 'super' ? 'SUPER RARE!' : t.rarity === 'rare' ? 'RARE WIN!' : 'YOU WON!', t.name.toUpperCase(), color, $('clawBanner'));
   sfx.fanfare(t.rarity !== 'common');
@@ -2128,9 +2068,8 @@ function winPrize(p) {
 }
 
 function clawUpdate(dt) {
+  if (!claw.world) return;
   claw.stateT += dt;
-  const ox = claw.x, oy = claw.y;
-  const SPEED_X = 130;
 
   switch (claw.state) {
     case 'idle':
@@ -2138,74 +2077,64 @@ function clawUpdate(dt) {
       if (claw.state === 'aim') {
         claw.timer -= dt;
         if (claw.timer <= 0) { claw.timer = 0; clawSetState('drop'); tone(500, { dur: 0.5, type: 'triangle', vol: 0.06, slide: 0.5 }); break; }
-        let dir = claw.move;
-        if (claw.dragX !== null) dir = Math.abs(claw.dragX - claw.x) < 3 ? 0 : Math.sign(claw.dragX - claw.x);
-        claw.x = clamp(claw.x + dir * SPEED_X * dt, HOME_X, CW - 40);
-        if (dir && Math.random() < dt * 8) tone(120 + Math.random() * 20, { dur: 0.05, type: 'sawtooth', vol: 0.012 });
+        let dx = claw.move.x, dz = claw.move.z;
+        if (claw.drag) {
+          const ex = claw.drag.x - claw.x, ez = claw.drag.z - claw.z;
+          const d = Math.hypot(ex, ez);
+          dx = d < 0.03 ? 0 : ex / d; dz = d < 0.03 ? 0 : ez / d;
+        }
+        const len = Math.hypot(dx, dz) || 1;
+        claw.x = clamp(claw.x + (dx / len) * CLAW_SPEED * dt, AIM.x0, AIM.x1);
+        claw.z = clamp(claw.z + (dz / len) * CLAW_SPEED * dt, AIM.z0, AIM.z1);
+        if ((dx || dz) && Math.random() < dt * 8) tone(120 + Math.random() * 20, { dur: 0.05, type: 'sawtooth', vol: 0.012 });
       }
       claw.angle += (OPEN_ANGLE - claw.angle) * Math.min(1, dt * 8);
       break;
     }
     case 'drop': {
       claw.angle += (OPEN_ANGLE - claw.angle) * Math.min(1, dt * 8);
-      claw.y += 150 * dt;
-      // stop when a prong tip or the hub comes to rest on something
-      const tips = prongTips();
-      let hit = tips.some((t) => t.y >= FLOOR - 2) || claw.y > FLOOR - PRONG - 10;
-      for (const p of claw.prizes) {
-        if (hit) break;
-        // the hub lands on the prize right underneath it
-        if (Math.abs(p.x - claw.x) < p.r * 0.8 && claw.y + 18 > p.y - p.r * 0.85) hit = true;
-        // a tip lands on top of a prize (one beside it just slides down its side)
-        for (const t of tips) if (t.y < p.y - p.r * 0.35 && Math.hypot(t.x - p.x, t.y - p.y) < p.r * 0.9) hit = true;
-      }
-      if (hit || claw.stateT > 3) { clawSetState('close'); tone(220, { dur: 0.25, type: 'square', vol: 0.04, slide: 0.8 }); }
+      claw.y -= 1.35 * dt;
+      if (dropBlocked() || claw.stateT > 3) { clawSetState('close'); tone(220, { dur: 0.25, type: 'square', vol: 0.04, slide: 0.8 }); }
       break;
     }
     case 'close': {
-      // each prong touches the nearest prize on its inner side; once both are squeezing the
-      // same prize the claw stops closing instead of crushing it out of the grip
-      const tips = prongTips();
-      claw.contact = tips.map((t, i) => {
-        const inward = i === 0 ? 1 : -1;
-        let best = null, bestD = Infinity;
-        for (const p of claw.prizes) {
-          if ((p.x - t.x) * inward < -p.r * 0.3) continue;   // it's outside this prong
-          const d = segDist(p, t.bx, t.by, t.x, t.y) - p.r;
-          if (d < 3 && d < bestD) { bestD = d; best = p; }
-        }
-        return best;
-      });
-      const squeezing = claw.contact[0] && claw.contact[0] === claw.contact[1];
-      if (!squeezing) claw.angle = Math.max(SHUT_ANGLE, claw.angle - 1.4 * dt);
-      // with nothing under the hub, the claw settles a little lower as it closes
-      const onPrize = claw.prizes.some((p) => Math.abs(p.x - claw.x) < p.r * 0.8 && claw.y + 20 > p.y - p.r);
-      if (!onPrize && claw.y < FLOOR - PRONG - 18) claw.y += 30 * dt;
-      if (claw.stateT > 0.7 || (squeezing && claw.stateT > 0.35)) { decideGrab(); clawSetState('lift'); }
+      // the prongs close until at least two of them are squeezing the same prize, instead of
+      // crushing it out of the grip
+      const counts = prongContacts();
+      const squeezing = [...counts.values()].some((n) => n >= 2);
+      if (!squeezing) claw.angle = Math.max(SHUT_ANGLE, claw.angle - 1.3 * dt);
+      if (claw.stateT > 0.75 || (squeezing && claw.stateT > 0.35)) { decideGrab(counts); clawSetState('lift'); }
       break;
     }
     case 'lift': {
-      claw.y = Math.max(RAIL_Y, claw.y - 110 * dt);
-      if (claw.y <= RAIL_Y) clawSetState('carry');
+      claw.y = Math.min(REST_Y, claw.y + 1.0 * dt);
+      // with nothing in its grip the claw goes slack, so nothing rides up in its prongs
+      if (!claw.held) claw.angle += (OPEN_ANGLE * 0.75 - claw.angle) * Math.min(1, dt * 3);
+      if (claw.y >= REST_Y) clawSetState('carry');
       break;
     }
     case 'carry': {
-      const dx = HOME_X - claw.x;
-      claw.x += Math.sign(dx) * Math.min(Math.abs(dx), SPEED_X * dt);
-      if (Math.abs(dx) < 0.5) clawSetState('release');
+      const ex = HOME.x - claw.x, ez = HOME.z - claw.z;
+      const d = Math.hypot(ex, ez);
+      const stepLen = Math.min(d, CLAW_SPEED * 1.1 * dt);
+      if (d > 1e-4) { claw.x += (ex / d) * stepLen; claw.z += (ez / d) * stepLen; }
+      if (!claw.held) claw.angle += (OPEN_ANGLE * 0.75 - claw.angle) * Math.min(1, dt * 3);
+      if (d < 0.005) clawSetState('release');
       break;
     }
     case 'release': {
       claw.angle += (OPEN_ANGLE - claw.angle) * Math.min(1, dt * 6);
-      // wait for a swinging prize to settle over the chute before letting go
-      if (claw.held && claw.stateT > 0.15 && (Math.abs(claw.swing) < 0.05 || claw.stateT > 1)) { releaseHeld(); claw.releasedT = claw.stateT; }
-      // give a dropped prize time to fall all the way into the chute before calling it
+      // wait for a swinging prize to settle over the hole before letting go
+      if (claw.held && claw.stateT > 0.2) {
+        const v = claw.held.body.linvel();
+        if (Math.hypot(v.x, v.z) < 0.12 || claw.stateT > 1.1) { releaseHeld(); claw.releasedT = claw.stateT; }
+      }
+      // give a dropped prize time to fall all the way through before calling it
       if (!claw.held && claw.stateT > Math.max(1.4, (claw.releasedT || 0) + 1.1)) {
         claw.releasedT = 0;
         if (!claw.wonThisPlay) {
           claw.misses++;
-          const near = claw.slipped;
-          banner(near ? 'SO CLOSE!' : 'MISSED', claw.misses >= CLAW_PITY ? 'NEXT GRAB IS STRONG!' : 'TRY AGAIN', '#ff4d6d', $('clawBanner'));
+          banner(claw.slipped ? 'SO CLOSE!' : 'MISSED', claw.misses >= CLAW_PITY ? 'NEXT GRAB IS STRONG!' : 'TRY AGAIN', '#ff4d6d', $('clawBanner'));
           sfx.miss();
         }
         clawSetState('idle');
@@ -2216,39 +2145,18 @@ function clawUpdate(dt) {
     }
   }
 
-  // held prize: hangs from the prongs, swaying a little; a weak grip lets go
+  // a weak grip lets go
   if (claw.held) {
     claw.grabT += dt;
     if (claw.grabT > claw.slipAt) {
       claw.slipped = true;
       releaseHeld();
-      claw.angle = Math.min(OPEN_ANGLE, claw.angle + 0.25);
+      claw.angle = Math.min(OPEN_ANGLE, claw.angle + 0.3);
       tone(330, { dur: 0.4, type: 'triangle', vol: 0.06, slide: 0.55 });
-    } else {
-      const p = claw.held;
-      // it slides toward the middle of the claw and settles into the prongs as it's lifted
-      p.gx *= 1 - Math.min(1, dt * 3);
-      p.gy += (Math.max(p.gy, 14 + p.r * 0.55) - p.gy) * Math.min(1, dt * 4);
-      // and hangs like a pendulum: the claw speeding up or stopping sets it swinging
-      const len = Math.max(20, Math.hypot(p.gx, p.gy));
-      const ax = (claw.vx - (claw.prevVx || 0)) / dt;
-      claw.swingV += (-(PRIZE_GRAVITY / len) * Math.sin(claw.swing) - (ax / len) * Math.cos(claw.swing) * 0.6) * dt;
-      claw.swingV *= Math.exp(-(claw.state === 'release' ? 6 : 2.5) * dt);
-      claw.swing = clamp(claw.swing + claw.swingV * dt, -0.5, 0.5);
-      p.x = claw.x + p.gx * Math.cos(claw.swing) + p.gy * Math.sin(claw.swing);
-      p.y = claw.y - p.gx * Math.sin(claw.swing) + p.gy * Math.cos(claw.swing);
-      p.a += (claw.swing * 0.6 - p.a) * Math.min(1, dt * 6);
-      claw.angle = Math.max(claw.angle, Math.asin(clamp((p.r * 0.8 - 9) / PRONG, 0, 0.9)));
     }
   }
 
-  claw.prevVx = claw.vx;
-  claw.vx = (claw.x - ox) / dt;
-  claw.vy = (claw.y - oy) / dt;
-
-  // physics in small steps
-  const n = Math.ceil(dt / (1 / 120));
-  for (let i = 0; i < n; i++) stepPrizes(dt / n);
+  stepClaw(dt);
 
   // restock when running low and nobody is playing
   if (claw.state === 'idle' && claw.prizes.length < STOCK - 6) {
@@ -2257,197 +2165,205 @@ function clawUpdate(dt) {
   }
 
   for (let i = claw.popups.length - 1; i >= 0; i--) {
-    claw.popups[i].t += dt;
-    if (claw.popups[i].t > 2.2) claw.popups.splice(i, 1);
+    const pu = claw.popups[i];
+    pu.t += dt;
+    if (pu.t > 2.4) { claw.scene.remove(pu.model); disposeModel(pu.model); claw.popups.splice(i, 1); }
   }
 
   $('clawTime').textContent = claw.state === 'aim' ? String(Math.ceil(claw.timer)).padStart(2, '0') : '--';
   const g = $('grab');
   const playing = claw.state !== 'idle';
-  g.innerHTML = claw.state === 'aim' ? 'GRAB<small>OR SPACE</small>' : playing ? '···<small>&nbsp;</small>' : `PLAY<small>${CLAW_COST} CREDITS</small>`;
+  const label = claw.state === 'aim' ? 'GRAB<small>OR SPACE</small>' : playing ? '···<small>&nbsp;</small>' : `PLAY<small>${CLAW_COST} CREDITS</small>`;
+  if (g.innerHTML !== label) g.innerHTML = label;
   g.disabled = (playing && claw.state !== 'aim') || (!playing && credits < CLAW_COST);
-  $('clawLeft').disabled = $('clawRight').disabled = claw.state !== 'aim';
+  for (const id of ['clawLeft', 'clawRight', 'clawUp', 'clawDown']) $(id).disabled = claw.state !== 'aim';
+  const attract = $('clawAttract');
+  attract.textContent = credits >= CLAW_COST ? 'PRESS PLAY' : `INSERT ${CLAW_COST} CREDITS`;
+  attract.classList.toggle('show', claw.state === 'idle');
 }
 
-// ---------- Drawing ----------
-const clawBg = (() => {
-  const [c, g] = makeCanvas(CW * 2, CH * 2);
-  g.scale(2, 2);
-  const back = g.createLinearGradient(0, 0, 0, CH);
-  back.addColorStop(0, '#2a1250');
-  back.addColorStop(1, '#14082a');
-  g.fillStyle = back;
-  g.fillRect(0, 0, CW, CH);
-  // polka-dot back panel
-  for (let y = 70; y < FLOOR; y += 26) {
-    for (let x = (y / 26) % 2 ? 13 : 0; x < CW; x += 26) {
-      g.fillStyle = 'rgba(255,62,165,.08)';
-      g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill();
-    }
-  }
-  // neon strip at the top
-  g.shadowColor = '#2ef2ff';
-  g.shadowBlur = 14;
-  g.fillStyle = '#9ff8ff';
-  g.fillRect(14, 16, CW - 28, 4);
-  g.shadowBlur = 0;
-  // rail
-  const rail = g.createLinearGradient(0, RAIL_Y - 30, 0, RAIL_Y - 20);
-  rail.addColorStop(0, '#f2f4fa');
-  rail.addColorStop(1, '#6d7387');
-  g.fillStyle = rail;
-  g.fillRect(10, RAIL_Y - 30, CW - 20, 9);
-  // floor of the pit
-  const floor = g.createLinearGradient(0, FLOOR, 0, CH);
-  floor.addColorStop(0, '#3a1d66');
-  floor.addColorStop(1, '#1a0d30');
-  g.fillStyle = floor;
-  g.fillRect(CHUTE_X, FLOOR, CW - CHUTE_X, CH - FLOOR);
-  g.fillStyle = 'rgba(255,255,255,.12)';
-  g.fillRect(CHUTE_X, FLOOR, CW - CHUTE_X, 2);
-  // chute: a dark hole with a glowing rim
-  g.fillStyle = '#05020c';
-  g.fillRect(12, CHUTE_TOP - 4, CHUTE_X - 12, CH - CHUTE_TOP + 4);
-  const hole = g.createLinearGradient(0, FLOOR, 0, CH);
-  hole.addColorStop(0, '#000');
-  hole.addColorStop(1, '#1a0d30');
-  g.fillStyle = hole;
-  g.fillRect(12, FLOOR, CHUTE_X - 12, CH - FLOOR);
-  g.fillStyle = 'rgba(255,210,62,.85)';
-  g.font = '900 13px system-ui, sans-serif';
-  g.textAlign = 'center';
-  g.fillText('PRIZE', (12 + CHUTE_X) / 2, CHUTE_TOP + 30);
-  g.font = '900 18px system-ui, sans-serif';
-  g.fillText('▼', (12 + CHUTE_X) / 2, CHUTE_TOP + 52);
-  return c;
-})();
+// ---------- Claw scene ----------
+function buildClawScene() {
+  const canvas = $('claw');
+  const renderer = makeRenderer(canvas);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#12072a');
+  scene.environment = studioEnv(renderer);
+  const camera = new THREE.PerspectiveCamera(35, 0.82, 0.1, 40);
+  camera.position.set(0.3, 4.0, 6.6);
+  camera.lookAt(0, 1.3, 0);
 
-function drawPrize(p) {
-  const t = PRIZE_BY_ID[p.id];
-  const glow = RARITY_GLOW[t.rarity];
-  // shadow on the floor
-  if (p.x > CHUTE_X) {
-    const h = clamp((FLOOR - p.y - p.r) / 200, 0, 1);
-    cctx.fillStyle = `rgba(0,0,0,${0.35 * (1 - h)})`;
-    cctx.beginPath(); cctx.ellipse(p.x, FLOOR + 1, p.r * (1 - h * 0.4), 4, 0, 0, Math.PI * 2); cctx.fill();
+  scene.add(new THREE.HemisphereLight('#d6c8ff', '#2a1250', 0.5));
+  // a light straight overhead, so the claw's shadow shows where it will land
+  const top = new THREE.DirectionalLight('#ffffff', 2.2);
+  top.position.set(0.15, 8, 0.25);
+  top.target.position.set(0, 0, 0);
+  top.castShadow = true;
+  top.shadow.mapSize.set(2048, 2048);
+  Object.assign(top.shadow.camera, { left: -1.9, right: 1.9, top: 1.5, bottom: -1.5, near: 2, far: 12 });
+  top.shadow.bias = -0.0005;
+  top.shadow.normalBias = 0.02;
+  scene.add(top, top.target);
+  const fill = new THREE.DirectionalLight('#ffe9f6', 0.6);
+  fill.position.set(1, 2.5, 6);
+  scene.add(fill);
+  const pinkL = new THREE.PointLight('#ff3ea5', 5, 6, 1.5); pinkL.position.set(-1.3, 3.3, -0.8);
+  const cyanL = new THREE.PointLight('#2ef2ff', 5, 6, 1.5); cyanL.position.set(1.3, 3.3, 0.8);
+  scene.add(pinkL, cyanL);
+
+  // walls: polka dots on purple
+  const dots = (base, dot) => canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = base; g.fillRect(0, 0, w, h);
+    g.fillStyle = dot;
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { g.beginPath(); g.arc(x * 32 + (y % 2 ? 16 : 0), y * 32 + 16, 5, 0, Math.PI * 2); g.fill(); }
+  }, { repeat: [3, 3.5] });
+  const backMat = new THREE.MeshStandardMaterial({ map: dots('#2c1356', 'rgba(255,62,165,.35)'), roughness: 0.85 });
+  const sideMat = new THREE.MeshStandardMaterial({ map: dots('#1f0d40', 'rgba(46,242,255,.18)'), roughness: 0.85 });
+  const W = CAB.x1 - CAB.x0, D = CAB.z1 - CAB.z0;
+  scene.add(shadowed(box(W, CAB.top + 0.4, 0.05, backMat, 0, CAB.top / 2 - 0.2, CAB.z0 - 0.025), false));
+  for (const s of [-1, 1]) scene.add(shadowed(box(0.05, CAB.top + 0.4, D, sideMat, s * (W / 2 + 0.025), CAB.top / 2 - 0.2, 0), false));
+  // the pit floor: soft carpet, with the hole cut out
+  const carpet = canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = '#4a2585'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 9000; i++) { g.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '0,0,0'},${Math.random() * 0.08})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+  }, { repeat: [3, 2] });
+  const floorMat = new THREE.MeshStandardMaterial({ map: carpet, roughness: 1 });
+  scene.add(shadowed(box(CAB.x1 - HOLE.x1, 0.2, D, floorMat, (HOLE.x1 + CAB.x1) / 2, -0.1, 0), false));
+  scene.add(shadowed(box(HOLE.x1 - CAB.x0, 0.2, HOLE.z0 - CAB.z0, floorMat, (CAB.x0 + HOLE.x1) / 2, -0.1, (CAB.z0 + HOLE.z0) / 2), false));
+  // the hole: a dark shaft with a glowing rim
+  const hw = HOLE.x1 - HOLE.x0, hd = HOLE.z1 - HOLE.z0;
+  const shaft = new THREE.MeshStandardMaterial({ color: '#05020c', roughness: 1, side: THREE.BackSide });
+  scene.add(box(hw, 1.2, hd, shaft, (HOLE.x0 + HOLE.x1) / 2, -0.6, (HOLE.z0 + HOLE.z1) / 2));
+  const rimMat = neonMat('#ffd23e', 2.2);
+  scene.add(box(hw, 0.025, 0.025, rimMat, (HOLE.x0 + HOLE.x1) / 2, 0.005, HOLE.z0 + 0.03));
+  scene.add(box(0.025, 0.025, hd, rimMat, HOLE.x1 - 0.03, 0.005, (HOLE.z0 + HOLE.z1) / 2));
+  // acrylic guard with chrome edges
+  scene.add(box(0.025, GUARD_H, hd, glassMat, HOLE.x1, GUARD_H / 2, (HOLE.z0 + HOLE.z1) / 2));
+  scene.add(box(hw, GUARD_H, 0.025, glassMat, (HOLE.x0 + HOLE.x1) / 2, GUARD_H / 2, HOLE.z0));
+  scene.add(shadowed(box(0.045, 0.045, hd, chromeMat, HOLE.x1, GUARD_H, (HOLE.z0 + HOLE.z1) / 2)));
+  scene.add(shadowed(box(hw + 0.02, 0.045, 0.045, chromeMat, (HOLE.x0 + HOLE.x1) / 2, GUARD_H, HOLE.z0)));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.2), new THREE.MeshBasicMaterial({ map: textTex('PRIZE ▼', { color: '#ffd23e', glow: '#ffd23e' }), transparent: true, depthWrite: false }));
+  sign.position.set(HOME.x, 0.3, CAB.z1 - 0.01);   // a sticker on the front glass, over the hole
+  scene.add(sign);
+  // the cabinet's base under the pit, with a chrome trim along the floor's edge
+  scene.add(box(W + 0.1, 1.6, 0.06, new THREE.MeshStandardMaterial({ color: '#1d0f38', roughness: 0.7 }), 0, -0.82, CAB.z1 + 0.04));
+  scene.add(box(W + 0.1, 0.04, 0.06, chromeMat, 0, -0.01, CAB.z1 + 0.05));
+  scene.add(box(W + 0.1, 0.03, 0.03, neonMat('#ff3ea5', 2), 0, -0.25, CAB.z1 + 0.08));
+  // ceiling with neon strips
+  scene.add(box(W, 0.1, D, new THREE.MeshStandardMaterial({ color: '#0d061c', roughness: 0.9 }), 0, CAB.top + 0.05, 0));
+  scene.add(box(W - 0.1, 0.04, 0.04, neonMat('#2ef2ff', 3), 0, CAB.top - 0.05, CAB.z1 - 0.05));
+  scene.add(box(W - 0.1, 0.04, 0.04, neonMat('#ff3ea5', 3), 0, CAB.top - 0.05, CAB.z0 + 0.05));
+  // front glass with a streak of glare
+  const glare = canvasTex(256, 256, (g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0.2, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.28, 'rgba(255,255,255,.18)');
+    grad.addColorStop(0.33, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.38, 'rgba(255,255,255,.08)');
+    grad.addColorStop(0.42, 'rgba(255,255,255,0)');
+    g.fillStyle = grad; g.fillRect(0, 0, w, h);
+  });
+  const front = new THREE.Mesh(new THREE.PlaneGeometry(W, CAB.top), new THREE.MeshBasicMaterial({ map: glare, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  front.position.set(0, CAB.top / 2, CAB.z1);
+  scene.add(front);
+
+  // gantry: rails along both sides, a crossbar riding on them, a trolley on the crossbar
+  const parts = claw.parts;
+  for (const s of [-1, 1]) {
+    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, D, 12), chromeMat);
+    rail.rotation.x = Math.PI / 2;
+    rail.position.set(s * (W / 2 - 0.06), RAIL_Y + 0.12, 0);
+    scene.add(shadowed(rail));
   }
-  if (glow) {
-    cctx.save();
-    cctx.globalCompositeOperation = 'lighter';
-    const g = cctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 1.6);
-    g.addColorStop(0, glow + '88');
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    cctx.globalAlpha = 0.55 + 0.25 * Math.sin(now / 250 + p.x);
-    cctx.fillStyle = g;
-    cctx.fillRect(p.x - p.r * 1.6, p.y - p.r * 1.6, p.r * 3.2, p.r * 3.2);
-    cctx.restore();
-  }
-  cctx.save();
-  cctx.translate(p.x, p.y);
-  cctx.rotate(p.a);
-  const size = p.r * 2.25;
-  cctx.drawImage(prizeSprite(p.id), -size / 2, -size / 2, size, size);
-  cctx.restore();
+  parts.bar = shadowed(box(W - 0.1, 0.07, 0.1, chromeMat, 0, RAIL_Y + 0.12, 0));
+  parts.trolley = new THREE.Group();
+  parts.trolley.add(shadowed(box(0.26, 0.15, 0.26, new THREE.MeshStandardMaterial({ color: '#d6dbe8', metalness: 0.6, roughness: 0.35 }), 0, 0, 0)));
+  parts.trolley.add(box(0.27, 0.03, 0.27, neonMat('#ff3ea5', 2), 0, -0.06, 0));
+  parts.cable = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 1, 8), new THREE.MeshStandardMaterial({ color: '#9aa1b3', metalness: 0.8, roughness: 0.4 })));
+  parts.hub = new THREE.Group();
+  parts.hub.add(shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.16, 28), chromeMat)));
+  parts.hub.add(shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.13, 0.08, 28), chromeMat)).translateY(0.11));
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 8), neonMat('#ffd23e', 3));
+  cap.position.y = -0.09;
+  parts.hub.add(cap);
+  parts.prongs = [0, 1, 2].map(() => {
+    const g = new THREE.Group();
+    const arm = new THREE.CylinderGeometry(0.026, 0.032, PRONG, 12);
+    arm.translate(0, -PRONG / 2, 0);
+    g.add(shadowed(new THREE.Mesh(arm, chromeMat)));
+    const hookGeo = new THREE.CylinderGeometry(0.02, 0.026, 0.14, 10);
+    hookGeo.translate(0, -0.07, 0);
+    const hook = shadowed(new THREE.Mesh(hookGeo, chromeMat));
+    hook.position.y = -PRONG;
+    hook.rotation.z = -1.05;
+    g.add(hook);
+    g.add(shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 8), chromeMat)));
+    return g;
+  });
+  scene.add(parts.bar, parts.trolley, parts.cable, parts.hub, ...parts.prongs);
+  // aiming laser while steering
+  parts.laser = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 6), new THREE.MeshBasicMaterial({ color: '#ff3355', transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
+  parts.dot = glowSprite('#ff3355', 0.22);
+  scene.add(parts.laser, parts.dot);
+
+  Object.assign(claw, { scene, camera, renderer });
+  watchVisible($('claw').parentElement, claw);
 }
 
-function drawClaw() {
-  const g = cctx;
-  // trolley on the rail and the cable
-  g.fillStyle = '#c9cfdf';
-  g.fillRect(claw.x - 16, RAIL_Y - 34, 32, 16);
-  g.fillStyle = '#ff3ea5';
-  g.fillRect(claw.x - 16, RAIL_Y - 20, 32, 3);
-  g.strokeStyle = '#9aa1b3';
-  g.lineWidth = 2;
-  g.beginPath(); g.moveTo(claw.x, RAIL_Y - 18); g.lineTo(claw.x, claw.y); g.stroke();
-  // prongs
-  const tips = prongTips();
-  for (const [i, t] of tips.entries()) {
-    const side = i === 0 ? -1 : 1;
-    const grad = g.createLinearGradient(t.bx, t.by, t.x, t.y);
-    grad.addColorStop(0, '#f4f6fb');
-    grad.addColorStop(1, '#7d8597');
-    g.strokeStyle = grad;
-    g.lineWidth = 5;
-    g.lineCap = 'round';
-    g.beginPath();
-    g.moveTo(t.bx, t.by);
-    g.lineTo(t.x, t.y);
-    // hooked tip curling inward
-    g.lineTo(t.x - side * 9 * Math.cos(claw.angle), t.y + 4);
-    g.stroke();
-  }
-  // middle prong, seen edge-on
-  g.strokeStyle = '#8a92a5';
-  g.lineWidth = 4;
-  g.beginPath(); g.moveTo(claw.x, claw.y + 14); g.lineTo(claw.x, claw.y + 14 + PRONG * Math.cos(claw.angle) * 0.85); g.stroke();
-  // hub
-  const hub = g.createLinearGradient(claw.x - 18, 0, claw.x + 18, 0);
-  hub.addColorStop(0, '#7d8597');
-  hub.addColorStop(0.5, '#f4f6fb');
-  hub.addColorStop(1, '#7d8597');
-  g.fillStyle = hub;
-  g.beginPath();
-  g.roundRect(claw.x - 18, claw.y, 36, 18, 6);
-  g.fill();
-  g.fillStyle = '#ffd23e';
-  g.beginPath(); g.arc(claw.x, claw.y + 9, 3.5, 0, Math.PI * 2); g.fill();
+let ccw = 0, cch = 0;
+function resizeClaw() {
+  const w = $('claw').parentElement.clientWidth;
+  if (!w) return;
+  ccw = w;
+  cch = Math.round(w * 1.22);
+  claw.renderer.setPixelRatio(dpr());
+  claw.renderer.setSize(ccw, cch, false);
+  $('claw').style.height = cch + 'px';
+  claw.camera.aspect = ccw / cch;
+  claw.camera.updateProjectionMatrix();
 }
 
-function clawDraw() {
-  if (!ccw) clawResize();
-  const g = cctx;
-  g.drawImage(clawBg, 0, 0, CW, CH);
-
-  // aim guide while steering
-  if (claw.state === 'aim') {
-    g.strokeStyle = 'rgba(255,210,62,.35)';
-    g.setLineDash([5, 6]);
-    g.lineWidth = 1.5;
-    g.beginPath(); g.moveTo(claw.x, claw.y + 70); g.lineTo(claw.x, FLOOR); g.stroke();
-    g.setLineDash([]);
+function renderClaw() {
+  if (!claw.visible || !claw.scene) return;
+  const parts = claw.parts;
+  const pose = claw.prev || claw;
+  const { x, y, z, angle } = pose;
+  parts.bar.position.z = z;
+  parts.trolley.position.set(x, RAIL_Y, z);
+  const cableTop = RAIL_Y - 0.07, cableBot = y + 0.15;
+  parts.cable.scale.y = Math.max(0.01, cableTop - cableBot);
+  parts.cable.position.set(x, (cableTop + cableBot) / 2, z);
+  parts.hub.position.set(x, y, z);
+  parts.prongs.forEach((g, i) => {
+    const p = prongAt(i, x, y, z, angle);
+    g.position.copy(p.hinge);
+    g.rotation.set(0, -p.phi, angle, 'YZX');
+  });
+  const aiming = claw.state === 'aim' || claw.state === 'idle';
+  parts.laser.visible = parts.dot.visible = claw.state === 'aim';
+  if (aiming) {
+    const s = surfaceAt(x, z);
+    const from = y - 0.12;
+    parts.laser.scale.y = Math.max(0.01, from - s);
+    parts.laser.position.set(x, (from + s) / 2, z);
+    parts.dot.position.set(x, s + 0.01, z);
   }
-
-  for (const p of claw.prizes) if (p !== claw.held) drawPrize(p);
-  drawClaw();
-  if (claw.held) drawPrize(claw.held);
-
-  // chute wall: clear acrylic with a chrome top
-  g.fillStyle = 'rgba(180,220,255,.16)';
-  g.fillRect(CHUTE_X - 4, CHUTE_TOP, 8, FLOOR - CHUTE_TOP);
-  g.fillStyle = '#e9ecf5';
-  g.fillRect(CHUTE_X - 5, CHUTE_TOP - 4, 10, 5);
-  // the chute's front panel, over anything falling inside it
-  g.fillStyle = 'rgba(255,62,165,.12)';
-  g.fillRect(12, CHUTE_TOP, CHUTE_X - 16, FLOOR - CHUTE_TOP);
-
-  // glass glare
-  const glare = g.createLinearGradient(0, 0, CW, CH);
-  glare.addColorStop(0.2, 'rgba(255,255,255,0)');
-  glare.addColorStop(0.27, 'rgba(255,255,255,.07)');
-  glare.addColorStop(0.31, 'rgba(255,255,255,0)');
-  g.fillStyle = glare;
-  g.fillRect(0, 0, CW, CH);
-
-  // prizes popping out of the door
+  const tNow = now / 1000;
+  for (const p of claw.prizes) {
+    const q = p.body.translation(), r = p.body.rotation();
+    p.model.position.set(q.x, q.y, q.z);
+    p.model.quaternion.set(r.x, r.y, r.z, r.w);
+    if (p.model.userData.glow) p.model.userData.glow.material.opacity = 0.35 + 0.2 * Math.sin(tNow * 4 + q.x * 3);
+  }
+  // won prizes pop up out of the hole and spin
   for (const pu of claw.popups) {
-    const k2 = Math.min(1, pu.t / 0.5);
-    const y = CH - 30 - Math.sin(k2 * Math.PI) * 30 - k2 * 20;
-    const size = 40 + 30 * (1 - Math.abs(1 - k2));
-    g.globalAlpha = Math.min(1, (2.2 - pu.t) * 2);
-    g.drawImage(prizeSprite(pu.id), (12 + CHUTE_X) / 2 - size / 2 + k2 * 30, y - size / 2, size, size);
-    g.globalAlpha = 1;
+    const k = Math.min(1, pu.t / 0.6);
+    const out = pu.t > 1.9 ? Math.max(0, 1 - (pu.t - 1.9) / 0.5) : 1;
+    pu.model.position.set(HOME.x + 0.15 * k, -0.3 + 1.6 * (1 - Math.pow(1 - k, 3)), HOME.z + 0.2 * k);
+    pu.model.rotation.set(0, pu.t * 3, 0);
+    pu.model.scale.setScalar((1 + 0.5 * Math.sin(k * Math.PI / 2)) * out);
   }
-
-  if (claw.state === 'idle' && Math.floor(now / 500) % 2 === 0) {
-    g.fillStyle = '#ffd23e';
-    g.shadowColor = '#ffd23e';
-    g.shadowBlur = 10;
-    g.font = '900 16px system-ui, sans-serif';
-    g.textAlign = 'center';
-    g.fillText(credits >= CLAW_COST ? 'PRESS PLAY' : `INSERT ${CLAW_COST} CREDITS`, CW / 2 + 30, 92);
-    g.shadowBlur = 0;
-  }
+  claw.renderer.render(claw.scene, claw.camera);
 }
 
 // ---------- Prize shelf ----------
@@ -2467,60 +2383,56 @@ function renderShelf(popId) {
   $('prizeCount').textContent = String(total).padStart(3, '0');
 }
 
-// ---------- Controls ----------
-function holdButton(id, dir) {
+// ---------- Claw controls ----------
+function holdButton(id, axis, dir) {
   const el = $(id);
-  el.addEventListener('pointerdown', (e) => { e.preventDefault(); claw.move = dir; el.classList.add('pressed'); });
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); claw.move[axis] = dir; el.classList.add('pressed'); });
   ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => el.addEventListener(ev, () => {
-    if (claw.move === dir) claw.move = 0;
+    if (claw.move[axis] === dir) claw.move[axis] = 0;
     el.classList.remove('pressed');
   }));
 }
-holdButton('clawLeft', -1);
-holdButton('clawRight', 1);
+holdButton('clawLeft', 'x', -1);
+holdButton('clawRight', 'x', 1);
+holdButton('clawUp', 'z', -1);
+holdButton('clawDown', 'z', 1);
 $('grab').addEventListener('click', clawPlay);
-clawCanvas.addEventListener('pointerdown', (e) => {
-  clawCanvas.setPointerCapture(e.pointerId);
-  const r = clawCanvas.getBoundingClientRect();
-  claw.dragX = (e.clientX - r.left) / csc;
+// drag on the machine to steer the claw toward that spot on the pile
+const PILE_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.5);
+function clawDragTo(e) {
+  const el = $('claw');
+  const rect = el.getBoundingClientRect();
+  raycaster.setFromCamera({ x: ((e.clientX - rect.left) / rect.width) * 2 - 1, y: -((e.clientY - rect.top) / rect.height) * 2 + 1 }, claw.camera);
+  if (raycaster.ray.intersectPlane(PILE_PLANE, _hit)) claw.drag = { x: clamp(_hit.x, AIM.x0, AIM.x1), z: clamp(_hit.z, AIM.z0, AIM.z1) };
+}
+$('claw').addEventListener('pointerdown', (e) => {
+  if (!claw.camera) return;
+  $('claw').setPointerCapture(e.pointerId);
+  clawDragTo(e);
 });
-clawCanvas.addEventListener('pointermove', (e) => {
-  if (claw.dragX === null) return;
-  const r = clawCanvas.getBoundingClientRect();
-  claw.dragX = (e.clientX - r.left) / csc;
-});
-['pointerup', 'pointercancel'].forEach((ev) => clawCanvas.addEventListener(ev, () => { claw.dragX = null; }));
+$('claw').addEventListener('pointermove', (e) => { if (claw.drag) clawDragTo(e); });
+['pointerup', 'pointercancel'].forEach((ev) => $('claw').addEventListener(ev, () => { claw.drag = null; }));
 
-// fill the claw machine and let the prizes settle into a pile
-function fillClaw() {
-  claw.prizes = [];
-  stockMachine(STOCK, false);
-  claw.settling = true;
-  for (let i = 0; i < 240; i++) stepPrizes(1 / 120);
-  claw.settling = false;
-}
-function resetClaw() {
-  claw.collection = {}; claw.misses = 0; claw.held = null; claw.move = 0;
-  claw.state = 'idle'; claw.x = HOME_X; claw.y = RAIL_Y; claw.angle = OPEN_ANGLE;
-  fillClaw();
-  renderShelf();
-}
 
 // ---------- Save / load ----------
-const TYPE_LIST = ['coin', 'big', 'star', 'gem'];
+const r3 = (v) => Math.round(v * 1000) / 1000;
 function save() {
+  if (!pusher.world) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      credits, won, spins, soundOn, daily, t: machine.t,
+      v: 2, credits, won, spins, soundOn, daily, t: pusher.t,
       claw: { collection: claw.collection, misses: claw.misses },
-      coins: machine.coins.map((c) => [Math.round(c.x * 10) / 10, Math.round(c.y * 10) / 10, c.layer, TYPE_LIST.indexOf(c.type)]),
+      coins: pusher.coins.filter((c) => !c.out).map((c) => {
+        const p = c.body.translation(), q = c.body.rotation();
+        return [r3(p.x), r3(p.y), r3(p.z), r3(q.x), r3(q.y), r3(q.z), r3(q.w), TYPE_LIST.indexOf(c.type)];
+      }),
     }));
   } catch (e) { /* storage unavailable */ }
 }
-function load() {
+function loadState() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (!s || !Array.isArray(s.coins)) return false;
+    if (!s || !Array.isArray(s.coins)) return null;
     credits = Number(s.credits) || 0;
     won = Number(s.won) || 0;
     spins = Number(s.spins) || 0;
@@ -2530,30 +2442,77 @@ function load() {
       claw.misses = Number(s.claw.misses) || 0;
     }
     if (s.daily && typeof s.daily.last === 'string') daily = { last: s.daily.last, streak: Number(s.daily.streak) || 0 };
-    machine.t = Number(s.t) || 0;
-    machine.front = machine.frontAt(machine.t);
-    machine.coins = [];
-    for (const [x, y, layer, ti] of s.coins) machine.add(x, y, layer, TYPE_LIST[ti] || 'coin');
-    return true;
-  } catch (e) { return false; }
+    return s;
+  } catch (e) { return null; }
+}
+function restoreCoins(s) {
+  pusher.t = Number(s.t) || 0;
+  pusher.front = frontAt(pusher.t);
+  pusher.shelf.setTranslation({ x: 0, y: DECK_H / 2, z: pusher.front - SHELF_LEN / 2 }, true);
+  for (const e of s.coins) {
+    if (!Array.isArray(e)) continue;
+    if (e.length >= 8) {
+      const type = TYPE_LIST[e[7]] || 'coin';
+      addCoin(type, { x: e[0], y: e[1], z: e[2] }, { x: e[3], y: e[4], z: e[5], w: e[6] });
+    } else {
+      // a save from the flat version: [x, y, layer, type] in its old table units
+      const [x, y, layer, ti] = e;
+      const type = TYPE_LIST[ti] || 'coin';
+      const z = clamp(y / 100, 0.15, TL - 0.15);
+      const base = layer ? DECK_H : rampH(z + TYPES[type].r);
+      addCoin(type, { x: clamp((x - 150) / 100, -TW / 2 + 0.14, TW / 2 - 0.14), y: base + TYPES[type].h / 2 + 0.01, z });
+    }
+  }
+  settlePusher(0.3);
 }
 
 // ---------- Start ----------
-if (!load()) machine.fill();
-fillClaw();
-renderShelf();
-$('sound').textContent = soundOn ? '🔊' : '🔇';
-resize();
-clawResize();
-window.addEventListener('resize', () => { resize(); clawResize(); });
-updateHud();
-renderChanger();
-setInterval(renderChanger, 1000);
-setInterval(save, 3000);
-window.addEventListener('pagehide', save);
-document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
-if (spins > 0) setTimeout(spinSlot, 800);
-requestAnimationFrame((ts) => { last = ts; now = ts; requestAnimationFrame(frame); });
+let last = performance.now();
+function frame(ts) {
+  const dt = Math.min((ts - last) / 1000, 0.1);
+  last = ts;
+  now = ts;
+  updatePusher(dt);
+  renderPusher();
+  updateReels(dt);
+  clawUpdate(dt);
+  renderClaw();
+  updateTray(dt);
+  requestAnimationFrame(frame);
+}
+
+async function start() {
+  const saved = loadState();
+  renderShelf();
+  $('sound').textContent = soundOn ? '🔊' : '🔇';
+  updateHud();
+  renderChanger();
+  setInterval(renderChanger, 1000);
+  try {
+    await RAPIER.init();
+  } catch (e) {
+    for (const id of ['pusherLoading', 'clawLoading']) $(id).textContent = 'COULD NOT LOAD';
+    return;
+  }
+  buildPusherWorld();
+  buildPusherScene();
+  if (saved && saved.coins.length) restoreCoins(saved);
+  else fillPusher();
+  buildClawWorld();
+  buildClawScene();
+  fillClaw();
+  buildTray();
+  const fit = () => { resizePusher(); resizeClaw(); resizeTray(); };
+  fit();
+  window.addEventListener('resize', fit);
+  for (const id of ['pusherLoading', 'clawLoading']) $(id).classList.add('gone');
+  setInterval(save, 3000);
+  window.addEventListener('pagehide', save);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+  if (spins > 0) setTimeout(spinSlot, 800);
+  requestAnimationFrame((ts) => { last = ts; now = ts; requestAnimationFrame(frame); });
+}
+start();
   </script>
 </body>
 </html>
