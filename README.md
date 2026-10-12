@@ -14,7 +14,7 @@ Or download `index.html` and double-click it. The whole game is that one file, w
 - **The pusher:** the shelf slides back and forth. The back wall scrapes coins off the shelf onto the table, and the shelf's front face pushes the table coins forward.
 - **Winning:** coins pushed off the **front edge** pay out. Near the front, the sides are open, and coins that fall off there go to the house.
 - **Real coin physics:** coins pile on top of each other, slide with friction, and only tip over an edge when the balance point of the coin plus everything stacked on it is past the edge. Coins can hang over the lip held down by the coins behind them, and when one drops, the coins resting on it tumble too.
-- **Lucky slot:** drop a coin through the moving **LUCKY** gate on the back wall to earn a spin.
+- **Lucky slot:** drop a coin through the moving **LUCKY** gate on the back wall to earn a spin. The gate is checked when your coin falls past it, a moment after you drop, so aim where the gate is going.
 
 | Reels | Prize |
 |-------|-------|
@@ -26,10 +26,10 @@ Or download `index.html` and double-click it. The whole game is that one file, w
 | 🪙 🪙 🪙 | 2 coins |
 
 - **Special pieces:** push a big coin off for 10 credits, a ★ token for 3 free spins, or a 💎 gem for 50 credits.
-- **Free credits:** you start with 30. While you have fewer than 5, you get 1 free credit every 15 seconds.
+- **Free credits:** you start with 20. While you have fewer than 3, you get 1 free credit every 30 seconds.
 - **Saving:** your credits, winnings and every coin on the table save in your browser.
 
-Without the slot bonuses, the table returns about 85 to 90% of the coins you drop. The bonuses bring it close to even. A new game starts from a machine recorded after 10 minutes of simulated play, so coins are already piled up and sitting on the brink.
+Without the slot bonuses, the table returns about 75% of the coins you drop, and the bonuses bring it to roughly 85%, so you slowly lose unless you hit the LUCKY gate often. The gate is narrow and fast, so timing your drops is the skill. A new game starts from a machine recorded after 10 minutes of simulated play, so coins are already piled up and sitting on the brink.
 
 ## Code
 
