@@ -3116,6 +3116,9 @@ const inHole = (x, z) => x < HOLE.x1 && z > HOLE.z0;
 function buildClawWorld() {
   const w = new RAPIER.World({ x: 0, y: -12, z: 0 });
   w.timestep = STEP;
+  // push overlapping toys apart gently over a few steps, not all at once, so a squeeze from
+  // the prongs nudges a toy instead of firing it off
+  w.integrationParameters.erp = 0.25;
   const fixed = w.createRigidBody(RAPIER.RigidBodyDesc.fixed());
   const cuboid = (x0, x1, y0, y1, z0, z1) => w.createCollider(RAPIER.ColliderDesc.cuboid((x1 - x0) / 2, (y1 - y0) / 2, (z1 - z0) / 2)
     .setTranslation((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2).setFriction(0.8), fixed);
@@ -3191,7 +3194,7 @@ function addPrize(t, pos) {
   claw.scene.add(model);
   const shape = prizeShapes[t.id];
   const collider = claw.world.createCollider((RAPIER.ColliderDesc.convexHull(shape.hull) || RAPIER.ColliderDesc.ball(shape.r))
-    .setFriction(0.9).setRestitution(0.15)
+    .setFriction(0.9).setRestitution(0).setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Min)
     .setMassProperties(mass, { x: 0, y: -0.35 * t.r, z: 0 }, { x: inertia, y: inertia, z: inertia }, { x: 0, y: 0, z: 0, w: 1 })
     .setCollisionGroups(PRIZE_GROUPS), body);
   // it drops into the pile without turning, so it lands facing the player; it's free to
@@ -3239,9 +3242,26 @@ function stepClaw(dt) {
   }
   claw.prev = { x: claw.x, y: claw.y, z: claw.z, angles: [...claw.angles] };
 }
+// Plush doesn't bounce. The prongs are moved by hand, so when one presses into a toy the
+// physics shoves the toy out at whatever speed it takes, which can fling it across the
+// cabinet; a loose toy is never allowed to move up or sideways, or spin, faster than a
+// nudge. (Falling isn't limited, so drops still look right.)
+const PLUSH_MAX_UP = 0.8, PLUSH_MAX_SIDE = 1.2, PLUSH_MAX_SPIN = 5;
+function calmPlush(p) {
+  const v = p.body.linvel();
+  const side = Math.hypot(v.x, v.z);
+  if (v.y > PLUSH_MAX_UP || side > PLUSH_MAX_SIDE) {
+    const k = side > PLUSH_MAX_SIDE ? PLUSH_MAX_SIDE / side : 1;
+    p.body.setLinvel({ x: v.x * k, y: Math.min(v.y, PLUSH_MAX_UP), z: v.z * k }, false);
+  }
+  const w = p.body.angvel();
+  const spin = Math.hypot(w.x, w.y, w.z);
+  if (spin > PLUSH_MAX_SPIN) p.body.setAngvel({ x: w.x * PLUSH_MAX_SPIN / spin, y: w.y * PLUSH_MAX_SPIN / spin, z: w.z * PLUSH_MAX_SPIN / spin }, false);
+}
 function afterClawStep() {
   for (let i = claw.prizes.length - 1; i >= 0; i--) {
     const p = claw.prizes[i];
+    if (p !== claw.held) calmPlush(p);
     const pos = p.body.translation();
     // a released prize gets solid to the prongs again once it's clear of them
     if (p.restoreAt && now > p.restoreAt) { p.restoreAt = 0; p.collider.setCollisionGroups(PRIZE_GROUPS); }
