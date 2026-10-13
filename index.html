@@ -562,7 +562,7 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
         <li>The front of the table is a <b>ramp</b> that slopes up to the edge, so loose coins slide back, and a raised <b>lip</b> at the very edge kicks them back again. Coins pushed over the <b>front edge</b> are yours. Coins that fall off the <b>sides</b> go to the house.</li>
         <li>Coins roll down inside the back wall and slide out of the slot onto the shelf. If one rolls past the moving <b>LUCKY</b> window on the way down, you earn a slot spin. Match 3 for coin showers, a <b>10</b> big coin, a <b>★</b> bonus token or the <b>💎</b> jackpot gem.</li>
         <li>Push a ★ off the front for 3 free spins. Push a 💎 off for 50 credits.</li>
-        <li>Visit the <b>Coin Machine</b> once a day for free coins. Come back on consecutive days to build a streak for a bigger payout.</li>
+        <li>The <b>Coin Machine</b> gives you one free payout of coins each time you open the arcade.</li>
         <li>Spend credits at the <b>Claw Machine</b> too: 5 credits a play, prizes go on your shelf.</li>
         <li>Running low? You also get a free credit every 15 seconds while you have fewer than 5.</li>
       </ul>
@@ -577,7 +577,7 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
     <div class="streak" id="streak"></div>
     <button class="dispense-btn" id="dispense">DISPENSE</button>
     <div class="chute" id="chute" aria-hidden="true"><canvas id="chuteCanvas"></canvas></div>
-    <div class="hint">One free payout per day. Resets at midnight.</div>
+    <div class="hint">One free payout each time you open the arcade.</div>
   </section>
 
   <section class="claw-cab" id="clawCab" data-game-part="claw" aria-label="Claw machine">
@@ -5794,60 +5794,16 @@ $('viewReset').onclick = resetClawView;
 
 
 // ---------- Save / load ----------
-const r3 = (v) => Math.round(v * 1000) / 1000;
+// Every visit is a fresh start: credits, coins, both machines, prizes and themes all begin anew
+// each time the page opens. Only the sound setting is remembered.
 function save() {
-  if (!pusher.world) return;
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({
-      v: 2, credits, won, spins, soundOn, daily, t: pusher.t,
-      claw: { collection: claw.collection, misses: claw.misses },
-      themes: { owned: ownedThemes, active: themeId },
-      coins: pusher.coins.filter((c) => !c.out).map((c) => {
-        const p = c.body.translation(), q = c.body.rotation();
-        return [r3(p.x), r3(p.y), r3(p.z), r3(q.x), r3(q.y), r3(q.z), r3(q.w), TYPE_LIST.indexOf(c.type)];
-      }),
-    }));
-  } catch (e) { /* storage unavailable */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 3, soundOn })); } catch (e) { /* storage unavailable */ }
 }
 function loadState() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (!s || !Array.isArray(s.coins)) return null;
-    credits = Number(s.credits) || 0;
-    won = Number(s.won) || 0;
-    spins = Number(s.spins) || 0;
-    soundOn = s.soundOn !== false;
-    if (s.claw && typeof s.claw === 'object') {
-      claw.collection = s.claw.collection && typeof s.claw.collection === 'object' ? s.claw.collection : {};
-      claw.misses = Number(s.claw.misses) || 0;
-    }
-    if (s.daily && typeof s.daily.last === 'string') daily = { last: s.daily.last, streak: Number(s.daily.streak) || 0 };
-    if (s.themes && Array.isArray(s.themes.owned)) {
-      ownedThemes = ['neon', ...s.themes.owned.filter((id) => THEMES[id] && id !== 'neon')];
-      if (ownedThemes.includes(s.themes.active)) themeId = s.themes.active;
-    }
-    return s;
-  } catch (e) { return null; }
-}
-function restoreCoins(s) {
-  pusher.t = Number(s.t) || 0;
-  pusher.front = frontAt(pusher.t);
-  pusher.shelf.setTranslation({ x: 0, y: DECK_H / 2, z: pusher.front - SHELF_LEN / 2 }, true);
-  for (const e of s.coins) {
-    if (!Array.isArray(e)) continue;
-    if (e.length >= 8) {
-      const type = TYPE_LIST[e[7]] || 'coin';
-      addCoin(type, { x: e[0], y: e[1], z: e[2] }, { x: e[3], y: e[4], z: e[5], w: e[6] });
-    } else {
-      // a save from the flat version: [x, y, layer, type] in its old table units
-      const [x, y, layer, ti] = e;
-      const type = TYPE_LIST[ti] || 'coin';
-      const z = clamp(y / 100, 0.15, TL - 0.15);
-      const base = layer ? DECK_H : rampH(z + TYPES[type].r);
-      addCoin(type, { x: clamp((x - 150) / 100, -TW / 2 + 0.14, TW / 2 - 0.14), y: base + TYPES[type].h / 2 + 0.01, z });
-    }
-  }
-  settlePusher(0.3);
+    if (s) soundOn = s.soundOn !== false;
+  } catch (e) { /* storage unavailable */ }
 }
 
 // ---------- Start ----------
@@ -5867,7 +5823,7 @@ function frame(ts) {
 }
 
 async function start() {
-  const saved = loadState();
+  loadState();
   buildShop();
   setTheme(themeId, { restock: false });
   $('sound').textContent = soundOn ? '🔊' : '🔇';
@@ -5883,8 +5839,7 @@ async function start() {
   buildPusherWorld();
   buildPusherScene();
   applyPusherTheme();
-  if (saved && saved.coins.length) restoreCoins(saved);
-  else fillPusher();
+  fillPusher();
   buildClawWorld();
   buildClawScene();
   applyClawTheme();
