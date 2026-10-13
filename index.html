@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Coin Pusher</title>
+  <script>if (new URLSearchParams(location.search).has('solo')) document.documentElement.classList.add('solo');</script>
   <style>
 :root {
   --bg: #0b0716;
@@ -46,6 +47,33 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .floor {
   display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;
   gap: 4px 20px; padding: 0 0 24px;
+}
+
+/* One game at a time: the tabs (and the link under each machine) swap them, and the new one
+   pops in. The theme shop stays out for both. */
+.game-nav { display: flex; justify-content: center; gap: 8px; margin: 12px 16px 0; flex-wrap: wrap; }
+.game-nav a, .next-game {
+  border-radius: 999px; padding: 8px 16px; font-weight: 800; font-size: .9rem; letter-spacing: .04em;
+  color: var(--text); text-decoration: none; background: #1a1030; box-shadow: inset 0 0 0 2px #3a2366;
+  transition: transform .12s, box-shadow .12s, background .12s;
+}
+.game-nav a:hover, .next-game:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 2px var(--neon-cyan), 0 0 14px rgba(46,242,255,.35); }
+.game-nav a[aria-current="page"] {
+  background: linear-gradient(180deg, #ff6fbf, var(--neon-pink)); color: #2a0018;
+  box-shadow: 0 0 16px rgba(255,62,165,.6);
+}
+.next-game { display: block; text-align: center; margin-top: 12px; }
+body:not([data-game="claw"]) [data-game-part="claw"],
+body[data-game="claw"] [data-game-part="pusher"] { display: none; }
+/* ?solo: one game only, for embedding on its own page */
+.solo .game-nav, .solo .next-game { display: none; }
+.game-out { animation: gameOut .22s ease-in forwards; pointer-events: none; }
+.game-in { animation: gameIn .55s cubic-bezier(.3, 1.45, .55, 1) both; }
+@keyframes gameOut { to { opacity: 0; transform: scale(.82) translateY(24px); } }
+@keyframes gameIn {
+  0% { opacity: 0; transform: scale(.55) translateY(60px); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: none; }
 }
 
 .cabinet {
@@ -400,20 +428,39 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
 }
 :root[data-theme="candy"] .marquee { background: linear-gradient(180deg, #6e2252, #3a1534); box-shadow: inset 0 0 0 2px #c2477f, inset 0 0 24px rgba(126,232,200,.25); }
 :root[data-theme="candy"] .shelf { background: linear-gradient(180deg, #6e2252, #3a1534); box-shadow: inset 0 0 0 2px #c2477f; }
+:root[data-theme="spooky"] { --bg: #08050c; --cab: #1a0f24; --cab2: #2e1a3a; --neon-pink: #ff8a1f; --neon-cyan: #7dff6b; --muted: #b8a8c8; }
+:root[data-theme="spooky"] body {
+  background-image:
+    radial-gradient(circle at 82% 12%, rgba(255,240,200,.35) 0 38px, rgba(255,240,200,.08) 40px, transparent 140px),
+    radial-gradient(ellipse at 50% 100%, rgba(255,138,31,.18), transparent 55%),
+    radial-gradient(circle at 20% 30%, rgba(125,255,107,.18) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 70% 70%, rgba(255,138,31,.2) 0 1.5px, transparent 2.5px);
+  background-size: 100% 100%, 100% 100%, 110px 110px, 140px 140px;
+}
+:root[data-theme="spooky"] .cabinet, :root[data-theme="spooky"] .claw-cab, :root[data-theme="spooky"] .shop {
+  background: linear-gradient(180deg, #2e1a3a, #1a0f24 30%, #0e0816);
+  box-shadow: 0 0 0 3px #4a2a5a, 0 0 0 6px #08050c, 0 0 40px rgba(255,138,31,.28), 0 20px 50px rgba(0,0,0,.7);
+}
+:root[data-theme="spooky"] .marquee { background: linear-gradient(180deg, #24122e, #120a1a); box-shadow: inset 0 0 0 2px #4a2a5a, inset 0 0 24px rgba(125,255,107,.18); }
+:root[data-theme="spooky"] .shelf { background: linear-gradient(180deg, #24122e, #120a1a); box-shadow: inset 0 0 0 2px #4a2a5a; }
 :root[data-theme="ocean"] .shelf { background: linear-gradient(180deg, #0d3f5e, #062237); box-shadow: inset 0 0 0 2px #1d6a8a; }
 :root[data-theme="space"] .shelf { background: linear-gradient(180deg, #1b1240, #0a0820); box-shadow: inset 0 0 0 2px #3b2f7a; }
 :root[data-theme="ocean"] .marquee { background: linear-gradient(180deg, #0d3f5e, #062237); box-shadow: inset 0 0 0 2px #1d6a8a, inset 0 0 24px rgba(61,245,214,.25); }
 :root[data-theme="space"] .marquee { background: linear-gradient(180deg, #1b1240, #0a0820); box-shadow: inset 0 0 0 2px #3b2f7a, inset 0 0 24px rgba(178,107,255,.3); }
 
 @media (prefers-reduced-motion: reduce) {
-  .marquee h1, .bulbs i, .reel.hit, #freeReady { animation: none !important; }
+  .marquee h1, .bulbs i, .reel.hit, #freeReady, .game-out, .game-in { animation: none !important; }
 }
   </style>
 </head>
 <body>
   <div class="arcade-sign">★ ARCADE ★</div>
+  <nav class="game-nav" aria-label="Games">
+    <a href="#coin-pusher" data-go="pusher">🪙 Coin Pusher</a>
+    <a href="#claw-machine" data-go="claw">🧸 Claw Machine</a>
+  </nav>
   <main class="floor">
-  <div class="cabinet">
+  <div class="cabinet" data-game-part="pusher">
     <header class="marquee" id="marquee">
       <div class="bulbs"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <h1>COIN <span>PUSHER</span></h1>
@@ -461,9 +508,20 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
         <li>Running low? You also get a free credit every 15 seconds while you have fewer than 5.</li>
       </ul>
     </details>
+    <a class="next-game" href="#claw-machine">🧸 Play the Claw Machine →</a>
   </div>
 
-  <section class="claw-cab" id="clawCab" aria-label="Claw machine">
+  <section class="changer" id="changer" data-game-part="pusher" aria-label="Coin machine: free coins every day">
+    <h2><small>FREE DAILY</small>COIN MACHINE</h2>
+    <div class="screen" id="changerScreen"></div>
+    <div class="streak-label" id="streakLabel">DAILY STREAK</div>
+    <div class="streak" id="streak"></div>
+    <button class="dispense-btn" id="dispense">DISPENSE</button>
+    <div class="chute" id="chute" aria-hidden="true"><canvas id="chuteCanvas"></canvas></div>
+    <div class="hint">One free payout per day. Resets at midnight.</div>
+  </section>
+
+  <section class="claw-cab" id="clawCab" data-game-part="claw" aria-label="Claw machine">
     <header class="marquee">
       <div class="bulbs"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <h1>CLAW <span>MACHINE</span></h1>
@@ -500,16 +558,6 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
         <div class="shelf-grid" id="shelf"></div>
       </section>
 
-  <section class="changer" id="changer" aria-label="Coin machine: free coins every day">
-    <h2><small>FREE DAILY</small>COIN MACHINE</h2>
-    <div class="screen" id="changerScreen"></div>
-    <div class="streak-label" id="streakLabel">DAILY STREAK</div>
-    <div class="streak" id="streak"></div>
-    <button class="dispense-btn" id="dispense">DISPENSE</button>
-    <div class="chute" id="chute" aria-hidden="true"><canvas id="chuteCanvas"></canvas></div>
-    <div class="hint">One free payout per day. Resets at midnight.</div>
-  </section>
-
     <details class="help">
       <summary>How to play</summary>
       <ul>
@@ -519,6 +567,7 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
         <li>Prizes you win go on your <b>Prize Shelf</b>. Rare prizes are heavier and harder to hold.</li>
       </ul>
     </details>
+    <a class="next-game" href="#coin-pusher">🪙 Play the Coin Pusher →</a>
   </section>
 
   <section class="shop" id="shop" aria-label="Theme shop">
@@ -751,6 +800,12 @@ const THEMES = {
     pusher: { bg: '#2c0d28', hemi: ['#ffd6ee', '#4a1840'], felt: ['#6e2252', '#9a3a72'], ramp: '#c95a96', wall: ['#c2477f', '#6e1d4a'], side: '#4a1840', back: '#2c0d28', tray: '#4a1840' },
     claw: { bg: '#3a1534', hemi: ['#f2c2dd', '#4a1840'], walls: 'candy', back: ['#c8578f', '#ffd6ea'], side: ['#4fa88a', '#ff9fd0'], floor: 'frosting', floorColor: '#d97aab', base: '#6a2458' },
   },
+  spooky: {
+    name: 'Spooky Night', blurb: 'Stone walls, a moonlit graveyard, flickering jack-o\'-lanterns, drifting fog, and cute monsters to catch.',
+    price: 700, points: 21, a: '#ff8a1f', b: '#7dff6b', ambient: 'fog',
+    pusher: { bg: '#0b0612', hemi: ['#c9b8ff', '#120a1a'], felt: ['#16261a', '#22381f'], ramp: '#3a4a2a', wall: ['#2e2440', '#120a1a'], side: '#150c1f', back: '#0b0612', tray: '#1a0f24' },
+    claw: { bg: '#0b0612', hemi: ['#cbbcff', '#140a20'], walls: 'bricks', back: ['#3a3248', '#1a1424'], side: ['#2c2638', '#16101e'], floor: 'graveyard', floorColor: '#2c3a22', base: '#1a0f24' },
+  },
   space: {
     name: 'Outer Space', blurb: 'A starfield, a moon-rock floor, ringed planets, and rockets, aliens and robots to win.',
     price: 600, points: 18, a: '#b26bff', b: '#6be3ff', ambient: 'stars',
@@ -758,7 +813,7 @@ const THEMES = {
     claw: { bg: '#05040f', hemi: ['#d2ccff', '#120e30'], walls: 'stars', back: ['#0b0922', '#ffffff'], side: ['#090718', '#ffffff'], floor: 'moon', floorColor: '#8e8ba3', base: '#0d0a22' },
   },
 };
-const THEME_ORDER = ['neon', 'ocean', 'candy', 'space'];
+const THEME_ORDER = ['neon', 'ocean', 'candy', 'space', 'spooky'];
 let themeId = 'neon';
 let ownedThemes = ['neon'];
 const theme = () => THEMES[themeId];
@@ -801,6 +856,16 @@ function wallPattern(kind, base, mark, repeat) {
       g.fillStyle = '#ffffff';
       for (let i = 0; i < 40; i++) { g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 2.5, 0, Math.PI * 2); g.fill(); }
       g.globalAlpha = 1;
+    } else if (kind === 'bricks') {
+      // old stone blocks with dark mortar and the odd crack
+      g.fillStyle = mark;
+      for (let row = 0; row < 8; row++) {
+        g.fillRect(0, row * 32, w, 3);
+        for (let x = (row % 2) * 32; x < w + 64; x += 64) g.fillRect(x, row * 32, 3, 32);
+      }
+      for (let i = 0; i < 60; i++) { g.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '0,0,0'},${Math.random() * 0.08})`; g.fillRect(Math.random() * w, Math.random() * h, 6 + Math.random() * 20, 3 + Math.random() * 10); }
+      g.strokeStyle = 'rgba(0,0,0,.4)'; g.lineWidth = 1.5;
+      for (let i = 0; i < 4; i++) { let x = Math.random() * w, y = Math.random() * h; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 4; k++) { x += rand(-8, 8); y += rand(4, 10); g.lineTo(x, y); } g.stroke(); }
     } else if (kind === 'stars') {
       for (const [x, y, c] of [[60, 70, 'rgba(178,107,255,.25)'], [190, 180, 'rgba(107,227,255,.18)']]) {
         const grad = g.createRadialGradient(x, y, 0, x, y, 110);
@@ -833,6 +898,18 @@ function floorPattern(kind, color) {
         g.save(); g.translate(Math.random() * w, Math.random() * h); g.rotate(Math.random() * Math.PI);
         g.fillStyle = cols[i % cols.length]; g.fillRect(-4, -1.5, 8, 3); g.restore();
       }
+    } else if (kind === 'graveyard') {
+      // tufty dark grass with fallen autumn leaves
+      for (let i = 0; i < 900; i++) {
+        const x = Math.random() * w, y = Math.random() * h;
+        g.strokeStyle = Math.random() < 0.5 ? 'rgba(90,130,60,.5)' : 'rgba(20,30,15,.5)'; g.lineWidth = 1.5;
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + rand(-3, 3), y - rand(4, 9)); g.stroke();
+      }
+      for (let i = 0; i < 40; i++) {
+        g.save(); g.translate(Math.random() * w, Math.random() * h); g.rotate(Math.random() * Math.PI * 2);
+        g.fillStyle = ['#ff8a1f', '#c94a1a', '#e0b030', '#8a3a1a'][i % 4];
+        g.beginPath(); g.ellipse(0, 0, 6, 3, 0, 0, Math.PI * 2); g.fill(); g.restore();
+      }
     } else if (kind === 'moon') {
       for (let i = 0; i < 14; i++) {
         const x = Math.random() * w, y = Math.random() * h, r = 6 + Math.random() * 18;
@@ -845,7 +922,7 @@ function floorPattern(kind, color) {
 
 // bubbles rising, or stars twinkling, inside a box
 function ambientParticles(kind, box3) {
-  const n = kind === 'bubbles' ? 70 : kind === 'sprinkles' ? 90 : 110;
+  const n = kind === 'bubbles' ? 70 : kind === 'sprinkles' ? 90 : kind === 'fog' ? 45 : 110;
   const pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
     pos[i * 3] = rand(box3.min.x, box3.max.x);
@@ -854,6 +931,11 @@ function ambientParticles(kind, box3) {
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  if (kind === 'fog') {
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ map: glowTex, size: 1.1, color: '#b8c8dc', transparent: true, opacity: 0.09, depthWrite: false }));
+    pts.userData = { kind, box3, speed: Array.from({ length: n }, () => rand(0.05, 0.18)) };
+    return pts;
+  }
   if (kind === 'sprinkles') {
     const cols = ['#ffd23e', '#7ee8c8', '#8fb8ff', '#ffffff', '#ff6fb5', '#b26bff'].map((c) => new THREE.Color(c));
     const col = new Float32Array(n * 3);
@@ -873,7 +955,15 @@ function ambientParticles(kind, box3) {
 function animateParticles(pts, dt, t) {
   if (!pts) return;
   const { kind, box3, speed } = pts.userData;
-  if (kind === 'sprinkles') {
+  if (kind === 'fog') {
+    const a = pts.geometry.attributes.position;
+    for (let i = 0; i < a.count; i++) {
+      let x = a.getX(i) + speed[i] * dt;
+      if (x > box3.max.x) x = box3.min.x;
+      a.setX(i, x);
+    }
+    a.needsUpdate = true;
+  } else if (kind === 'sprinkles') {
     const a = pts.geometry.attributes.position;
     for (let i = 0; i < a.count; i++) {
       let y = a.getY(i) - speed[i] * dt;
@@ -902,6 +992,75 @@ function kelp(height, color, seed) {
   const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.035, 6), new THREE.MeshStandardMaterial({ color, roughness: 0.6 }));
   m.castShadow = true;
   m.userData.sway = seed;
+  return m;
+}
+// a rounded gravestone with RIP and a little cross on top
+function gravestone(k) {
+  const g = new THREE.Group();
+  const stone = new THREE.MeshStandardMaterial({ color: '#7a7488', roughness: 0.95 });
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(0.5 * k, 0.55 * k, 0.12 * k), stone);
+  slab.position.y = 0.275 * k;
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.25 * k, 0.25 * k, 0.12 * k, 24, 1, false, 0, Math.PI), stone);
+  top.rotation.set(Math.PI / 2, Math.PI / 2, 0);
+  top.position.y = 0.55 * k;
+  const rip = new THREE.Mesh(new THREE.PlaneGeometry(0.36 * k, 0.14 * k), new THREE.MeshBasicMaterial({ map: textTex('R.I.P.', { color: '#2a2438', font: '900 40px system-ui, sans-serif' }), transparent: true }));
+  rip.position.set(0, 0.45 * k, 0.061 * k);
+  g.add(slab, top, rip);
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+// a jack-o'-lantern whose carved face flickers like a candle
+function jackLantern(k) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(k, 24, 16), new THREE.MeshStandardMaterial({ color: '#ff7a1a', roughness: 0.7 }));
+  body.scale.y = 0.8;
+  body.position.y = 0.8 * k;
+  const glowMat = new THREE.MeshStandardMaterial({ color: '#000', emissive: '#ffb52e', emissiveIntensity: 2 });
+  const face = new THREE.Group();
+  for (const s of [-1, 1]) { const eye = new THREE.Mesh(new THREE.ConeGeometry(0.18 * k, 0.05 * k, 3), glowMat); eye.rotation.x = Math.PI / 2; eye.position.set(s * 0.35 * k, 0.95 * k, 0.86 * k); face.add(eye); }
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.4 * k, 0.07 * k, 6, 20, Math.PI), glowMat);
+  mouth.rotation.z = Math.PI;
+  mouth.position.set(0, 0.75 * k, 0.83 * k);
+  face.add(mouth);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.08 * k, 0.12 * k, 0.3 * k, 8), new THREE.MeshStandardMaterial({ color: '#4a6a22' }));
+  stem.position.y = 1.55 * k;
+  g.add(body, face, stem);
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  g.userData.flicker = glowMat;
+  return g;
+}
+// a bare, twisted tree
+function deadTree(height) {
+  const g = new THREE.Group();
+  const bark = new THREE.MeshStandardMaterial({ color: '#2a2030', roughness: 1 });
+  const limb = (from, to, rad) => {
+    const curve = new THREE.CatmullRomCurve3([from, from.clone().lerp(to, 0.5).add(new THREE.Vector3(rand(-0.08, 0.08), 0, rand(-0.05, 0.05))), to]);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 10, rad, 6), bark));
+  };
+  const top = new THREE.Vector3(0.05, height, 0);
+  limb(new THREE.Vector3(0, 0, 0), top, 0.06);
+  limb(new THREE.Vector3(0.02, height * 0.6, 0), new THREE.Vector3(0.45, height * 0.85, 0.05), 0.035);
+  limb(new THREE.Vector3(0.03, height * 0.75, 0), new THREE.Vector3(-0.4, height * 1.0, 0.02), 0.03);
+  limb(top, new THREE.Vector3(0.3, height + 0.25, 0), 0.025);
+  limb(new THREE.Vector3(0.25, height * 0.78, 0.03), new THREE.Vector3(0.35, height * 0.98, 0.04), 0.02);
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+// a little bat stuck flat to the wall
+function wallBat(k) {
+  const m = new THREE.Mesh(new THREE.ShapeGeometry((() => {
+    const sh = new THREE.Shape();
+    sh.moveTo(0, -0.2 * k);
+    sh.quadraticCurveTo(0.3 * k, -0.1 * k, 0.9 * k, 0.15 * k);
+    sh.quadraticCurveTo(0.6 * k, 0, 0.55 * k, -0.15 * k);
+    sh.quadraticCurveTo(0.4 * k, 0, 0.25 * k, -0.1 * k);
+    sh.lineTo(0.12 * k, 0.2 * k); sh.lineTo(0, 0.08 * k); sh.lineTo(-0.12 * k, 0.2 * k);
+    sh.lineTo(-0.25 * k, -0.1 * k);
+    sh.quadraticCurveTo(-0.4 * k, 0, -0.55 * k, -0.15 * k);
+    sh.quadraticCurveTo(-0.6 * k, 0, -0.9 * k, 0.15 * k);
+    sh.quadraticCurveTo(-0.3 * k, -0.1 * k, 0, -0.2 * k);
+    return sh;
+  })()), new THREE.MeshBasicMaterial({ color: '#0a0610', side: THREE.DoubleSide }));
   return m;
 }
 // a lollipop tree: a striped stick with a swirly disc on top
@@ -1023,6 +1182,22 @@ const EMBLEMS = {
     g.bezierCurveTo(204, 104, 196, 150, 128, 196);
     g.fill();
   },
+  pumpkin(g, lo) {
+    // a jack-o'-lantern: ribbed, with a stem and a carved grin
+    for (const [dx, k] of [[-34, 0.75], [34, 0.75], [0, 1]]) { g.beginPath(); g.ellipse(128 + dx, 138, 46 * k, 58, 0, 0, Math.PI * 2); g.fill(); }
+    g.fillRect(120, 66, 16, 22);
+    g.fillStyle = lo;
+    for (const s of [-1, 1]) { g.beginPath(); g.moveTo(128 + s * 18, 128); g.lineTo(128 + s * 44, 128); g.lineTo(128 + s * 31, 106); g.fill(); }
+    g.beginPath(); g.moveTo(88, 150); g.quadraticCurveTo(128, 186, 168, 150); g.quadraticCurveTo(128, 168, 88, 150); g.fill();
+  },
+  bat(g) {
+    g.beginPath(); g.moveTo(128, 110);
+    g.quadraticCurveTo(160, 96, 214, 118); g.quadraticCurveTo(188, 124, 186, 146); g.quadraticCurveTo(170, 134, 156, 146);
+    g.lineTo(140, 162); g.lineTo(128, 150); g.lineTo(116, 162); g.lineTo(100, 146);
+    g.quadraticCurveTo(86, 134, 70, 146); g.quadraticCurveTo(68, 124, 42, 118); g.quadraticCurveTo(96, 96, 128, 110);
+    g.fill();
+    g.beginPath(); g.moveTo(116, 112); g.lineTo(112, 94); g.lineTo(124, 108); g.lineTo(132, 108); g.lineTo(144, 94); g.lineTo(140, 112); g.fill();
+  },
   planet(g) {
     g.beginPath(); g.arc(128, 128, 42, 0, Math.PI * 2); g.fill();
     g.lineWidth = 12;
@@ -1045,6 +1220,12 @@ const COIN_THEMES = {
     big:  { color: '#7ee8c8', metal: 0, rough: 0.2 },
     star: { color: '#ffd23e', metal: 0.05, rough: 0.2, glow: '#ffd23e' },
     gem:  { color: '#c98bff', metal: 0.05, rough: 0.2, glow: '#c98bff', emblem: 'heart' },
+  },
+  spooky: {
+    coin: { color: '#ff8a1f', metal: 0.35, rough: 0.4, emblem: 'pumpkin' },                    // pumpkin pennies
+    big:  { color: '#e6dfcc', metal: 0.05, rough: 0.6 },                                       // old bone
+    star: { color: '#7dff6b', metal: 0.2, glow: '#7dff6b' },                                   // slime
+    gem:  { color: '#9a5bff', metal: 0.3, rough: 0.15, glow: '#b26bff', emblem: 'bat' },
   },
   space: {
     coin: { color: '#d2d9e8', metal: 1, rough: 0.2, emblem: 'planet' },                       // chrome
@@ -1555,6 +1736,25 @@ function applyPusherTheme() {
       parts.deco.add(k);
     });
     parts.deco.add(ambientParticles('bubbles', new THREE.Box3(new THREE.Vector3(-TW / 2 - 0.4, -0.5, -0.45), new THREE.Vector3(TW / 2 + 0.4, 2.6, 1.6))));
+  } else if (th.ambient === 'fog') {
+    // gravestones and jack-o'-lanterns beside the table, fog rolling across it
+    [[-1, 0.5, 0.75], [1, 1.4, 0.85]].forEach(([s, z, k]) => {
+      const gs = gravestone(k);
+      gs.position.set(s * (TW / 2 + 0.3), -0.25, z);
+      gs.rotation.y = -s * 0.5;
+      parts.deco.add(gs);
+    });
+    [[-1, 1.6, 0.15], [1, 0.4, 0.13], [-1, 2.5, 0.12]].forEach(([s, z, k]) => {
+      const jl = jackLantern(k);
+      jl.position.set(s * (TW / 2 + 0.28), 0, z);
+      parts.deco.add(jl);
+    });
+    [[-1.1, WALL_TOP + 0.9, 0.2], [0.9, WALL_TOP + 1.2, 0.16], [0.1, WALL_TOP + 1.4, 0.13]].forEach(([x, y, k]) => {
+      const b = wallBat(k);
+      b.position.set(x, y, -0.54);
+      parts.deco.add(b);
+    });
+    parts.deco.add(ambientParticles('fog', new THREE.Box3(new THREE.Vector3(-TW / 2 - 1, 0.05, 0.2), new THREE.Vector3(TW / 2 + 1, 0.6, TL))));
   } else if (th.ambient === 'sprinkles') {
     // lollipop trees beside the table and sprinkles drifting down
     [[-1, 0.4, 1.7, '#ff6fb5'], [-1, 1.5, 1.3, '#7ee8c8'], [1, 0.7, 1.5, '#ffd23e'], [1, 1.9, 1.8, '#b26bff']].forEach(([s, z, hgt, c]) => {
@@ -1579,12 +1779,15 @@ function animateDeco(group) {
   for (const o of group.children) {
     if (o.userData.sway !== undefined) o.rotation.z = Math.sin(t * 1.2 + o.userData.sway) * 0.09;
     if (o.isPoints) animateParticles(o, dt, t);
+    if (o.userData.flicker) o.userData.flicker.emissiveIntensity = 1.6 + 0.5 * Math.sin(t * 13 + o.position.x * 7) + 0.3 * Math.sin(t * 31 + o.position.z * 5);
   }
 }
 
 let cw = 0, ch = 0;
 function resizePusher() {
-  cw = $('game').parentElement.clientWidth;
+  const w = $('game').parentElement.clientWidth;
+  if (!w) return;   // its game is put away; it's sized again when it comes back out
+  cw = w;
   ch = Math.round(cw * 1.18);
   pusher.renderer.setPixelRatio(dpr());
   pusher.renderer.setSize(cw, ch, false);
@@ -1854,16 +2057,62 @@ const dropBtn = $('drop');
 dropBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); if (pusher.world) startHold(() => dropCoin(chuteX)); });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => dropBtn.addEventListener(ev, stopHold));
 
+// ---------- Switching games ----------
+// One machine is out at a time. The address says which (#coin-pusher or #claw-machine), so the
+// tabs and links are plain links, and Back goes to the game you were on.
+const GAME_HASH = { pusher: '#coin-pusher', claw: '#claw-machine' };
+const GAME_TITLE = { pusher: 'Coin Pusher', claw: 'Claw Machine' };
+let game = null, fitGames = () => {}, swapTimer = 0;
+const gameFromHash = () => Object.keys(GAME_HASH).find((g) => GAME_HASH[g] === location.hash);
+function showGame(id, animate = true) {
+  if (id === game) return;
+  const prev = game;
+  game = id;
+  try { localStorage.setItem('arcadeGame', id); } catch (e) { /* storage blocked */ }
+  document.title = `${GAME_TITLE[id]} · Arcade`;
+  document.querySelectorAll('.game-nav a').forEach((a) => {
+    if (a.dataset.go === id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  clearTimeout(swapTimer);
+  const parts = (g) => document.querySelectorAll(`[data-game-part="${g}"]`);
+  const swap = () => {
+    if (prev) parts(prev).forEach((el) => el.classList.remove('game-out'));
+    document.body.dataset.game = id;
+    parts(id).forEach((el) => {
+      el.classList.remove('game-in', 'game-out');
+      if (animate) { void el.offsetWidth; el.classList.add('game-in'); }
+    });
+    fitGames();
+    if (animate) window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!prev || !animate || reduced) { swap(); return; }
+  parts(prev).forEach((el) => el.classList.add('game-out'));
+  swapTimer = setTimeout(swap, 220);
+}
+document.addEventListener('animationend', (e) => e.target.classList.remove('game-in'));
+window.addEventListener('hashchange', () => showGame(gameFromHash() || 'pusher'));
+{
+  let first = gameFromHash();
+  if (!first) { try { first = localStorage.getItem('arcadeGame'); } catch (e) { /* storage blocked */ } }
+  if (!GAME_HASH[first]) first = 'pusher';
+  history.replaceState(null, '', GAME_HASH[first]);
+  showGame(first, false);
+}
+
 let spaceDown = false;
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'KeyQ' || e.code === 'KeyE') { turnClawView(e.code === 'KeyQ' ? -Math.PI / 4 : Math.PI / 4); return; }
+  if (game === 'claw') {
+    if (e.code === 'KeyQ' || e.code === 'KeyE') { turnClawView(e.code === 'KeyQ' ? -Math.PI / 4 : Math.PI / 4); return; }
+    if (e.code === 'Space' && !e.repeat && claw.state === 'idle') { e.preventDefault(); clawPlay(); return; }
+  }
   if (claw.state === 'aim') {
     const k = { ArrowLeft: ['x', -1], ArrowRight: ['x', 1], ArrowUp: ['z', -1], ArrowDown: ['z', 1] }[e.code];
     if (k) { e.preventDefault(); claw.move[k[0]] = k[1]; }
     if (e.code === 'Space' && !e.repeat) { e.preventDefault(); clawPlay(); }
     return;
   }
-  if (e.code !== 'Space' || spaceDown || !pusher.world) return;
+  if (e.code !== 'Space' || spaceDown || !pusher.world || game !== 'pusher') return;
   e.preventDefault();
   spaceDown = true;
   dropBtn.classList.add('pressed');
@@ -2130,6 +2379,21 @@ const PRIZE_SETS = {
     { id: 'castle',     emoji: '🏰', name: 'Candy Castle', rarity: 'super',  r: 0.27, weight: 1.8,  chance: 0.8, look: 'castle',     color: '#ffb3d9' },
     { id: 'rainbow',    emoji: '🌈', name: 'Rainbow',      rarity: 'super',  r: 0.27, weight: 1.8,  chance: 0.8, look: 'rainbow',    color: '#ffffff' },
   ],
+  spooky: [
+    { id: 'ghost',       emoji: '👻', name: 'Ghost',         rarity: 'common', r: 0.28, weight: 0.9,  chance: 12,  look: 'ghost',       color: '#f6f3fb' },
+    { id: 'pumpkin',     emoji: '🎃', name: 'Jack',          rarity: 'common', r: 0.29, weight: 1,    chance: 12,  look: 'pumpkin',     color: '#ff8a1f' },
+    { id: 'bat',         emoji: '🦇', name: 'Bat',           rarity: 'common', r: 0.28, weight: 0.95, chance: 12,  look: 'bat',         color: '#4a3a62' },
+    { id: 'blackcat',    emoji: '🐈‍⬛', name: 'Black Cat',  rarity: 'common', r: 0.29, weight: 1,    chance: 12,  look: 'blackcat',    color: '#2e2a36' },
+    { id: 'mummy',       emoji: '🤕', name: 'Mummy',         rarity: 'common', r: 0.29, weight: 1,    chance: 10,  look: 'mummy',       color: '#ece5d0' },
+    { id: 'spider',      emoji: '🕷️', name: 'Spider',        rarity: 'common', r: 0.28, weight: 1,    chance: 10,  look: 'spider',      color: '#3a3044' },
+    { id: 'skull',       emoji: '💀', name: 'Skully',        rarity: 'common', r: 0.27, weight: 1,    chance: 8,   look: 'skull',       color: '#f4efe2' },
+    { id: 'owl',         emoji: '🦉', name: 'Owl',           rarity: 'common', r: 0.28, weight: 1,    chance: 8,   look: 'owl',         color: '#8a5a3a' },
+    { id: 'vampire',     emoji: '🧛', name: 'Vampire',       rarity: 'rare',   r: 0.31, weight: 1.35, chance: 3,   look: 'vampire',     color: '#ece4f4' },
+    { id: 'frank',       emoji: '🧟', name: 'Frankie',       rarity: 'rare',   r: 0.31, weight: 1.35, chance: 3,   look: 'frank',       color: '#8acb6e' },
+    { id: 'witch',       emoji: '🧙', name: 'Witch',         rarity: 'rare',   r: 0.3,  weight: 1.3,  chance: 3,   look: 'witch',       color: '#ffe0c8' },
+    { id: 'crystalball', emoji: '🔮', name: 'Crystal Ball',  rarity: 'super',  r: 0.26, weight: 1.8,  chance: 0.8, look: 'crystalball', color: '#b26bff' },
+    { id: 'candelabra',  emoji: '🕯️', name: 'Candelabra',    rarity: 'super',  r: 0.26, weight: 1.8,  chance: 0.8, look: 'candelabra',  color: '#ffc93a' },
+  ],
   space: [
     { id: 'alien',     emoji: '👽', name: 'Alien',        rarity: 'common', r: 0.29, weight: 1,    chance: 12,  look: 'alien',     color: '#7be36b' },
     { id: 'rocket',    emoji: '🚀', name: 'Rocket',       rarity: 'common', r: 0.28, weight: 1,    chance: 12,  look: 'rocket',    color: '#f4f4f8' },
@@ -2213,6 +2477,7 @@ const PRIZE_FABRIC = {
   bunny: 'minky', cat: 'knit', dog: 'cord', frog: 'velvet', duck: 'minky', fox: 'knit', unicorn: 'velvet', dragon: 'cord', octopus: 'minky',
   clownfish: 'velvet', puffer: 'minky', crab: 'knit', turtle: 'cord', whale: 'minky', dolphin: 'velvet', jelly: 'velvet', shark: 'knit', squid: 'minky', lobster: 'cord',
   alien: 'velvet', rocket: 'knit', planet: 'cord', moon: 'minky', starplush: 'velvet', sun: 'knit',
+  ghost: 'minky', pumpkin: 'cord', bat: 'velvet', blackcat: 'velvet', mummy: 'knit', skull: 'minky', vampire: 'velvet', frank: 'cord', witch: 'knit',
   lollipop: 'velvet', cupcake: 'knit', donut: 'minky', icecream: 'knit', candy: 'velvet', cookie: 'cord', chocbar: 'velvet', strawberry: 'minky', cake: 'knit', rainbow: 'velvet',
 };
 const fabricMats = Object.fromEntries(Object.entries(FABRICS).map(([k, f]) => [k, new THREE.MeshPhysicalMaterial({ vertexColors: true, ...f })]));
@@ -2290,6 +2555,9 @@ const PLUSH = {
   dragon:  { belly: '#d9f0a8', pad: '#3f9a5b', spike: '#ffb547', horn: '#fff3c4' },
   octopus: {},
   seal:    { belly: '#e6e9ee', pad: '#9aa1ad' },
+  blackcat: { belly: '#4a4454', pad: '#ff8fb5', inner: '#ff8fb5' },
+  vampire: { belly: '#2a1f36', pad: '#2a1f36', limb: '#2a1f36' },
+  frank:   { belly: '#3a3448', pad: '#3a3448', limb: '#3a3448' },
   alien:   { belly: '#c8f5b8', pad: '#4fb041' },
 };
 
@@ -2792,6 +3060,156 @@ const CUSTOM_LOOKS = {
     smileAt(-0.66, -0.57, 0.24, 0.025);
     blushAt(0.66, -0.55, 0.2);
   },
+  ghost({ part, S, pair, vc, t, eyeAt, smileAt, blushAt }) {
+    const sheet = vc('fab', t.color);
+    // a sheet over a round head, flaring out to a scalloped hem
+    const prof = [[0, 0.95], [0.3, 0.9], [0.52, 0.72], [0.62, 0.45], [0.64, 0.1], [0.68, -0.3], [0.76, -0.62], [0.8, -0.72], [0, -0.72]];
+    part(new THREE.LatheGeometry(prof.map(([x, y]) => new THREE.Vector2(x * t.r, y * t.r)), 40), sheet, [0, 0, 0]);
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; part(S(0.16, 12, 8), sheet, [Math.cos(a) * 0.68, -0.76, Math.sin(a) * 0.68]); }
+    pair((s) => part(S(0.15, 12, 8), sheet, [s * 0.66, 0.0, 0.2], [0, 0, s * 0.6], [1, 0.6, 0.8]));
+    pair((s) => {
+      part(S(0.11, 16, 12), vc('gloss', '#141216'), [s * 0.2, 0.38, 0.5], [0, s * 0.3, 0], [0.85, 1.25, 0.5]);
+      part(S(0.03, 8, 6), vc('gloss', '#ffffff'), [s * 0.2 - 0.03, 0.45, 0.55]);
+    });
+    part(S(0.07, 12, 8), vc('gloss', '#3a1d22'), [0, 0.16, 0.6], [0, 0, 0], [1, 1.3, 0.5]);
+    blushAt(0.36, 0.25, 0.5);
+  },
+  pumpkin({ part, S, C, vc, t, B }) {
+    const orange = vc('fab', t.color);
+    // ribbed: eight swollen lobes round the middle
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      part(S(0.42, 20, 14), orange, [Math.cos(a) * 0.32, -0.05, Math.sin(a) * 0.32], [0, -a, 0], [0.7, 0.95, 1.05]);
+    }
+    part(S(0.55, 24, 16), orange, [0, -0.05, 0], [0, 0, 0], [1, 0.85, 1]);
+    part(new THREE.CylinderGeometry(0.06 * t.r, 0.09 * t.r, 0.3 * t.r, 8), vc('fab', '#5a7a2a'), [0.03, 0.58, 0], [0, 0, -0.25]);
+    part(S(0.14, 12, 8), vc('fab', '#4f9a3a'), [0.18, 0.5, 0.05], [0.3, 0, 0.5], [1, 0.25, 0.6]);
+    // a happy carved face, glowing from the candle inside
+    const glow = vc('gloss', '#ffd23e');
+    for (const s of [-1, 1]) part(C(0.1, 0.03, 3), glow, [s * 0.22, 0.12, 0.66], [Math.PI / 2, 0, 0], [1.3, 1, 1.2]);
+    part(C(0.06, 0.03, 3), glow, [0, -0.02, 0.69], [Math.PI / 2, 0, Math.PI], [1, 1, 1]);
+    part(new THREE.TorusGeometry(t.r * 0.24, t.r * 0.05, 6, 20, Math.PI), glow, [0, -0.08, 0.64], [0.2, 0, Math.PI]);
+    part(B(0.06, 0.06, 0.03), orange, [0, -0.3, 0.66]);
+  },
+  bat({ part, S, C, pair, vc, t, eyeAt, smileAt }) {
+    const fur = vc('fab', t.color), wing = vc('fab', '#3e2f52');
+    part(S(0.45, 28, 18), fur, [0, 0, 0], [0, 0, 0], [1, 1.05, 0.95]);
+    pair((s) => {
+      part(C(0.14, 0.3), fur, [s * 0.26, 0.48, 0], [0, 0, -s * 0.35]);
+      part(C(0.08, 0.2), vc('fab', '#ff8fb5'), [s * 0.25, 0.46, 0.05], [0, 0, -s * 0.35], [1, 1, 0.5]);
+      // scalloped wings, spread wide
+      for (let k = 0; k < 3; k++) part(S(0.28, 16, 10), wing, [s * (0.5 + k * 0.2), 0.1 - k * 0.08, -0.05], [0, 0, s * (0.3 + k * 0.25)], [1, 0.55, 0.12]);
+      part(S(0.09), fur, [s * 0.18, -0.48, 0.1]);
+      eyeAt(s * 0.17, 0.12, 0.38, 0.11);
+      part(C(0.025, 0.07), vc('gloss', '#ffffff'), [s * 0.05, -0.1, 0.42], [Math.PI, 0, 0]);
+    });
+    smileAt(0, -0.05, 0.43, 0.035);
+  },
+  mummy({ part, S, Cap, pair, vc, t, eyeAt, smileAt, blushAt }) {
+    const cloth = vc('fab', t.color), wrap = vc('fab', '#d4c8a8');
+    part(S(0.5, 28, 18), cloth, [0, 0.3, 0]);
+    part(S(0.46, 28, 18), cloth, [0, -0.38, 0], [0, 0, 0], [1, 1.05, 0.95]);
+    // bandages wound round at all angles
+    [[0.55, 0.15, 0.48], [0.38, -0.2, 0.5], [0.16, 0.25, 0.51], [-0.2, 0.2, 0.47], [-0.42, -0.25, 0.47], [-0.62, 0.15, 0.43]].forEach(([y, tilt, k]) =>
+      part(new THREE.TorusGeometry(t.r * k, t.r * 0.035, 6, 32), wrap, [0, y, 0], [Math.PI / 2 + tilt, 0, tilt * 0.6]));
+    pair((s) => {
+      part(Cap(0.11, 0.3), cloth, [s * 0.36, -0.15, 0.32], [Math.PI / 2 - 0.2, 0, 0]);
+      part(S(0.16), cloth, [s * 0.22, -0.82, 0.12], [0, 0, 0], [1, 0.7, 1.3]);
+    });
+    eyeAt(-0.17, 0.36, 0.42, 0.1);
+    part(new THREE.TorusGeometry(t.r * 0.08, t.r * 0.02, 6, 16, Math.PI), vc('fab', '#3a1d22'), [0.18, 0.33, 0.45], [0, 0, 0]);
+    smileAt(0, 0.16, 0.48, 0.03);
+    blushAt(0.3, 0.2, 0.4);
+  },
+  spider({ part, S, Cap, pair, vc, t, eyeAt, smileAt, blushAt }) {
+    const fur = vc('fab', t.color);
+    part(S(0.42, 28, 18), fur, [0, 0.0, 0.18]);
+    part(S(0.5, 28, 18), fur, [0, 0.08, -0.45], [0, 0, 0], [1, 0.9, 1.1]);
+    part(S(0.16, 12, 8), vc('fab', '#ff5fa0'), [0, 0.5, -0.5], [0, 0, 0], [1, 0.4, 1]);
+    pair((s) => {
+      for (let k = 0; k < 4; k++) {
+        const z = 0.3 - k * 0.22;
+        part(Cap(0.05, 0.3), fur, [s * 0.48, 0.08, z], [0, 0, -s * 0.9]);
+        part(Cap(0.045, 0.32), fur, [s * 0.74, -0.32, z], [0, 0, s * 0.35]);
+      }
+      eyeAt(s * 0.14, 0.12, 0.5, 0.11);
+      part(S(0.04, 8, 6), vc('gloss', '#141216'), [s * 0.08, 0.3, 0.5]);
+    });
+    smileAt(0, -0.05, 0.57, 0.035);
+    blushAt(0.27, -0.02, 0.48);
+  },
+  skull({ part, S, C, pair, vc, t, B, blushAt }) {
+    const bone = vc('fab', t.color);
+    part(S(0.6, 32, 20), bone, [0, 0.12, 0], [0, 0, 0], [1, 0.95, 1]);
+    part(S(0.4, 24, 16), bone, [0, -0.38, 0.12], [0, 0, 0], [1, 0.65, 0.9]);
+    pair((s) => {
+      part(S(0.16, 16, 12), vc('gloss', '#2a1f2e'), [s * 0.22, 0.08, 0.5], [0, s * 0.3, 0], [1, 1.15, 0.45]);
+      part(S(0.035, 8, 6), vc('gloss', '#ffffff'), [s * 0.22 - 0.03, 0.14, 0.56]);
+    });
+    part(C(0.07, 0.04, 3), vc('gloss', '#2a1f2e'), [0, -0.1, 0.57], [Math.PI / 2, 0, Math.PI]);
+    for (let i = -2; i <= 2; i++) part(B(0.07, 0.1, 0.04), vc('gloss', '#ffffff'), [i * 0.08, -0.33, 0.47]);
+    blushAt(0.36, -0.06, 0.45);
+    // a little bow on top
+    pair((s) => part(S(0.14, 12, 8), vc('fab', '#ff4d8d'), [s * 0.15, 0.68, 0.1], [0, 0, s * 0.4], [1, 0.6, 0.6]));
+    part(S(0.07, 10, 8), vc('fab', '#ff4d8d'), [0, 0.66, 0.12]);
+  },
+  owl({ part, S, C, pair, vc, t, B }) {
+    const brown = vc('fab', t.color), cream = vc('fab', '#f2dfc0');
+    part(S(0.65, 32, 20), brown, [0, 0, 0], [0, 0, 0], [1, 1.05, 0.95]);
+    part(S(0.5, 28, 18), cream, [0, -0.15, 0.22], [0, 0, 0], [0.95, 1, 0.75]);
+    for (let r = 0; r < 3; r++) for (let c = -1; c <= 1; c++) part(new THREE.TorusGeometry(t.r * 0.06, t.r * 0.012, 4, 12, Math.PI), vc('fab', '#b08860'), [c * 0.16 + (r % 2) * 0.08, -0.22 - r * 0.15, 0.6 - r * 0.03], [0, 0, Math.PI]);
+    pair((s) => {
+      part(S(0.22, 20, 14), vc('fab', '#f8ecd8'), [s * 0.22, 0.28, 0.48], [0, 0, 0], [1, 1, 0.4]);
+      part(S(0.13, 16, 12), vc('gloss', '#ffb52e'), [s * 0.22, 0.28, 0.55], [0, 0, 0], [1, 1, 0.4]);
+      part(S(0.07, 12, 8), vc('gloss', '#141216'), [s * 0.22, 0.28, 0.59], [0, 0, 0], [1, 1, 0.4]);
+      part(S(0.025, 8, 6), vc('gloss', '#ffffff'), [s * 0.22 - 0.03, 0.32, 0.62]);
+      part(C(0.1, 0.26), brown, [s * 0.38, 0.72, 0], [0, 0, -s * 0.35]);
+      part(S(0.26, 16, 10), brown, [s * 0.6, -0.1, 0], [0, 0, s * 0.25], [0.35, 0.9, 0.8]);
+      part(S(0.09, 10, 8), vc('fab', '#ff9a1f'), [s * 0.18, -0.68, 0.3], [0, 0, 0], [1.2, 0.5, 1.2]);
+    });
+    part(C(0.07, 0.16), vc('fab', '#ff9a1f'), [0, 0.14, 0.62], [Math.PI, 0, 0]);
+  },
+  witch({ part, S, C, Cap, pair, vc, t, eyes, smile, blushAt, B }) {
+    const skin = vc('fab', t.color), dress = vc('fab', '#6a3fb0');
+    part(C(0.55, 0.75, 32), dress, [0, -0.55, 0]);
+    part(S(0.45, 28, 18), skin, [0, 0.12, 0.02]);
+    pair((s) => {
+      for (let k = 0; k < 3; k++) part(S(0.13, 12, 8), vc('fab', '#ff8a1f'), [s * (0.38 + k * 0.03), 0.05 - k * 0.15, -0.05], [0, 0, 0], [0.8, 1.2, 0.8]);
+      part(Cap(0.07, 0.2), dress, [s * 0.36, -0.42, 0.12], [0.4, 0, s * 0.5]);
+    });
+    eyes(0.12, 0.43, 0.15);
+    smile(-0.02, 0.45, 0.035);
+    blushAt(0.27, 0.02, 0.38);
+    // the hat: a wide brim and a tall crooked cone with a gold buckle
+    part(new THREE.CylinderGeometry(t.r * 0.78, t.r * 0.78, t.r * 0.06, 40), vc('fab', '#2e1a4a'), [0, 0.45, 0]);
+    part(C(0.4, 0.62, 28), vc('fab', '#2e1a4a'), [0, 0.76, -0.02], [0, 0, 0]);
+    part(C(0.16, 0.3, 20), vc('fab', '#2e1a4a'), [0.14, 1.1, -0.04], [0, 0, -0.7]);
+    part(new THREE.TorusGeometry(t.r * 0.37, t.r * 0.05, 8, 32), vc('fab', '#7dff6b'), [0, 0.53, -0.02], [Math.PI / 2, 0, 0]);
+    part(B(0.14, 0.12, 0.03), vc('metal', '#ffc93a'), [0, 0.53, 0.36]);
+  },
+  crystalball({ part, S, C, vc, t }) {
+    const gold = vc('metal', '#ffc93a');
+    part(S(0.62, 40, 28), vc('gloss', t.color), [0, 0.22, 0]);
+    part(S(0.3, 24, 16), vc('gloss', '#e8c9ff'), [-0.12, 0.3, 0.2]);
+    part(new THREE.CylinderGeometry(t.r * 0.45, t.r * 0.62, t.r * 0.3, 32), gold, [0, -0.55, 0]);
+    part(new THREE.TorusGeometry(t.r * 0.42, t.r * 0.07, 8, 32), gold, [0, -0.38, 0], [Math.PI / 2, 0, 0]);
+    for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2; part(C(0.07, 0.3), gold, [Math.cos(a) * 0.42, -0.25, Math.sin(a) * 0.42], [Math.sin(a) * 0.4, 0, -Math.cos(a) * 0.4]); }
+    part(new THREE.CylinderGeometry(t.r * 0.7, t.r * 0.7, t.r * 0.08, 32), vc('fab', '#4a1f6e'), [0, -0.74, 0]);
+  },
+  candelabra({ part, S, vc, t }) {
+    const gold = vc('metal', '#ffc93a');
+    const cyl = (a, b, h, seg = 16) => new THREE.CylinderGeometry(a * t.r, b * t.r, h * t.r, seg);
+    part(cyl(0.3, 0.42, 0.14), gold, [0, -0.86, 0]);
+    part(cyl(0.06, 0.08, 0.9), gold, [0, -0.38, 0]);
+    part(S(0.1, 12, 8), gold, [0, -0.56, 0]);
+    part(new THREE.TorusGeometry(t.r * 0.32, t.r * 0.04, 8, 24, Math.PI), gold, [0, 0.06, 0], [0, 0, Math.PI]);
+    for (const x of [-0.32, 0, 0.32]) {
+      part(cyl(0.09, 0.07, 0.06), gold, [x, x ? 0.08 : 0.1, 0]);
+      part(cyl(0.065, 0.065, 0.42), vc('fab', '#fbf6e8'), [x, x ? 0.32 : 0.36, 0]);
+      part(S(0.07, 10, 8), vc('gloss', '#ffb52e'), [x, x ? 0.6 : 0.64, 0], [0, 0, 0], [0.8, 1.6, 0.8]);
+      part(S(0.035, 8, 6), vc('fab', '#fbf6e8'), [x + 0.05, x ? 0.42 : 0.46, 0.05], [0, 0, 0], [1, 1.8, 1]);
+    }
+  },
   cosmicgem({ part, vc, t }) {
     part(new THREE.OctahedronGeometry(t.r * 0.72), vc('gloss', t.color), [0, 0.05, 0], [0, Math.PI / 4, 0], [1, 1.3, 1]);
     part(new THREE.TorusGeometry(t.r * 0.52, t.r * 0.06, 8, 32), vc('metal', '#ffc93a'), [0, 0.05, 0], [Math.PI / 2, 0, 0]);
@@ -2935,7 +3353,13 @@ function buildPrizeTemplate(t) {
     // a fabric tag sewn into the side, with a red band
     part(new THREE.BoxGeometry(0.2 * r, 0.13 * r, 0.012 * r), vc('fab', '#f7f4ee'), [0.42, -0.62, -0.26], [0, 2.2, 0.25]);
     part(new THREE.BoxGeometry(0.2 * r, 0.04 * r, 0.016 * r), vc('fab', '#e8304f'), [0.42, -0.57, -0.26], [0, 2.2, 0.25]);
-    if (L === 'alien') pair((s) => {
+    if (L === 'blackcat') pair((s) => {
+      // glowing cat's eyes with slit pupils
+      part(S(0.1, 16, 12), vc('gloss', '#d7ff3e'), [s * 0.2, 0.33, 0.585], [0, s * 0.25, 0], [1, 1.15, 0.5]);
+      part(S(0.07, 10, 8), eyeMat, [s * 0.2, 0.33, 0.625], [0, 0, 0], [0.3, 1.1, 0.4]);
+      part(S(0.025, 8, 6), shineMat, [s * 0.2 - 0.03, 0.38, 0.64]);
+    });
+    else if (L === 'alien') pair((s) => {
       part(S(0.16, 16, 12), eyeMat, [s * 0.22, 0.32, 0.54], [0, s * 0.3, s * 0.5], [1.25, 0.8, 0.45]);
       part(S(0.04, 8, 6), shineMat, [s * 0.2, 0.38, 0.61]);
     });
@@ -2971,6 +3395,29 @@ function buildPrizeTemplate(t) {
         smile(0.13, 0.58, 0.035);
         part(S(0.17), fur, [0, -0.6, -0.5]);
         break;
+      case 'vampire':
+        // slicked hair with a widow's peak, a high-collared cape and two little fangs
+        part(new THREE.SphereGeometry(r * 0.62, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.42), vc('fab', '#1d1626'), [0, 0.28, 0.02], [0, 0, 0], [1.08, 0.97, 0.97]);
+        part(C(0.1, 0.18, 4), vc('fab', '#1d1626'), [0, 0.62, 0.42], [-0.55, 0, 0]);
+        part(new THREE.CylinderGeometry(r * 0.62, r * 0.7, r * 0.95, 32, 1, true, Math.PI * 0.45, Math.PI * 1.1), vc('fab', '#2a1f36'), [0, -0.4, 0]);
+        part(new THREE.CylinderGeometry(r * 0.6, r * 0.68, r * 0.93, 32, 1, true, Math.PI * 0.45, Math.PI * 1.1), vc('fab', '#c4142f'), [0, -0.4, 0]);
+        pair((s) => {
+          part(C(0.18, 0.4), vc('fab', '#2a1f36'), [s * 0.36, -0.02, -0.05], [0.2, 0, s * 0.35], [1, 1, 0.3]);
+          part(C(0.022, 0.06), vc('gloss', '#ffffff'), [s * 0.05, 0.06, 0.6], [Math.PI, 0, 0]);
+        });
+        part(S(0.07, 10, 8), vc('fab', '#c4142f'), [0, -0.12, 0.47]);
+        smile(0.11, 0.6);
+        break;
+      case 'frank':
+        // a flat-topped head of black hair, neck bolts and a row of stitches
+        part(new THREE.CylinderGeometry(r * 0.5, r * 0.56, r * 0.16, 32), vc('fab', '#1d1626'), [0, 0.8, 0.02]);
+        for (let i = 0; i < 5; i++) part(B(0.1, 0.12, 0.08), vc('fab', '#1d1626'), [-0.24 + i * 0.12, 0.66, 0.5], [0.25, 0, 0]);
+        pair((s) => part(new THREE.CylinderGeometry(r * 0.06, r * 0.06, r * 0.24, 10), vc('metal', '#9aa1b3'), [s * 0.62, 0.02, 0], [0, 0, Math.PI / 2]));
+        part(B(0.32, 0.015, 0.02), threadMat, [0.15, 0.55, 0.53], [0.2, 0.2, 0.15]);
+        for (let i = 0; i < 4; i++) part(B(0.015, 0.07, 0.02), threadMat, [0.04 + i * 0.075, 0.55 + i * 0.011, 0.535], [0.2, 0.2, 0.15]);
+        smile(0.11, 0.62);
+        break;
+      case 'blackcat':
       case 'cat':
         pair((s) => {
           part(C(0.17, 0.28), fur, [s * 0.38, 0.8, 0], [0, 0, -s * 0.4]);
@@ -3969,6 +4416,29 @@ function applyClawTheme() {
     shell.scale.set(1, 0.5, 1.2);
     shell.position.set(-0.4, 0, -1.0);
     parts.deco.add(star, shell, ambientParticles('bubbles', new THREE.Box3(new THREE.Vector3(CAB.x0 + 0.1, 0, CAB.z0 + 0.1), new THREE.Vector3(CAB.x1 - 0.1, CAB.top - 0.2, CAB.z1 - 0.2))));
+  } else if (th.ambient === 'fog') {
+    // gravestones and a dead tree at the back, jack-o'-lanterns, bats on the wall, low fog
+    const tree = deadTree(2.2);
+    tree.position.set(1.25, 0, -0.98);
+    parts.deco.add(tree);
+    [[-1.3, -0.95, 0.9, 0.15], [-0.75, -1.02, 0.7, -0.1], [0.55, -1.0, 0.8, 0.08]].forEach(([x, z, k, rot]) => {
+      const gs = gravestone(k);
+      gs.position.set(x, 0, z);
+      gs.rotation.set(0, rot, rot * 0.3);
+      parts.deco.add(gs);
+    });
+    [[1.38, 0.95, 0.13], [-0.2, -1.02, 0.11], [1.4, -0.45, 0.1]].forEach(([x, z, k]) => {
+      const jl = jackLantern(k);
+      jl.position.set(x, 0, z);
+      parts.deco.add(jl);
+    });
+    [[-0.9, 2.9, 0.18], [-0.4, 3.2, 0.13], [0.2, 2.75, 0.15], [0.75, 3.15, 0.12]].forEach(([x, y, k]) => {
+      const b = wallBat(k);
+      b.position.set(x, y, CAB.z0 + 0.03);
+      b.rotation.z = rand(-0.3, 0.3);
+      parts.deco.add(b);
+    });
+    parts.deco.add(ambientParticles('fog', new THREE.Box3(new THREE.Vector3(CAB.x0 - 0.5, 0.05, CAB.z0 + 0.1), new THREE.Vector3(CAB.x1 + 0.5, 0.75, CAB.z1 - 0.2))));
   } else if (th.ambient === 'sprinkles') {
     // lollipop trees in the back corners, gumdrops on the frosting
     [[-1.35, -0.92, 2.0, '#ff6fb5'], [1.35, -0.92, 2.4, '#7ee8c8'], [-0.9, -1.0, 1.4, '#ffd23e'], [0.85, -1.0, 1.7, '#b26bff']].forEach(([x, z, hgt, c]) => {
@@ -4336,7 +4806,7 @@ async function start() {
   applyClawTheme();
   fillClaw();
   buildTray();
-  const fit = () => { resizePusher(); resizeClaw(); resizeTray(); };
+  const fit = fitGames = () => { resizePusher(); resizeClaw(); resizeTray(); };
   fit();
   window.addEventListener('resize', fit);
   for (const id of ['pusherLoading', 'clawLoading']) $(id).classList.add('gone');
@@ -4347,6 +4817,13 @@ async function start() {
   requestAnimationFrame((ts) => { last = ts; now = ts; requestAnimationFrame(frame); });
 }
 start();
+
+// Embedded with ?solo: tell the page around us how tall the arcade is, so it can size the frame.
+if (document.documentElement.classList.contains('solo') && window.parent !== window) {
+  const floor = document.querySelector('.floor');
+  const tell = () => window.parent.postMessage({ arcadeHeight: Math.ceil(floor.getBoundingClientRect().bottom + scrollY) }, '*');
+  new ResizeObserver(tell).observe(floor);
+}
   </script>
 </body>
 </html>
