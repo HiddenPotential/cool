@@ -546,6 +546,21 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
 }
 :root[data-theme="july4"] .marquee { background: linear-gradient(180deg, #8a1020, #4a0a14); box-shadow: inset 0 0 0 2px #ffffff, inset 0 0 24px rgba(79,139,255,.25); }
 :root[data-theme="july4"] .shelf { background: linear-gradient(180deg, #24357a, #0e1640); box-shadow: inset 0 0 0 2px #c4142f; }
+:root[data-theme="lunar"] { --bg: #1a0505; --cab: #4a0a0a; --cab2: #8a1414; --neon-pink: #ffd23e; --neon-cyan: #ff4d3b; --muted: #f2c8a8; }
+:root[data-theme="lunar"] body {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(255,59,59,.35), transparent 60%),
+    radial-gradient(circle at 20% 30%, rgba(255,210,62,.45) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 75%, rgba(255,179,199,.35) 0 2.5px, transparent 3.5px),
+    radial-gradient(circle at 85% 20%, rgba(255,210,62,.3) 0 1.5px, transparent 2.5px);
+  background-size: 100% 100%, 100px 100px, 140px 140px, 70px 70px;
+}
+:root[data-theme="lunar"] .cabinet, :root[data-theme="lunar"] .claw-cab, :root[data-theme="lunar"] .shop {
+  background: linear-gradient(180deg, #a81c1c, #4a0a0a 30%, #2a0606);
+  box-shadow: 0 0 0 3px #ffc93a, 0 0 0 6px #1a0505, 0 0 40px rgba(255,59,59,.35), 0 20px 50px rgba(0,0,0,.6);
+}
+:root[data-theme="lunar"] .marquee { background: linear-gradient(180deg, #8a1414, #3a0808); box-shadow: inset 0 0 0 2px #ffc93a, inset 0 0 24px rgba(255,210,62,.25); }
+:root[data-theme="lunar"] .shelf { background: linear-gradient(180deg, #8a1414, #3a0808); box-shadow: inset 0 0 0 2px #ffc93a; }
 :root[data-theme="ocean"] .shelf { background: linear-gradient(180deg, #0d3f5e, #062237); box-shadow: inset 0 0 0 2px #1d6a8a; }
 :root[data-theme="space"] .shelf { background: linear-gradient(180deg, #1b1240, #0a0820); box-shadow: inset 0 0 0 2px #3b2f7a; }
 :root[data-theme="ocean"] .marquee { background: linear-gradient(180deg, #0d3f5e, #062237); box-shadow: inset 0 0 0 2px #1d6a8a, inset 0 0 24px rgba(61,245,214,.25); }
@@ -957,8 +972,14 @@ const THEMES = {
     pusher: { bg: '#070c22', hemi: ['#eef2ff', '#0a1030'], felt: ['#14286a', '#1d3a8a'], ramp: '#2a4aa8', wall: ['#24357a', '#0e1640'], side: '#0e1640', back: '#070c22', tray: '#14204a' },
     claw: { bg: '#0a1030', hemi: ['#f2f5ff', '#101a44'], walls: 'stripes', back: ['#b3192e', '#ffffff'], side: ['#1f3a8a', 'rgba(0,0,0,0)'], floor: 'picnic', floorColor: '#f6f1e6', base: '#14204a' },
   },
+  lunar: {
+    name: 'Lunar New Year', blurb: 'Red walls with gold clouds, glowing lanterns, firecrackers and plum blossom, drifting petals, and lucky cats, dumplings, koi and a lion dancer to win.',
+    price: 700, points: 21, a: '#ffd23e', b: '#ff3b3b', ambient: 'blossoms',
+    pusher: { bg: '#1a0505', hemi: ['#fff0d8', '#2a0808'], felt: ['#6a0e12', '#8a1a1a'], ramp: '#a82a22', wall: ['#8a1414', '#3a0808'], side: '#3a0808', back: '#1a0505', tray: '#4a0a0a' },
+    claw: { bg: '#200606', hemi: ['#fff2dc', '#3a0a0a'], walls: 'clouds', back: ['#b3141e', '#ffc93a'], side: ['#8a1018', '#e8b04a'], floor: 'redtiles', floorColor: '#8a1018', base: '#4a0a0a' },
+  },
 };
-const THEME_ORDER = ['neon', 'ocean', 'candy', 'space', 'spooky', 'harvest', 'xmas', 'valentine', 'patrick', 'spring', 'july4', 'dino'];
+const THEME_ORDER = ['neon', 'ocean', 'candy', 'space', 'spooky', 'harvest', 'xmas', 'lunar', 'valentine', 'patrick', 'spring', 'july4', 'dino'];
 let themeId = 'neon';
 let ownedThemes = ['neon'];
 const theme = () => THEMES[themeId];
@@ -1142,6 +1163,23 @@ function drawFlower(g, x, y, s, petal, middle) {
 
 // extra wall and floor fabrics, drawn over the base colour by wallPattern / floorPattern
 const WALL_KINDS = {
+  clouds(g, w, h, mark) {
+    // gold auspicious clouds: little spirals in clusters
+    g.strokeStyle = mark; g.lineWidth = 3; g.lineCap = 'round';
+    for (let i = 0; i < 9; i++) {
+      const x = Math.random() * w, y = Math.random() * h, k = 6 + Math.random() * 6;
+      g.globalAlpha = 0.55 + Math.random() * 0.35;
+      for (const [dx, dy] of [[0, 0], [k * 2.2, -k * 0.6], [k * 4.2, 0]]) {
+        g.beginPath();
+        for (let a = 0; a < Math.PI * 3.2; a += 0.2) { const rr = k * (1 - a / (Math.PI * 4)); g.lineTo(x + dx + Math.cos(a) * rr, y + dy + Math.sin(a) * rr); }
+        g.stroke();
+      }
+      g.beginPath(); g.moveTo(x - k, y + k); g.quadraticCurveTo(x + k * 2, y + k * 2.2, x + k * 5.2, y + k); g.stroke();
+    }
+    g.globalAlpha = 0.7; g.fillStyle = mark;
+    for (let i = 0; i < 40; i++) { g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 1.5, 0, Math.PI * 2); g.fill(); }
+    g.globalAlpha = 1;
+  },
   shamrocks(g, w, h, mark) {
     g.fillStyle = mark;
     for (let i = 0; i < 16; i++) { g.globalAlpha = 0.45 + Math.random() * 0.4; drawShamrock(g, Math.random() * w, Math.random() * h, 7 + Math.random() * 7, Math.random() * 6); }
@@ -1193,6 +1231,16 @@ const WALL_KINDS = {
   },
 };
 const FLOOR_KINDS = {
+  redtiles(g, w, h) {
+    // a gold lattice like a carved window screen
+    g.strokeStyle = 'rgba(255,201,58,.55)'; g.lineWidth = 3;
+    for (let x = 0; x <= w; x += 64) for (let y = 0; y <= h; y += 64) {
+      g.strokeRect(x + 8, y + 8, 48, 48);
+      g.beginPath(); g.moveTo(x + 32, y + 8); g.lineTo(x + 32, y + 22); g.moveTo(x + 32, y + 42); g.lineTo(x + 32, y + 56);
+      g.moveTo(x + 8, y + 32); g.lineTo(x + 22, y + 32); g.moveTo(x + 42, y + 32); g.lineTo(x + 56, y + 32); g.stroke();
+      g.strokeRect(x + 22, y + 22, 20, 20);
+    }
+  },
   clovers(g, w, h) {
     for (let i = 0; i < 1000; i++) {
       const x = Math.random() * w, y = Math.random() * h;
@@ -1255,6 +1303,7 @@ const FLOOR_KINDS = {
 // falling snow, rising hearts, and leaves and petals tumbling down
 const spriteTex = (draw) => canvasTex(64, 64, (g) => { g.fillStyle = '#ffffff'; draw(g); });
 const PARTICLE_KINDS = {
+  blossoms: { n: 70, size: 0.1, tex: spriteTex((g) => { g.beginPath(); g.ellipse(32, 32, 14, 22, 0.6, 0, Math.PI * 2); g.fill(); }), colors: ['#ffb3c7', '#ff8fab', '#ffffff', '#ffd23e'], speed: [0.1, 0.25], dir: -1, wobble: 0.005 },
   clovers:  { n: 50, size: 0.12, tex: spriteTex((g) => drawShamrock(g, 30, 28, 12)), colors: ['#2fbf5a', '#4fd36a', '#1f9a46', '#ffd23e'], speed: [0.15, 0.35], dir: -1, wobble: 0.006 },
   confetti: { n: 90, size: 0.09, tex: spriteTex((g) => drawStar(g, 32, 34, 26)), colors: ['#ff2d45', '#ffffff', '#3d6fd8', '#ffd23e'], speed: [0.12, 0.3], dir: -1, wobble: 0.005 },
   snow:   { n: 140, size: 0.075, tex: glowTex, colors: ['#ffffff', '#eaf4ff'], speed: [0.12, 0.3], dir: -1, wobble: 0.003 },
@@ -1638,9 +1687,111 @@ function fireworkBurst(k, color) {
   return g;
 }
 
+// Lunar New Year props: glowing lanterns, firecracker strings, plum blossom, gold ingots, 福 signs
+function lanternDeco(k, len) {
+  // hangs from its top, so it can sway
+  const g = new THREE.Group();
+  const string = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, len, 4), stdMat('#ffc93a'));
+  string.position.y = -len / 2;
+  const glow = stdMat('#e0222e', { emissive: '#ff3b2f', emissiveIntensity: 0.9, roughness: 0.5 });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(k, 24, 16), glow);
+  body.scale.y = 0.85; body.position.y = -len - k * 0.85;
+  const gold = stdMat('#ffc93a', { metalness: 0.8, roughness: 0.3 });
+  const capT = new THREE.Mesh(new THREE.CylinderGeometry(k * 0.45, k * 0.55, k * 0.18, 20), gold);
+  capT.position.y = -len - k * 0.05;
+  const capB = capT.clone(); capB.position.y = -len - k * 1.65;
+  const tassel = new THREE.Mesh(new THREE.ConeGeometry(k * 0.18, k * 0.7, 10), stdMat('#c4142f'));
+  tassel.rotation.x = Math.PI; tassel.position.y = -len - k * 2.1;
+  g.add(string, body, capT, capB, tassel);
+  g.userData.sway = Math.random() * 6;
+  g.userData.flicker = glow;
+  return shade(g);
+}
+function firecrackerString(len) {
+  const g = new THREE.Group();
+  const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, len, 4), stdMat('#c9934a'));
+  rope.position.y = -len / 2;
+  g.add(rope);
+  const red = stdMat('#d0142f', { roughness: 0.5 }), gold = stdMat('#ffc93a', { metalness: 0.7, roughness: 0.3 });
+  for (let i = 0; i < 12; i++) {
+    for (const s of [-1, 1]) {
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.07, 8), red);
+      c.position.set(s * 0.03, -0.08 - i * (len - 0.12) / 12, 0);
+      c.rotation.z = s * 0.9;
+      g.add(c);
+    }
+  }
+  const knot = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), gold);
+  g.add(knot);
+  g.userData.sway = Math.random() * 6;
+  return shade(g);
+}
+function blossomTree(h) {
+  const g = new THREE.Group();
+  const bark = stdMat('#3a2420', { roughness: 1 });
+  const flowerMats = ['#ffb3c7', '#ff8fab', '#ffffff'].map((c) => stdMat(c, { roughness: 0.6 }));
+  const limb = (from, to, rad) => {
+    const curve = new THREE.CatmullRomCurve3([from, from.clone().lerp(to, 0.5).add(new THREE.Vector3(rand(-0.06, 0.06), 0, rand(-0.04, 0.04))), to]);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 10, rad, 6), bark));
+    for (let i = 0; i < 7; i++) {
+      const p = curve.getPoint(0.35 + Math.random() * 0.65);
+      const f = new THREE.Mesh(new THREE.SphereGeometry(0.035 + Math.random() * 0.02, 8, 6), flowerMats[i % 3]);
+      f.position.copy(p).add(new THREE.Vector3(rand(-0.04, 0.04), rand(-0.02, 0.04), rand(-0.04, 0.04)));
+      g.add(f);
+    }
+  };
+  const top = new THREE.Vector3(0.05, h, 0);
+  limb(new THREE.Vector3(0, 0, 0), top, 0.05);
+  limb(new THREE.Vector3(0.02, h * 0.55, 0), new THREE.Vector3(0.42, h * 0.82, 0.05), 0.03);
+  limb(new THREE.Vector3(0.03, h * 0.7, 0), new THREE.Vector3(-0.38, h * 0.95, 0.02), 0.026);
+  limb(top, new THREE.Vector3(0.28, h + 0.2, 0), 0.02);
+  limb(new THREE.Vector3(0.22, h * 0.76, 0.03), new THREE.Vector3(0.36, h * 1.0, 0.04), 0.016);
+  return shade(g);
+}
+function ingotDeco(k) {
+  const g = new THREE.Group();
+  const gold = stdMat('#ffc93a', { metalness: 1, roughness: 0.22 });
+  const base = new THREE.Mesh(new THREE.SphereGeometry(k, 20, 12), gold);
+  base.scale.set(1.35, 0.5, 0.8); base.position.y = k * 0.45;
+  g.add(base);
+  for (const s of [-1, 1]) { const end = new THREE.Mesh(new THREE.SphereGeometry(k * 0.5, 14, 10), gold); end.scale.set(0.8, 0.9, 0.8); end.position.set(s * k * 0.95, k * 0.85, 0); g.add(end); }
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(k * 0.55, 16, 12), gold);
+  dome.position.y = k * 0.9;
+  g.add(dome);
+  return shade(g);
+}
+// a red diamond with a gold 福 ("good fortune"), stuck to a wall
+function fuDiamond(k) {
+  const g = new THREE.Group();
+  const sq = new THREE.Mesh(new THREE.PlaneGeometry(k, k), new THREE.MeshBasicMaterial({ color: '#c4142f', side: THREE.DoubleSide }));
+  sq.rotation.z = Math.PI / 4;
+  const ch = new THREE.Mesh(new THREE.PlaneGeometry(k * 0.9, k * 0.9), new THREE.MeshBasicMaterial({ map: textTex('福', { w: 128, h: 128, font: '900 100px serif', color: '#ffd23e' }), transparent: true }));
+  ch.position.z = 0.005;
+  g.add(sq, ch);
+  return g;
+}
+
 // Each holiday dresses both machines: props beside the coin pusher, props in the claw machine's
 // back corners, and its particles drifting through both.
 const HOLIDAY_DECO = {
+  blossoms: {
+    pusher(deco) {
+      [[-1, 0.5, 2.35, 0.5, 0.14], [-1, 1.5, 2.45, 0.35, 0.12], [1, 0.9, 2.4, 0.45, 0.13], [1, 2.0, 2.3, 0.6, 0.12]].forEach(([s, z, top, len, k]) => { const l = lanternDeco(k, len); l.position.set(s * (TW / 2 + 0.32), top, z); deco.add(l); });
+      [[-1, 2.5], [1, 0.3]].forEach(([s, z]) => { const f = firecrackerString(1.1); f.position.set(s * (TW / 2 + 0.3), 1.9, z); deco.add(f); });
+      const tree = blossomTree(1.6); tree.position.set(TW / 2 + 0.34, -0.7, 1.4); tree.rotation.y = Math.PI; deco.add(tree);
+      [[-1, 1.0, 0.09], [1, 2.6, 0.08], [-1, 1.9, 0.07]].forEach(([s, z, k]) => { const ig = ingotDeco(k); ig.position.set(s * (TW / 2 + 0.28), 0, z); deco.add(ig); });
+      [[-1.05, 1.0, 0.32], [1.0, 1.2, 0.28]].forEach(([x, y, k]) => { const f = fuDiamond(k); f.position.set(x, WALL_TOP + y, -0.53); deco.add(f); });
+      deco.add(makeHolidayParticles('blossoms', new THREE.Box3(new THREE.Vector3(-TW / 2 - 0.4, -0.3, -0.45), new THREE.Vector3(TW / 2 + 0.4, 2.6, 1.6))));
+    },
+    claw(deco) {
+      [[-0.9, 0.45, 0.17], [0, 0.35, 0.15], [0.9, 0.5, 0.17]].forEach(([x, len, k]) => { const l = lanternDeco(k, len); l.position.set(x, CAB.top - 0.05, CAB.z0 + 0.25); deco.add(l); });
+      const tree = blossomTree(2.3); tree.position.set(1.25, 0, -0.95); tree.rotation.y = Math.PI; deco.add(tree);
+      [[-1.38, -0.98], [-1.2, -1.04]].forEach(([x, z]) => { const f = firecrackerString(1.6); f.position.set(x, 2.4, z); deco.add(f); });
+      [[1.33, 0.92, 0.14], [-0.6, -1.0, 0.12], [0.5, -1.02, 0.1]].forEach(([x, z, k]) => { const ig = ingotDeco(k); ig.position.set(x, 0, z); deco.add(ig); });
+      [[-0.55, 2.35, 0.4], [0.45, 2.3, 0.36]].forEach(([x, y, k]) => { const f = fuDiamond(k); f.position.set(x, y, CAB.z0 + 0.03); deco.add(f); });
+      deco.add(makeHolidayParticles('blossoms', new THREE.Box3(new THREE.Vector3(CAB.x0 + 0.1, 0, CAB.z0 + 0.1), new THREE.Vector3(CAB.x1 - 0.1, CAB.top - 0.2, CAB.z1 - 0.2))));
+    },
+  },
   clovers: {
     pusher(deco) {
       const arch = rainbowArch(1.05, 0.05); arch.position.set(0, WALL_TOP + 0.15, -0.54); deco.add(arch);
@@ -1783,6 +1934,15 @@ function wearAccessories({ part, S, C, Cap, B, pair, vc, t, r }) {
       part(new THREE.CylinderGeometry(r * 0.3, r * 0.34, r * 0.5, 32), plushMat('#ffffff', samStripeTex()), [0, 1.07, -0.03], [0.12, 0, 0]);
       part(new THREE.CylinderGeometry(r * 0.345, r * 0.345, r * 0.12, 32), blue, [0, 0.88, -0.01], [0.12, 0, 0]);
       for (let i = 0; i < 3; i++) part(new THREE.ExtrudeGeometry(starShape(0.06 * r, 0.027 * r), { depth: 0.01 * r, bevelEnabled: false }), vc('fab', '#ffffff'), [(i - 1) * 0.14, 0.89, 0.34], [0.12, 0, 0]);
+    } else if (w === 'tangcap') {
+      part(new THREE.SphereGeometry(r * 0.5, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), vc('fab', '#1d1d22'), [0, 0.7, 0.02], [0.12, 0, 0], [1.08, 0.6, 1.02]);
+      part(new THREE.TorusGeometry(r * 0.5, r * 0.04, 8, 32), vc('fab', '#c4142f'), [0, 0.71, 0.02], [Math.PI / 2 + 0.12, 0, 0]);
+      part(S(0.08, 12, 8), vc('fab', '#e0222e'), [0, 1.0, -0.02]);
+    } else if (w === 'catbell') {
+      part(new THREE.TorusGeometry(r * 0.42, r * 0.07, 10, 32), vc('fab', '#d0142f'), [0, -0.06, 0.02], [Math.PI / 2, 0, 0]);
+      part(S(0.09, 14, 10), vc('metal', '#ffc93a'), [0, -0.15, 0.47]);
+    } else if (w === 'koban') {
+      part(new THREE.CylinderGeometry(r * 0.2, r * 0.2, r * 0.05, 24), vc('metal', '#ffc93a'), [0, -0.42, 0.5], [Math.PI / 2, 0, 0], [0.75, 1, 1.3]);
     } else if (w === 'bonnet') {
       const straw = vc('fab', '#f2d38a');
       part(new THREE.CylinderGeometry(r * 0.68, r * 0.68, r * 0.04, 40), straw, [0, 0.76, 0.02], [0.18, 0, 0]);
@@ -2227,6 +2387,13 @@ const EMBLEMS = {
     }
     g.beginPath(); g.arc(128, 128, 14, 0, Math.PI * 2); g.fill();
   },
+  cash(g, lo) {
+    // a round coin with a square hole and a raised rim round the hole
+    g.beginPath(); g.arc(128, 128, 92, 0, Math.PI * 2); g.fill();
+    g.fillStyle = lo; g.fillRect(104, 104, 48, 48);
+    g.strokeStyle = lo; g.lineWidth = 8; g.strokeRect(92, 92, 72, 72);
+    g.beginPath(); g.arc(128, 128, 78, 0, Math.PI * 2); g.stroke();
+  },
   planet(g) {
     g.beginPath(); g.arc(128, 128, 42, 0, Math.PI * 2); g.fill();
     g.lineWidth = 12;
@@ -2303,6 +2470,12 @@ const COIN_THEMES = {
     big:  { color: '#f2bf45', metal: 1, rough: 0.25 },
     star: { color: '#ff2d45', metal: 0.3, glow: '#ff4d5d' },
     gem:  { color: '#3d6fd8', metal: 0.3, rough: 0.15, glow: '#4f8bff', emblem: 'firework' },
+  },
+  lunar: {
+    coin: { color: '#f2bf45', metal: 1, rough: 0.25, emblem: 'cash' },                        // old gold cash coins
+    big:  { color: '#d0142f', metal: 0.4, rough: 0.25 },                                        // red lacquer
+    star: { color: '#ffd23e', metal: 0.3, glow: '#ffd23e' },
+    gem:  { color: '#2fae78', metal: 0.2, rough: 0.12, glow: '#3dff9a', emblem: '福' },         // jade
   },
 };
 const coinFaces = {};
@@ -3607,6 +3780,21 @@ const PRIZE_SETS = {
     { id: 'libertytorch', emoji: '🔥', name: 'Liberty Torch', rarity: 'super',  r: 0.26, weight: 1.8,  chance: 0.8, look: 'torch',      color: '#ffc93a' },
     { id: 'goldeagle',    emoji: '🦅', name: 'Golden Eagle',  rarity: 'super',  r: 0.27, weight: 1.8,  chance: 0.8, look: 'eagle',      color: '#ffc93a' },
   ],
+  lunar: [
+    { id: 'lantern',    emoji: '🏮', name: 'Lantern',        rarity: 'common', r: 0.28, weight: 0.95, chance: 12,  look: 'lantern',   color: '#e0222e' },
+    { id: 'dumpling',   emoji: '🥟', name: 'Dumpling',       rarity: 'common', r: 0.28, weight: 1,    chance: 12,  look: 'dumpling',  color: '#fbf3e4' },
+    { id: 'hongbao',    emoji: '🧧', name: 'Red Envelope',   rarity: 'common', r: 0.27, weight: 0.9,  chance: 12,  look: 'hongbao',   color: '#d0142f' },
+    { id: 'mandarin',   emoji: '🍊', name: 'Mandarin',       rarity: 'common', r: 0.27, weight: 1,    chance: 12,  look: 'mandarin',  color: '#ff8a1f' },
+    { id: 'luckycat',   emoji: '😺', name: 'Lucky Cat',      rarity: 'common', r: 0.29, weight: 1,    chance: 10,  look: 'cat',       color: '#fbf6f2', wear: ['catbell', 'koban'] },
+    { id: 'redpanda',   emoji: '🦊', name: 'Red Panda',      rarity: 'common', r: 0.29, weight: 1,    chance: 10,  look: 'fox',       color: '#c8481e' },
+    { id: 'baobun',     emoji: '🥮', name: 'Bao Bun',        rarity: 'common', r: 0.28, weight: 1,    chance: 8,   look: 'baobun',    color: '#fbf6ee' },
+    { id: 'tangbear',   emoji: '🧸', name: 'Silk-Cap Bear',  rarity: 'common', r: 0.31, weight: 1,    chance: 8,   look: 'bear',      color: '#d0342a', muzzle: '#ffe0c8', wear: ['tangcap'] },
+    { id: 'liondance',  emoji: '🦁', name: 'Lion Dancer',    rarity: 'rare',   r: 0.31, weight: 1.35, chance: 3,   look: 'liondance', color: '#e0222e' },
+    { id: 'yearsheep',  emoji: '🐑', name: 'Year of the Sheep', rarity: 'rare', r: 0.3, weight: 1.3,  chance: 3,   look: 'lamb',      color: '#fdfbf7' },
+    { id: 'koi',        emoji: '🐟', name: 'Koi',            rarity: 'rare',   r: 0.3,  weight: 1.3,  chance: 3,   look: 'koi',       color: '#ff6a1f' },
+    { id: 'goldingot',  emoji: '💰', name: 'Gold Ingot',     rarity: 'super',  r: 0.26, weight: 1.8,  chance: 0.8, look: 'ingot',     color: '#ffc93a' },
+    { id: 'jadedisc',   emoji: '🟢', name: 'Jade Disc',      rarity: 'super',  r: 0.26, weight: 1.8,  chance: 0.8, look: 'jadedisc',  color: '#2fae78' },
+  ],
 };
 let PRIZES = PRIZE_SETS.neon;
 const PRIZE_BY_ID = Object.fromEntries(Object.values(PRIZE_SETS).flat().map((p) => [p.id, p]));
@@ -3672,6 +3860,7 @@ const FABRICS = {
 };
 // which fabric each toy is made of (anything not listed is fur)
 const PRIZE_FABRIC = {
+  lantern: 'velvet', dumpling: 'minky', hongbao: 'velvet', mandarin: 'velvet', luckycat: 'minky', redpanda: 'knit', baobun: 'minky', tangbear: 'cord', liondance: 'velvet', yearsheep: 'minky', koi: 'velvet',
   shamrock: 'velvet', luckybear: 'minky', luckykitty: 'knit', irishsetter: 'cord', luckyfrog: 'velvet', mintcupcake: 'knit', leprechaun: 'velvet',
   hotdog: 'minky', watermelon: 'velvet', firecracker: 'knit', burger: 'minky', cherrypie: 'knit', bluestar: 'velvet', sambear: 'cord', eagle: 'cord',
   reindeer: 'cord', polarbear: 'minky', penguin: 'velvet', snowman: 'minky', gingerbread: 'cord', present: 'velvet', santakitty: 'knit', rudolph: 'cord', santa: 'velvet', xmastree: 'knit',
@@ -3813,6 +4002,94 @@ function quadDino({ part, S, C, vc, t, sideEye, sideBlush, sideMouth }, { headX 
   sideMouth(headX + head * 0.75, neckY - head * 0.35, hz * 0.7, 0.05);
 }
 const CUSTOM_LOOKS = {
+  // ---- Lunar New Year ----
+  lantern({ part, S, C, vc, t, eyes, smile, blushAt }) {
+    const red = vc('fab', t.color), gold = vc('metal', '#ffc93a');
+    part(S(0.6, 32, 22), red, [0, 0, 0], [0, 0, 0], [1, 0.85, 1]);
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; part(new THREE.TorusGeometry(0.6 * t.r, 0.014 * t.r, 4, 32, Math.PI), vc('fab', '#a30e1e'), [0, 0, 0], [Math.PI / 2, 0, a], [1, 1, 0.85]); }
+    part(new THREE.CylinderGeometry(0.3 * t.r, 0.36 * t.r, 0.12 * t.r, 24), gold, [0, 0.52, 0]);
+    part(new THREE.CylinderGeometry(0.36 * t.r, 0.3 * t.r, 0.12 * t.r, 24), gold, [0, -0.52, 0]);
+    part(new THREE.TorusGeometry(0.1 * t.r, 0.025 * t.r, 6, 16), gold, [0, 0.66, 0]);
+    part(new THREE.CylinderGeometry(0.05 * t.r, 0.05 * t.r, 0.12 * t.r, 8), gold, [0, -0.64, 0]);
+    part(C(0.13, 0.32, 12), vc('fab', '#ffc93a'), [0, -0.86, 0], [Math.PI, 0, 0]);
+    eyes(0.06, 0.58, 0.18);
+    smile(-0.08, 0.59);
+    blushAt(0.34, -0.06, 0.52);
+  },
+  dumpling({ part, S, vc, t, eyes, smile, blushAt }) {
+    const dough = vc('fab', t.color);
+    part(S(0.6, 32, 20), dough, [0, -0.28, 0], [0, 0, 0], [1.25, 0.75, 0.82]);
+    for (let i = 0; i < 9; i++) { const u = i / 8, x = -0.62 + u * 1.24; part(S(0.13, 10, 8), dough, [x, 0.12 - Math.abs(x) * 0.35, 0], [0, 0, x * 0.6], [0.7, 1, 0.55]); }
+    eyes(-0.24, 0.47, 0.17);
+    smile(-0.36, 0.48);
+    blushAt(0.36, -0.33, 0.42);
+  },
+  hongbao({ part, pair, vc, t, B, eyes }) {
+    const gold = vc('metal', '#ffc93a');
+    part(B(0.95, 1.35, 0.12), vc('fab', t.color), [0, -0.05, 0]);
+    for (const y of [0.56, -0.66]) part(B(0.8, 0.04, 0.02), gold, [0, y, 0.065]);
+    pair((s) => part(B(0.04, 1.22, 0.02), gold, [s * 0.38, -0.05, 0.065]));
+    part(new THREE.CylinderGeometry(0.22 * t.r, 0.22 * t.r, 0.04 * t.r, 32), gold, [0, -0.22, 0.07], [Math.PI / 2, 0, 0]);
+    part(B(0.1, 0.1, 0.03), vc('fab', t.color), [0, -0.22, 0.095]);
+    eyes(0.3, 0.07, 0.18);
+  },
+  mandarin({ part, S, pair, vc, t, eyes, smile, blushAt }) {
+    part(S(0.6, 32, 24), vc('fab', t.color), [0, -0.1, 0], [0, 0, 0], [1.05, 0.88, 1.05]);
+    part(new THREE.CylinderGeometry(0.035 * t.r, 0.045 * t.r, 0.14 * t.r, 8), vc('fab', '#5a3a1e'), [0, 0.45, 0]);
+    pair((s) => part(S(0.2, 12, 8), vc('gloss', '#2f9e4a'), [s * 0.16, 0.48, 0.02], [0, 0, s * 0.5], [1, 0.22, 0.5]));
+    eyes(0.0, 0.58, 0.18);
+    smile(-0.14, 0.59);
+    blushAt(0.36, -0.1, 0.52);
+  },
+  baobun({ part, S, C, vc, t, eyes, smile, blushAt }) {
+    const dough = vc('fab', t.color);
+    part(S(0.62, 32, 22), dough, [0, -0.15, 0], [0, 0, 0], [1, 0.82, 1]);
+    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; part(S(0.12, 8, 6), dough, [Math.cos(a) * 0.12, 0.36, Math.sin(a) * 0.12], [0, -a, 0.6], [0.5, 1, 0.5]); }
+    part(C(0.08, 0.14), dough, [0, 0.46, 0]);
+    part(S(0.06, 10, 8), vc('fab', '#e0222e'), [0, 0.38, 0.22], [0, 0, 0], [1, 0.4, 1]);
+    eyes(-0.1, 0.55, 0.18);
+    smile(-0.24, 0.56);
+    blushAt(0.34, -0.2, 0.5);
+  },
+  liondance({ part, S, C, pair, vc, t, eyeAt, B }) {
+    const red = vc('fab', t.color), gold = vc('metal', '#ffc93a'), fur = vc('fab', '#ffffff');
+    part(S(0.6, 32, 22), red, [0, 0.05, -0.05], [0, 0, 0], [1.1, 0.95, 1]);
+    for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2; part(S(0.13, 10, 8), fur, [Math.cos(a) * 0.6, 0.05 + Math.sin(a) * 0.52, 0.25]); }
+    pair((s) => { eyeAt(s * 0.22, 0.2, 0.52, 0.13); part(S(0.15, 12, 8), gold, [s * 0.22, 0.33, 0.48], [0, 0, 0], [1.1, 0.4, 0.6]); });
+    part(new THREE.CylinderGeometry(0.1 * t.r, 0.1 * t.r, 0.03 * t.r, 20), vc('gloss', '#e8fbff'), [0, 0.45, 0.48], [Math.PI / 2, 0, 0]);
+    part(C(0.08, 0.22), gold, [0, 0.66, 0.32], [-0.4, 0, 0]);
+    part(S(0.16, 12, 8), vc('fab', '#ff8fae'), [0, -0.02, 0.6], [0, 0, 0], [1.3, 0.8, 0.6]);
+    part(B(0.7, 0.16, 0.36), gold, [0, -0.32, 0.36], [0.25, 0, 0]);
+    part(B(0.6, 0.06, 0.3), vc('fab', '#ffffff'), [0, -0.24, 0.42], [0.25, 0, 0]);
+    pair((s) => part(S(0.16, 12, 8), red, [s * 0.58, 0.42, -0.05], [0, 0, s * 0.4], [0.5, 1, 0.8]));
+    [['#ffd23e', -0.18], ['#3dbf5a', 0], ['#3d8bff', 0.18]].forEach(([c, x]) => part(S(0.08, 10, 8), vc('fab', c), [x, 0.62, 0.05]));
+    for (let i = 0; i < 6; i++) part(S(0.11, 10, 8), fur, [-0.25 + i * 0.1, -0.55, 0.3]);
+  },
+  koi({ part, S, pair, vc, t, sideEye, sideMouth }) {
+    const white = vc('fab', '#fbf8f2'), orange = vc('fab', t.color);
+    part(S(0.6, 32, 20), white, [0, 0, 0], [0, 0, 0], [1.4, 0.8, 0.62]);
+    [[0.35, 0.22, 0.24], [-0.15, 0.25, 0.26], [0.05, -0.1, 0.3], [-0.5, 0.08, 0.2]].forEach(([x, y, k]) => pair((s) => part(S(k, 12, 8), orange, [x, y, s * 0.3], [0, 0, 0], [1, 0.8, 0.4])));
+    part(S(0.24, 14, 10), orange, [0, 0.42, 0], [0, 0, -0.2], [1.2, 0.5, 0.15]);
+    pair((s) => part(S(0.32, 14, 10), orange, [-0.98, s * 0.22, 0], [0, 0, s * 0.7], [0.9, 0.38, 0.12]));
+    pair((s) => part(S(0.18, 12, 8), white, [0.2, -0.42, s * 0.25], [s * 0.4, 0, -0.4], [1, 0.3, 0.6]));
+    pair((s) => part(new THREE.CylinderGeometry(0.012 * t.r, 0.012 * t.r, 0.25 * t.r, 4), orange, [0.86, -0.08, s * 0.1], [0, 0, 0.8]));
+    sideEye(0.55, 0.12, 0.3);
+    sideMouth(0.78, -0.08, 0.2, 0.05);
+  },
+  ingot({ part, S, pair, vc, t }) {
+    const gold = vc('metal', t.color);
+    part(S(0.62, 32, 20), gold, [0, -0.3, 0], [0, 0, 0], [1.35, 0.55, 0.8]);
+    pair((s) => part(S(0.32, 20, 14), gold, [s * 0.62, -0.02, 0], [0, 0, s * 0.3], [0.85, 0.9, 0.8]));
+    part(S(0.35, 24, 16), gold, [0, 0.05, 0]);
+    part(new THREE.TorusGeometry(0.66 * t.r, 0.04 * t.r, 8, 40), vc('metal', '#ffe08a'), [0, -0.24, 0], [Math.PI / 2, 0, 0], [1.3, 0.8, 1]);
+  },
+  jadedisc({ part, S, C, vc, t }) {
+    part(new THREE.TorusGeometry(0.42 * t.r, 0.22 * t.r, 18, 40), vc('gloss', t.color), [0, 0.1, 0]);
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; part(S(0.05, 8, 6), vc('gloss', '#7ae8b8'), [Math.cos(a) * 0.42, 0.1 + Math.sin(a) * 0.42, 0.2]); }
+    part(new THREE.CylinderGeometry(0.03 * t.r, 0.03 * t.r, 0.25 * t.r, 6), vc('fab', '#d0142f'), [0, -0.66, 0]);
+    part(S(0.07, 10, 8), vc('metal', '#ffc93a'), [0, -0.8, 0]);
+    part(C(0.1, 0.25, 10), vc('fab', '#d0142f'), [0, -0.98, 0], [Math.PI, 0, 0]);
+  },
   // ---- St. Patrick's Day ----
   shamrock({ part, vc, t, eyes, smile, blushAt }) {
     part(puffyGeo(cloverShapes(0.62 * t.r), 0.35 * t.r, 0.12 * t.r), vc('fab', t.color), [0, 0.1, 0]);
