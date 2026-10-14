@@ -606,7 +606,7 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
         <li>The front of the table is a <b>ramp</b> that slopes up to the edge, so loose coins slide back, and a raised <b>lip</b> at the very edge kicks them back again. Coins pushed over the <b>front edge</b> are yours. Coins that fall off the <b>sides</b> go to the house.</li>
         <li>Coins roll down inside the back wall and slide out of the slot onto the shelf. If one rolls past the moving <b>LUCKY</b> window on the way down, you earn a slot spin. Match 3 for coin showers, a <b>10</b> big coin, a <b>★</b> bonus token or the <b>💎</b> jackpot gem.</li>
         <li>Push a ★ off the front for 3 free spins. Push a 💎 off for 50 credits.</li>
-        <li>The <b>Coin Machine</b> gives you one free payout of coins each time you open the arcade.</li>
+        <li>Visit the <b>Coin Machine</b> once a day for free coins. Come back on consecutive days to build a streak for a bigger payout.</li>
         <li>Spend credits at the <b>Claw Machine</b> too: 5 credits a play, prizes go on your shelf.</li>
         <li>Running low? You also get a free credit every 15 seconds while you have fewer than 5.</li>
       </ul>
@@ -621,7 +621,7 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
     <div class="streak" id="streak"></div>
     <button class="dispense-btn" id="dispense">DISPENSE</button>
     <div class="chute" id="chute" aria-hidden="true"><canvas id="chuteCanvas"></canvas></div>
-    <div class="hint">One free payout each time you open the arcade.</div>
+    <div class="hint">One free payout per day. Resets at midnight.</div>
   </section>
 
   <section class="claw-cab" id="clawCab" data-game-part="claw" aria-label="Claw machine">
@@ -6657,14 +6657,16 @@ $('viewReset').onclick = resetClawView;
 
 // ---------- Save / load ----------
 // Every visit is a fresh start: credits, coins, both machines, prizes and themes all begin anew
-// each time the page opens. Only the sound setting is remembered.
+// each time the page opens. Only the sound setting and the coin machine's daily payout (when it
+// last paid, and the streak) are remembered, so the free coins stay once a day.
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 3, soundOn })); } catch (e) { /* storage unavailable */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 3, soundOn, daily })); } catch (e) { /* storage unavailable */ }
 }
 function loadState() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (s) soundOn = s.soundOn !== false;
+    if (s && s.daily && typeof s.daily.last === 'string') daily = { last: s.daily.last, streak: Number(s.daily.streak) || 0 };
   } catch (e) { /* storage unavailable */ }
 }
 
