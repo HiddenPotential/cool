@@ -428,6 +428,21 @@ canvas { display: block; width: 100%; touch-action: none; cursor: crosshair; }
 }
 :root[data-theme="candy"] .marquee { background: linear-gradient(180deg, #6e2252, #3a1534); box-shadow: inset 0 0 0 2px #c2477f, inset 0 0 24px rgba(126,232,200,.25); }
 :root[data-theme="candy"] .shelf { background: linear-gradient(180deg, #6e2252, #3a1534); box-shadow: inset 0 0 0 2px #c2477f; }
+:root[data-theme="dino"] { --bg: #070c06; --cab: #1d2a14; --cab2: #2f4220; --neon-pink: #ff7a2e; --neon-cyan: #9be36b; --muted: #b8c8a0; }
+:root[data-theme="dino"] body {
+  background-image:
+    radial-gradient(ellipse at 50% 110%, rgba(255,90,31,.32), transparent 55%),
+    radial-gradient(ellipse at 20% 0%, rgba(80,170,70,.3), transparent 55%),
+    radial-gradient(circle at 20% 30%, rgba(255,140,60,.35) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 70% 70%, rgba(155,227,107,.25) 0 1.5px, transparent 2.5px);
+  background-size: 100% 100%, 100% 100%, 110px 110px, 140px 140px;
+}
+:root[data-theme="dino"] .cabinet, :root[data-theme="dino"] .claw-cab, :root[data-theme="dino"] .shop {
+  background: linear-gradient(180deg, #2f4220, #1d2a14 30%, #10180b);
+  box-shadow: 0 0 0 3px #4a6a2a, 0 0 0 6px #070c06, 0 0 40px rgba(255,122,46,.25), 0 20px 50px rgba(0,0,0,.65);
+}
+:root[data-theme="dino"] .marquee { background: linear-gradient(180deg, #22341a, #10180b); box-shadow: inset 0 0 0 2px #4a6a2a, inset 0 0 24px rgba(255,122,46,.22); }
+:root[data-theme="dino"] .shelf { background: linear-gradient(180deg, #22341a, #10180b); box-shadow: inset 0 0 0 2px #4a6a2a; }
 :root[data-theme="spooky"] { --bg: #08050c; --cab: #1a0f24; --cab2: #2e1a3a; --neon-pink: #ff8a1f; --neon-cyan: #7dff6b; --muted: #b8a8c8; }
 :root[data-theme="spooky"] body {
   background-image:
@@ -888,6 +903,12 @@ const THEMES = {
     pusher: { bg: '#2c0d28', hemi: ['#ffd6ee', '#4a1840'], felt: ['#6e2252', '#9a3a72'], ramp: '#c95a96', wall: ['#c2477f', '#6e1d4a'], side: '#4a1840', back: '#2c0d28', tray: '#4a1840' },
     claw: { bg: '#3a1534', hemi: ['#f2c2dd', '#4a1840'], walls: 'candy', back: ['#c8578f', '#ffd6ea'], side: ['#4fa88a', '#ff9fd0'], floor: 'frosting', floorColor: '#d97aab', base: '#6a2458' },
   },
+  dino: {
+    name: 'Dino Island', blurb: 'Jungle-leaf walls, a smoking volcano, palm trees and a nest of eggs, glowing embers, and dinosaurs to catch.',
+    price: 650, points: 20, a: '#ff7a2e', b: '#9be36b', ambient: 'embers',
+    pusher: { bg: '#0b120a', hemi: ['#e2f5c8', '#14200c'], felt: ['#3a2e1c', '#56442a'], ramp: '#6a5232', wall: ['#2a4a26', '#122410'], side: '#14200f', back: '#0b120a', tray: '#1c2a14' },
+    claw: { bg: '#0b120a', hemi: ['#e6f7d0', '#1a2a10'], walls: 'jungle', back: ['#1f4a2c', '#3f8a3a'], side: ['#183a22', '#2f7030'], floor: 'dirt', floorColor: '#8a6a44', base: '#1c2a14' },
+  },
   spooky: {
     name: 'Spooky Night', blurb: 'Stone walls, a moonlit graveyard, flickering jack-o\'-lanterns, drifting fog, and cute monsters to catch.',
     price: 700, points: 21, a: '#ff8a1f', b: '#7dff6b', ambient: 'fog',
@@ -937,7 +958,7 @@ const THEMES = {
     claw: { bg: '#0a1030', hemi: ['#f2f5ff', '#101a44'], walls: 'stripes', back: ['#b3192e', '#ffffff'], side: ['#1f3a8a', 'rgba(0,0,0,0)'], floor: 'picnic', floorColor: '#f6f1e6', base: '#14204a' },
   },
 };
-const THEME_ORDER = ['neon', 'ocean', 'candy', 'space', 'spooky', 'harvest', 'xmas', 'valentine', 'patrick', 'spring', 'july4'];
+const THEME_ORDER = ['neon', 'ocean', 'candy', 'space', 'spooky', 'harvest', 'xmas', 'valentine', 'patrick', 'spring', 'july4', 'dino'];
 let themeId = 'neon';
 let ownedThemes = ['neon'];
 const theme = () => THEMES[themeId];
@@ -980,6 +1001,16 @@ function wallPattern(kind, base, mark, repeat) {
       g.fillStyle = '#ffffff';
       for (let i = 0; i < 40; i++) { g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 2.5, 0, Math.PI * 2); g.fill(); }
       g.globalAlpha = 1;
+    } else if (kind === 'jungle') {
+      // overlapping palm and fern leaves in the shade
+      for (let i = 0; i < 26; i++) {
+        const x = Math.random() * w, y = Math.random() * h, a = Math.random() * Math.PI * 2, len = 40 + Math.random() * 50;
+        g.save(); g.translate(x, y); g.rotate(a);
+        g.fillStyle = i % 3 ? mark : 'rgba(20,60,25,.8)';
+        g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len * 0.5, -len * 0.22, len, 0); g.quadraticCurveTo(len * 0.5, len * 0.22, 0, 0); g.fill();
+        g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, 0); g.lineTo(len, 0); g.stroke();
+        g.restore();
+      }
     } else if (kind === 'bricks') {
       // old stone blocks with dark mortar and the odd crack
       g.fillStyle = mark;
@@ -1022,6 +1053,18 @@ function floorPattern(kind, color) {
       for (let i = 0; i < 160; i++) {
         g.save(); g.translate(Math.random() * w, Math.random() * h); g.rotate(Math.random() * Math.PI);
         g.fillStyle = cols[i % cols.length]; g.fillRect(-4, -1.5, 8, 3); g.restore();
+      }
+    } else if (kind === 'dirt') {
+      // packed earth with pebbles and the odd fern sprig
+      for (let i = 0; i < 70; i++) {
+        g.fillStyle = ['#b09a7a', '#6a5236', '#9a8a70', '#5a4630'][i % 4];
+        g.beginPath(); g.ellipse(Math.random() * w, Math.random() * h, 2 + Math.random() * 5, 2 + Math.random() * 3, Math.random() * 3, 0, Math.PI * 2); g.fill();
+      }
+      g.strokeStyle = 'rgba(80,140,60,.7)'; g.lineWidth = 2;
+      for (let i = 0; i < 10; i++) {
+        const x = Math.random() * w, y = Math.random() * h;
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + 12, y - 12); g.stroke();
+        for (let k = 1; k < 5; k++) { g.beginPath(); g.moveTo(x + k * 2.5, y - k * 2.5); g.lineTo(x + k * 2.5 - 4, y - k * 2.5 - 2); g.moveTo(x + k * 2.5, y - k * 2.5); g.lineTo(x + k * 2.5 + 2, y - k * 2.5 + 4); g.stroke(); }
       }
     } else if (kind === 'graveyard') {
       // tufty dark grass with fallen autumn leaves
@@ -1753,7 +1796,7 @@ function wearAccessories({ part, S, C, Cap, B, pair, vc, t, r }) {
 // bubbles rising, or stars twinkling, inside a box
 function ambientParticles(kind, box3) {
   if (PARTICLE_KINDS[kind]) return makeHolidayParticles(kind, box3);
-  const n = kind === 'bubbles' ? 70 : kind === 'sprinkles' ? 90 : kind === 'fog' ? 45 : 110;
+  const n = kind === 'bubbles' ? 70 : kind === 'sprinkles' ? 90 : kind === 'fog' ? 45 : kind === 'embers' ? 60 : 110;
   const pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
     pos[i * 3] = rand(box3.min.x, box3.max.x);
@@ -1762,6 +1805,11 @@ function ambientParticles(kind, box3) {
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  if (kind === 'embers') {
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ map: glowTex, size: 0.07, color: '#ff8a3d', transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
+    pts.userData = { kind, box3, speed: Array.from({ length: n }, () => rand(0.15, 0.45)) };
+    return pts;
+  }
   if (kind === 'fog') {
     const pts = new THREE.Points(geo, new THREE.PointsMaterial({ map: glowTex, size: 1.1, color: '#b8c8dc', transparent: true, opacity: 0.09, depthWrite: false }));
     pts.userData = { kind, box3, speed: Array.from({ length: n }, () => rand(0.05, 0.18)) };
@@ -1787,6 +1835,18 @@ function animateParticles(pts, dt, t) {
   if (!pts) return;
   const { kind, box3, speed } = pts.userData;
   if (PARTICLE_KINDS[kind]) { moveHolidayParticles(pts, dt, t); return; }
+  if (kind === 'embers') {
+    const a = pts.geometry.attributes.position;
+    for (let i = 0; i < a.count; i++) {
+      let y = a.getY(i) + speed[i] * dt;
+      if (y > box3.max.y) y = box3.min.y;
+      a.setY(i, y);
+      a.setX(i, a.getX(i) + Math.sin(t * 2.3 + i * 1.7) * 0.003);
+    }
+    a.needsUpdate = true;
+    pts.material.opacity = 0.7 + 0.25 * Math.sin(t * 7);
+    return;
+  }
   if (kind === 'fog') {
     const a = pts.geometry.attributes.position;
     for (let i = 0; i < a.count; i++) {
@@ -1827,6 +1887,91 @@ function kelp(height, color, seed) {
   return m;
 }
 // a rounded gravestone with RIP and a little cross on top
+// a palm tree: a curving, ringed trunk and a crown of drooping fronds
+function palmTree(height) {
+  const g = new THREE.Group();
+  const bark = new THREE.MeshStandardMaterial({ color: '#8a6a44', roughness: 0.9 });
+  const pts = [];
+  for (let i = 0; i <= 6; i++) pts.push(new THREE.Vector3(Math.sin(i / 6 * 1.2) * 0.18, (i / 6) * height, 0));
+  const curve = new THREE.CatmullRomCurve3(pts);
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.06, 8), bark));
+  for (let i = 1; i < 8; i++) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.012, 4, 12), new THREE.MeshStandardMaterial({ color: '#6a5034' }));
+    ring.position.copy(curve.getPoint(i / 8)); ring.rotation.x = Math.PI / 2;
+    g.add(ring);
+  }
+  const top = curve.getPoint(1);
+  const leaf = new THREE.MeshStandardMaterial({ color: '#3fae4a', roughness: 0.7, side: THREE.DoubleSide });
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2;
+    const frond = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 6), leaf);
+    frond.scale.set(1, 0.08, 0.3);
+    frond.position.set(top.x + Math.cos(a) * 0.26, top.y - 0.06, Math.sin(a) * 0.26);
+    frond.rotation.set(0, -a, -0.45);
+    g.add(frond);
+  }
+  for (let i = 0; i < 3; i++) {
+    const nut = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), new THREE.MeshStandardMaterial({ color: '#5a3a1e' }));
+    nut.position.set(top.x + Math.cos(i * 2.1) * 0.06, top.y - 0.08, Math.sin(i * 2.1) * 0.06);
+    g.add(nut);
+  }
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+// a smoking volcano with a glowing crater
+function volcanoDeco(k) {
+  const g = new THREE.Group();
+  const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * k, 0.9 * k, 1.1 * k, 24), new THREE.MeshStandardMaterial({ color: '#5a4a44', roughness: 1, flatShading: true }));
+  cone.position.y = 0.55 * k;
+  const lavaMat = new THREE.MeshStandardMaterial({ color: '#000', emissive: '#ff5a1f', emissiveIntensity: 2 });
+  const lava = new THREE.Mesh(new THREE.CylinderGeometry(0.21 * k, 0.21 * k, 0.03 * k, 20), lavaMat);
+  lava.position.y = 1.1 * k;
+  g.add(cone, lava);
+  for (const [a, len] of [[0.5, 0.45], [2.2, 0.3], [3.7, 0.4]]) {
+    const drip = new THREE.Mesh(new THREE.CapsuleGeometry(0.035 * k, len * k, 4, 8), lavaMat);
+    drip.position.set(Math.cos(a) * 0.38 * k, 0.88 * k - len * 0.4 * k, Math.sin(a) * 0.38 * k);
+    drip.rotation.set(Math.sin(a) * 0.55, 0, -Math.cos(a) * 0.55);
+    g.add(drip);
+  }
+  for (const [x, y, s] of [[0, 1.3, 0.16], [0.1, 1.5, 0.2], [-0.05, 1.75, 0.24]]) {
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(s * k, 12, 8), new THREE.MeshStandardMaterial({ color: '#c8c4c8', roughness: 1, transparent: true, opacity: 0.75 }));
+    puff.position.set(x * k, y * k, 0);
+    g.add(puff);
+  }
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  g.userData.flicker = lavaMat;
+  return g;
+}
+// a fern: a fan of leafy fronds
+function fern(k) {
+  const g = new THREE.Group();
+  const leaf = new THREE.MeshStandardMaterial({ color: '#4fbf5a', roughness: 0.75, side: THREE.DoubleSide });
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2;
+    const f = new THREE.Mesh(new THREE.SphereGeometry(0.3 * k, 10, 6), leaf);
+    f.scale.set(1, 0.1, 0.28);
+    f.position.set(Math.cos(a) * 0.24 * k, 0.12 * k, Math.sin(a) * 0.24 * k);
+    f.rotation.set(0, -a, 0.5);
+    g.add(f);
+  }
+  return g;
+}
+// a straw nest holding three speckled eggs
+function eggNest(k) {
+  const g = new THREE.Group();
+  const nest = new THREE.Mesh(new THREE.TorusGeometry(0.22 * k, 0.08 * k, 8, 24), new THREE.MeshStandardMaterial({ color: '#b08a4a', roughness: 1 }));
+  nest.rotation.x = Math.PI / 2;
+  nest.position.y = 0.06 * k;
+  g.add(nest);
+  [[0, 0.06, 0.14, '#f4ecd8'], [-0.1, -0.06, 0.12, '#dff0c8'], [0.11, -0.04, 0.12, '#f8e0c8']].forEach(([x, z, r, c]) => {
+    const egg = new THREE.Mesh(new THREE.SphereGeometry(r * k, 16, 12), new THREE.MeshStandardMaterial({ color: c, roughness: 0.5 }));
+    egg.scale.y = 1.3;
+    egg.position.set(x * k, r * 1.2 * k, z * k);
+    g.add(egg);
+  });
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
 function gravestone(k) {
   const g = new THREE.Group();
   const stone = new THREE.MeshStandardMaterial({ color: '#7a7488', roughness: 0.95 });
@@ -2014,6 +2159,21 @@ const EMBLEMS = {
     g.bezierCurveTo(204, 104, 196, 150, 128, 196);
     g.fill();
   },
+  footprint(g) {
+    // a three-toed dinosaur track
+    g.beginPath(); g.ellipse(128, 150, 32, 38, 0, 0, Math.PI * 2); g.fill();
+    for (const [a, len] of [[-0.55, 70], [0, 78], [0.55, 70]]) {
+      g.save(); g.translate(128, 140); g.rotate(a);
+      g.beginPath(); g.moveTo(-13, 0); g.quadraticCurveTo(-10, -len * 0.8, 0, -len); g.quadraticCurveTo(10, -len * 0.8, 13, 0); g.fill();
+      g.restore();
+    }
+  },
+  bone(g) {
+    g.save(); g.translate(128, 128); g.rotate(-0.6);
+    g.fillRect(-56, -12, 112, 24);
+    for (const s of [-1, 1]) for (const d of [-1, 1]) { g.beginPath(); g.arc(s * 62, d * 14, 18, 0, Math.PI * 2); g.fill(); }
+    g.restore();
+  },
   pumpkin(g, lo) {
     // a jack-o'-lantern: ribbed, with a stem and a carved grin
     for (const [dx, k] of [[-34, 0.75], [34, 0.75], [0, 1]]) { g.beginPath(); g.ellipse(128 + dx, 138, 46 * k, 58, 0, 0, Math.PI * 2); g.fill(); }
@@ -2089,6 +2249,12 @@ const COIN_THEMES = {
     big:  { color: '#7ee8c8', metal: 0, rough: 0.2 },
     star: { color: '#ffd23e', metal: 0.05, rough: 0.2, glow: '#ffd23e' },
     gem:  { color: '#c98bff', metal: 0.05, rough: 0.2, glow: '#c98bff', emblem: 'heart' },
+  },
+  dino: {
+    coin: { color: '#b8a07a', metal: 0.1, rough: 0.75, emblem: 'footprint' },                  // stone tokens
+    big:  { color: '#ffb02e', metal: 0.1, rough: 0.15 },                                       // amber
+    star: { color: '#9be36b', metal: 0.1, glow: '#9be36b' },                                   // a leaf
+    gem:  { color: '#ff5a1f', metal: 0.2, rough: 0.2, glow: '#ff7a2e', emblem: 'bone' },       // lava
   },
   spooky: {
     coin: { color: '#ff8a1f', metal: 0.35, rough: 0.4, emblem: 'pumpkin' },                    // pumpkin pennies
@@ -2641,6 +2807,22 @@ function applyPusherTheme() {
       parts.deco.add(k);
     });
     parts.deco.add(ambientParticles('bubbles', new THREE.Box3(new THREE.Vector3(-TW / 2 - 0.4, -0.5, -0.45), new THREE.Vector3(TW / 2 + 0.4, 2.6, 1.6))));
+  } else if (th.ambient === 'embers') {
+    // palm trees and ferns beside the table, a volcano behind it, embers drifting up
+    [[-1, 0.5, 1.7], [1, 1.3, 1.9]].forEach(([s, z, hgt]) => {
+      const palm = palmTree(hgt);
+      palm.position.set(s * (TW / 2 + 0.32), -0.7, z);
+      palm.rotation.y = s > 0 ? Math.PI : 0;
+      parts.deco.add(palm);
+    });
+    [[-1, 1.9, 0.9], [1, 0.4, 0.8], [-1, 2.8, 0.7]].forEach(([s, z, k]) => {
+      const f = fern(k);
+      f.position.set(s * (TW / 2 + 0.3), -0.05, z);
+      parts.deco.add(f);
+    });
+    const v = volcanoDeco(0.8);
+    v.position.set(1.1, WALL_TOP + 0.05, -0.5);
+    parts.deco.add(v, ambientParticles('embers', new THREE.Box3(new THREE.Vector3(-TW / 2 - 0.4, -0.3, -0.45), new THREE.Vector3(TW / 2 + 0.4, 2.6, 1.6))));
   } else if (th.ambient === 'fog') {
     // gravestones and jack-o'-lanterns beside the table, fog rolling across it
     [[-1, 0.5, 0.75], [1, 1.4, 0.85]].forEach(([s, z, k]) => {
@@ -3290,6 +3472,21 @@ const PRIZE_SETS = {
     { id: 'castle',     emoji: '🏰', name: 'Candy Castle', rarity: 'super',  r: 0.27, weight: 1.8,  chance: 0.8, look: 'castle',     color: '#ffb3d9' },
     { id: 'rainbow',    emoji: '🌈', name: 'Rainbow',      rarity: 'super',  r: 0.27, weight: 1.8,  chance: 0.8, look: 'rainbow',    color: '#ffffff' },
   ],
+  dino: [
+    { id: 'trex',      emoji: '🦖', name: 'T-Rex',         rarity: 'common', r: 0.3,  weight: 1,    chance: 12,  look: 'trex',      color: '#6cc56b' },
+    { id: 'trike',     emoji: '🦕', name: 'Triceratops',   rarity: 'common', r: 0.3,  weight: 1.05, chance: 12,  look: 'trike',     color: '#6fa8e8' },
+    { id: 'stego',     emoji: '🦕', name: 'Stegosaurus',   rarity: 'common', r: 0.3,  weight: 1.05, chance: 12,  look: 'stego',     color: '#f2a65a' },
+    { id: 'bronto',    emoji: '🦕', name: 'Brontosaurus',  rarity: 'common', r: 0.3,  weight: 1.05, chance: 12,  look: 'bronto',    color: '#b48cff' },
+    { id: 'ptero',     emoji: '🪽', name: 'Pterodactyl',   rarity: 'common', r: 0.28, weight: 0.9,  chance: 10,  look: 'ptero',     color: '#5cc9b0' },
+    { id: 'dinohatch', emoji: '🥚', name: 'Hatchling',     rarity: 'common', r: 0.27, weight: 0.95, chance: 10,  look: 'dinohatch', color: '#8fdc6a' },
+    { id: 'anky',      emoji: '🐢', name: 'Ankylosaurus',  rarity: 'common', r: 0.3,  weight: 1.05, chance: 8,   look: 'anky',      color: '#c49a64' },
+    { id: 'parasaur',  emoji: '🦖', name: 'Parasaurolophus', rarity: 'common', r: 0.3, weight: 1,   chance: 8,   look: 'parasaur',  color: '#f2d16b' },
+    { id: 'spino',     emoji: '🦖', name: 'Spinosaurus',   rarity: 'rare',   r: 0.32, weight: 1.35, chance: 3,   look: 'spino',     color: '#e8603c' },
+    { id: 'mammoth',   emoji: '🦣', name: 'Woolly Mammoth', rarity: 'rare',  r: 0.32, weight: 1.35, chance: 3,   look: 'mammoth',   color: '#9a6a44' },
+    { id: 'volcano',   emoji: '🌋', name: 'Little Volcano', rarity: 'rare',  r: 0.3,  weight: 1.3,  chance: 3,   look: 'volcano',   color: '#6a5a5a' },
+    { id: 'amber',     emoji: '🍯', name: 'Amber Stone',   rarity: 'super',  r: 0.26, weight: 1.8,  chance: 0.8, look: 'amber',     color: '#ffb02e' },
+    { id: 'fossil',    emoji: '🐚', name: 'Golden Fossil', rarity: 'super',  r: 0.26, weight: 1.8,  chance: 0.8, look: 'fossil',    color: '#ffc93a' },
+  ],
   spooky: [
     { id: 'ghost',       emoji: '👻', name: 'Ghost',         rarity: 'common', r: 0.28, weight: 0.9,  chance: 12,  look: 'ghost',       color: '#f6f3fb' },
     { id: 'pumpkin',     emoji: '🎃', name: 'Jack',          rarity: 'common', r: 0.29, weight: 1,    chance: 12,  look: 'pumpkin',     color: '#ff8a1f' },
@@ -3484,6 +3681,7 @@ const PRIZE_FABRIC = {
   bunny: 'minky', cat: 'knit', dog: 'cord', frog: 'velvet', duck: 'minky', fox: 'knit', unicorn: 'velvet', dragon: 'cord', octopus: 'minky',
   clownfish: 'velvet', puffer: 'minky', crab: 'knit', turtle: 'cord', whale: 'minky', dolphin: 'velvet', jelly: 'velvet', shark: 'knit', squid: 'minky', lobster: 'cord',
   alien: 'velvet', rocket: 'knit', planet: 'cord', moon: 'minky', starplush: 'velvet', sun: 'knit',
+  trex: 'cord', trike: 'knit', stego: 'minky', bronto: 'velvet', ptero: 'velvet', dinohatch: 'minky', anky: 'cord', parasaur: 'knit', spino: 'velvet', mammoth: 'fur', volcano: 'knit',
   ghost: 'minky', pumpkin: 'cord', bat: 'velvet', blackcat: 'velvet', mummy: 'knit', skull: 'minky', vampire: 'velvet', frank: 'cord', witch: 'knit',
   lollipop: 'velvet', cupcake: 'knit', donut: 'minky', icecream: 'knit', candy: 'velvet', cookie: 'cord', chocbar: 'velvet', strawberry: 'minky', cake: 'knit', rainbow: 'velvet',
 };
@@ -3579,6 +3777,40 @@ function starShape(outer, inner) {
     if (i) s.lineTo(Math.cos(a) * k, Math.sin(a) * k); else s.moveTo(Math.cos(a) * k, Math.sin(a) * k);
   }
   return s;
+}
+// a dinosaur that stands up on its hind legs, like a T-rex, facing the player
+function uprightDino({ part, S, C, Cap, pair, vc, t, eyes, blushAt, smileAt }, { snout = 1, teeth = false, bill = false } = {}) {
+  const skin = vc('fab', t.color), belly = vc('fab', '#fff1c9');
+  part(S(0.48, 28, 18), skin, [0, -0.3, -0.05], [0, 0, 0], [1, 1.05, 0.95]);
+  part(S(0.4, 24, 16), belly, [0, -0.33, 0.15], [0, 0, 0], [0.85, 0.95, 0.65]);
+  part(S(0.42, 28, 18), skin, [0, 0.33, 0.08], [0, 0, 0], [1.08, 0.92, 1]);
+  part(S(0.27, 20, 14), bill ? vc('fab', '#ffd38a') : skin, [0, 0.22, 0.38 + 0.08 * snout], [0, 0, 0], [1.1, bill ? 0.55 : 0.75, 0.8 * snout]);
+  const front = 0.38 + 0.3 * snout;
+  pair((s) => part(S(0.03, 8, 6), vc('gloss', '#2a1a14'), [s * 0.07, 0.3, front - 0.02]));
+  eyes(0.44, 0.47, 0.17);
+  smileAt(0, 0.14, front - 0.04, 0.05);
+  if (teeth) pair((s) => part(C(0.025, 0.06), vc('gloss', '#ffffff'), [s * 0.06, 0.1, front - 0.05], [Math.PI, 0, 0]));
+  blushAt(0.3, 0.3, 0.42);
+  pair((s) => {
+    part(Cap(0.045, 0.12), skin, [s * 0.36, -0.15, 0.3], [-1.0, 0, s * 0.4]);
+    part(S(0.19), skin, [s * 0.25, -0.76, 0.05], [0, 0, 0], [1, 0.8, 1.25]);
+  });
+  part(C(0.28, 0.75), skin, [0, -0.48, -0.62], [-1.9, 0, 0]);
+  for (let i = 0; i < 4; i++) part(C(0.06, 0.14), vc('fab', '#ffd23e'), [0, 0.7 - i * 0.26, -0.18 - i * 0.14], [-0.5 - i * 0.3, 0, 0]);
+}
+// a four-legged dinosaur seen side-on, facing +x, with its face on both flanks of its head
+function quadDino({ part, S, C, vc, t, sideEye, sideBlush, sideMouth }, { headX = 0.8, head = 0.28, neckY = 0, flat = false } = {}) {
+  const skin = vc('fab', t.color), belly = vc('fab', '#fff1c9');
+  const bh = flat ? 0.7 : 0.85;
+  part(S(0.55, 32, 20), skin, [0, 0, 0], [0, 0, 0], [1.35, bh, 0.95]);
+  part(S(0.53, 28, 18), belly, [0.05, -0.1, 0], [0, 0, 0], [1.2, bh * 0.75, 0.9]);
+  part(S(head, 20, 14), skin, [headX, neckY, 0], [0, 0, 0], [1.25, 0.95, 0.95]);
+  part(C(0.2, 0.6), skin, [-0.88, -0.02, 0], [0, 0, Math.PI / 2 - 0.1]);
+  for (const [x, z] of [[0.38, 0.3], [0.38, -0.3], [-0.38, 0.3], [-0.38, -0.3]]) part(S(0.17, 12, 8), skin, [x, -0.5 * bh / 0.85, z], [0, 0, 0], [1, 1.3, 1]);
+  const hz = head * 0.9;
+  sideEye(headX + head * 0.35, neckY + head * 0.3, hz, 0.06);
+  sideBlush(headX + head * 0.2, neckY - head * 0.15, hz * 0.95);
+  sideMouth(headX + head * 0.75, neckY - head * 0.35, hz * 0.7, 0.05);
 }
 const CUSTOM_LOOKS = {
   // ---- St. Patrick's Day ----
@@ -4806,6 +5038,126 @@ const CUSTOM_LOOKS = {
     for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2; part(C(0.07, 0.3), gold, [Math.cos(a) * 0.42, -0.25, Math.sin(a) * 0.42], [Math.sin(a) * 0.4, 0, -Math.cos(a) * 0.4]); }
     part(new THREE.CylinderGeometry(t.r * 0.7, t.r * 0.7, t.r * 0.08, 32), vc('fab', '#4a1f6e'), [0, -0.74, 0]);
   },
+  // dinosaurs that stand up like a T-rex face the player; the four-legged ones are seen
+  // side-on, facing +x, like the fish
+  trex(kit) { uprightDino(kit, { snout: 1, teeth: true }); },
+  parasaur(kit) {
+    uprightDino(kit, { snout: 0.85, bill: true });
+    const { part, Cap, vc } = kit;
+    part(Cap(0.07, 0.55), vc('fab', '#ff8a3d'), [0, 0.82, -0.28], [-1.0, 0, 0]);
+  },
+  spino(kit) {
+    uprightDino(kit, { snout: 1.35, teeth: true });
+    const { part, S, B, vc } = kit;
+    // the sail along its back, striped
+    part(S(0.5, 24, 16), vc('fab', '#ffcc4d'), [0, 0.0, -0.42], [0.25, 0, 0], [0.08, 1.05, 0.95]);
+    for (let i = 0; i < 5; i++) part(B(0.09, 0.02, 0.5), vc('fab', '#e8603c'), [0, -0.3 + i * 0.16, -0.42 - (i % 2) * 0.02], [0.25, 0, 0]);
+  },
+  trike(kit) {
+    const { part, S, C, vc, t } = kit;
+    quadDino(kit, { headX: 0.78, head: 0.32, neckY: 0.05 });
+    // a bony frill behind the head, and three horns
+    part(new THREE.CylinderGeometry(t.r * 0.44, t.r * 0.44, t.r * 0.06, 28), vc('fab', '#a6ccf2'), [0.58, 0.22, 0], [0, 0, Math.PI / 2 - 0.35]);
+    for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2; part(S(0.06, 8, 6), vc('fab', '#ffd23e'), [0.58 + Math.sin(a) * 0.06, 0.22 + Math.cos(a) * 0.43, Math.sin(a) * 0.43]); }
+    for (const s of [-1, 1]) part(C(0.05, 0.32), vc('fab', '#fff4dc'), [0.94, 0.32, s * 0.13], [0, 0, -1.0]);
+    part(C(0.04, 0.16), vc('fab', '#fff4dc'), [1.08, 0.1, 0], [0, 0, -1.2]);
+  },
+  stego(kit) {
+    const { part, C, vc } = kit;
+    quadDino(kit, { headX: 0.86, head: 0.22, neckY: -0.08 });
+    [[-0.5, 0.42, 0.16], [-0.22, 0.56, 0.2], [0.08, 0.58, 0.2], [0.36, 0.48, 0.16]].forEach(([x, y, k], i) =>
+      part(C(k, k * 2.1), vc('fab', i % 2 ? '#ffd23e' : '#ff8a3d'), [x, y, 0], [0, 0, -x * 0.4], [1, 1, 0.28]));
+    for (const s of [-1, 1]) for (const dx of [0, 0.12]) part(C(0.04, 0.2), vc('fab', '#fff4dc'), [-1.1 + dx, 0.08, s * 0.08], [s * 0.9, 0, 0.5]);
+  },
+  anky(kit) {
+    const { part, S, C, vc } = kit;
+    quadDino(kit, { headX: 0.82, head: 0.24, neckY: -0.12, flat: true });
+    for (let i = 0; i < 4; i++) for (let j = -1; j <= 1; j++) part(S(0.08, 10, 8), vc('fab', '#8a6440'), [-0.45 + i * 0.27, 0.3 - Math.abs(j) * 0.05, j * 0.22], [0, 0, 0], [1, 0.6, 1]);
+    for (const s of [-1, 1]) for (let i = 0; i < 4; i++) part(C(0.05, 0.16), vc('fab', '#fff4dc'), [-0.45 + i * 0.27, -0.02, s * 0.6], [s * Math.PI / 2, 0, 0]);
+    part(S(0.17, 14, 10), vc('fab', '#8a6440'), [-1.12, -0.1, 0]);
+  },
+  bronto({ part, S, C, Cap, pair, vc, t, sideEye, sideBlush, sideMouth }) {
+    const skin = vc('fab', t.color), belly = vc('fab', '#e2d4ff');
+    part(S(0.5, 28, 18), skin, [-0.15, -0.25, 0], [0, 0, 0], [1.25, 0.85, 0.85]);
+    part(S(0.48, 28, 18), belly, [-0.12, -0.33, 0], [0, 0, 0], [1.15, 0.65, 0.8]);
+    part(Cap(0.13, 0.55), skin, [0.32, 0.22, 0], [0, 0, -0.55]);
+    part(S(0.2, 18, 12), skin, [0.6, 0.6, 0], [0, 0, 0], [1.35, 0.9, 0.9]);
+    part(C(0.16, 0.62), skin, [-0.9, -0.3, 0], [0, 0, Math.PI / 2 - 0.2]);
+    for (const [x, z] of [[0.15, 0.22], [0.15, -0.22], [-0.42, 0.22], [-0.42, -0.22]]) part(S(0.15, 12, 8), skin, [x, -0.68, z], [0, 0, 0], [1, 1.4, 1]);
+    for (const [x, y, k] of [[-0.2, 0.08, 0.08], [0.05, 0.05, 0.06], [-0.4, -0.05, 0.07]]) pair((s) => part(S(k, 10, 8), vc('fab', '#d6c2ff'), [x, y, s * 0.36], [0, 0, 0], [1, 1, 0.4]));
+    sideEye(0.66, 0.66, 0.15, 0.06); sideBlush(0.62, 0.56, 0.16); sideMouth(0.78, 0.54, 0.12, 0.05);
+  },
+  ptero({ part, S, C, pair, vc, t, eyes, smile, blushAt }) {
+    const skin = vc('fab', t.color), wing = vc('fab', '#a8ecd9');
+    part(S(0.36, 24, 16), skin, [0, -0.2, 0]);
+    part(S(0.3, 24, 16), skin, [0, 0.32, 0.05]);
+    part(C(0.09, 0.5), vc('fab', '#ffd23e'), [0, 0.24, 0.52], [Math.PI / 2, 0, 0], [1, 1, 0.8]);
+    part(C(0.08, 0.42), skin, [0, 0.52, -0.26], [-1.9, 0, 0]);
+    pair((s) => {
+      part(S(0.5, 20, 12), wing, [s * 0.62, 0.05, -0.05], [0, 0, s * 0.3], [1.3, 0.16, 0.65]);
+      part(S(0.08), skin, [s * 0.14, -0.55, 0.12], [0, 0, 0], [1, 0.6, 1.3]);
+    });
+    eyes(0.42, 0.29, 0.13);
+    smile(0.2, 0.33, 0.03);
+    blushAt(0.22, 0.28, 0.24);
+  },
+  dinohatch({ part, S, C, pair, vc, t, eyes, smile, blushAt }) {
+    const shell = vc('fab', '#fbf3e0'), spot = vc('fab', '#9be36b');
+    part(new THREE.SphereGeometry(t.r * 0.62, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), shell, [0, -0.2, 0], [0, 0, 0], [1, 1.25, 1]);
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; part(C(0.09, 0.16, 4), shell, [Math.cos(a) * 0.58, -0.15, Math.sin(a) * 0.58], [0, -a, 0]); }
+    for (const [x, y, z] of [[0.3, -0.5, 0.4], [-0.35, -0.6, 0.3], [0.05, -0.75, 0.45], [-0.2, -0.35, 0.52]]) part(S(0.08, 10, 8), spot, [x, y, z], [0, 0, 0], [1, 1, 0.4]);
+    part(S(0.4, 28, 18), vc('fab', t.color), [0, 0.22, 0.02]);
+    part(new THREE.SphereGeometry(t.r * 0.3, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2.4), shell, [0.08, 0.5, -0.02], [0, 0, -0.35]);
+    pair((s) => part(S(0.08, 10, 8), vc('fab', t.color), [s * 0.4, -0.08, 0.2], [0, 0, 0], [1, 0.8, 1]));
+    eyes(0.25, 0.37, 0.14);
+    smile(0.1, 0.4, 0.03);
+    blushAt(0.24, 0.14, 0.32);
+  },
+  mammoth({ part, S, pair, vc, t, eyes, blushAt }) {
+    const fur = vc('fab', t.color);
+    part(S(0.62, 32, 20), fur, [0, -0.15, -0.15], [0, 0, 0], [1, 0.95, 1]);
+    part(S(0.42, 28, 18), fur, [0, 0.25, 0.35]);
+    for (let i = 0; i < 4; i++) part(S(0.12 - i * 0.012, 12, 8), fur, [0, 0.05 - i * 0.16, 0.7 + (i === 3 ? 0.05 : 0)]);
+    pair((s) => {
+      part(new THREE.TorusGeometry(t.r * 0.22, t.r * 0.045, 8, 20, Math.PI * 0.75), vc('fab', '#fff4dc'), [s * 0.2, -0.02, 0.62], [0, s > 0 ? 0.3 : Math.PI - 0.3, Math.PI * 1.15]);
+      part(S(0.26, 16, 10), fur, [s * 0.45, 0.25, 0.2], [0, s * 0.5, 0], [0.4, 1, 1]);
+      for (const z of [0.15, -0.4]) part(S(0.17, 12, 8), fur, [s * 0.3, -0.75, z], [0, 0, 0], [1, 1.2, 1]);
+    });
+    part(S(0.18, 14, 10), fur, [0, 0.62, 0.25]);
+    eyes(0.35, 0.68, 0.17);
+    blushAt(0.3, 0.22, 0.62);
+  },
+  volcano({ part, S, vc, t, eyes, smile, blushAt }) {
+    part(new THREE.CylinderGeometry(t.r * 0.32, t.r * 0.82, t.r * 1.0, 32), vc('fab', t.color), [0, -0.45, 0]);
+    part(new THREE.CylinderGeometry(t.r * 0.31, t.r * 0.31, t.r * 0.04, 24), vc('gloss', '#ff5a1f'), [0, 0.06, 0]);
+    for (const [a, len] of [[0.4, 0.4], [1.9, 0.3], [2.8, 0.5], [4.3, 0.35], [5.4, 0.45]]) {
+      const x = Math.cos(a), z = Math.sin(a);
+      part(S(0.08, 10, 8), vc('gloss', '#ff7a1a'), [x * (0.36 + len * 0.25), 0.02 - len * 0.5, z * (0.36 + len * 0.25)], [0, 0, 0], [1, len * 4, 1]);
+    }
+    for (const [x, y, k] of [[0, 0.3, 0.16], [0.12, 0.48, 0.13], [-0.1, 0.62, 0.11]]) part(S(k, 12, 8), vc('fab', '#d8d4dc'), [x, y, 0]);
+    eyes(-0.35, 0.6, 0.18);
+    smile(-0.5, 0.65, 0.04);
+    blushAt(0.36, -0.45, 0.58);
+  },
+  amber({ part, S, B, vc, t }) {
+    part(new THREE.IcosahedronGeometry(t.r * 0.62, 1), vc('gloss', t.color), [0, 0.05, 0], [0, 0.3, 0], [1, 1.2, 0.8]);
+    // a little bug trapped inside, just under the surface
+    const dark = vc('gloss', '#4a2408');
+    part(S(0.08, 10, 8), dark, [0, 0.1, 0.42], [0, 0, 0], [1.6, 1, 0.5]);
+    for (const s of [-1, 1]) { part(S(0.09, 10, 8), vc('gloss', '#c97a1a'), [s * 0.1, 0.17, 0.41], [0, 0, s * 0.5], [1.4, 0.5, 0.3]); for (const dy of [-0.05, 0.05]) part(B(0.12, 0.01, 0.01), dark, [s * 0.1, 0.07 + dy, 0.41], [0, 0, s * 0.4]); }
+    part(new THREE.TorusGeometry(t.r * 0.42, t.r * 0.05, 8, 32), vc('metal', '#ffc93a'), [0, -0.42, 0], [Math.PI / 2, 0, 0]);
+    part(new THREE.CylinderGeometry(t.r * 0.42, t.r * 0.5, t.r * 0.12, 32), vc('metal', '#ffc93a'), [0, -0.5, 0]);
+  },
+  fossil({ part, S, B, vc, t }) {
+    const gold = vc('metal', '#ffc93a');
+    // an ammonite: a shell spiralling out from the middle, with ribs
+    for (let i = 0; i < 46; i++) {
+      const a = i * 0.32, rr = 0.06 + a * 0.042, k = 0.05 + a * 0.016;
+      part(S(k, 12, 8), gold, [Math.cos(a) * rr, 0.08 + Math.sin(a) * rr, 0], [0, 0, 0], [1, 1, 0.75]);
+      if (i % 3 === 0 && i > 6) part(B(0.02, k * 2.1, k * 1.6), vc('metal', '#e8a91a'), [Math.cos(a) * rr, 0.08 + Math.sin(a) * rr, 0], [0, 0, a]);
+    }
+    part(B(0.9, 0.12, 0.5), vc('fab', '#5a3a24'), [0, -0.78, 0]);
+  },
   candelabra({ part, S, vc, t }) {
     const gold = vc('metal', '#ffc93a');
     const cyl = (a, b, h, seg = 16) => new THREE.CylinderGeometry(a * t.r, b * t.r, h * t.r, seg);
@@ -5988,6 +6340,27 @@ function applyClawTheme() {
     shell.scale.set(1, 0.5, 1.2);
     shell.position.set(-0.4, 0, -1.0);
     parts.deco.add(star, shell, ambientParticles('bubbles', new THREE.Box3(new THREE.Vector3(CAB.x0 + 0.1, 0, CAB.z0 + 0.1), new THREE.Vector3(CAB.x1 - 0.1, CAB.top - 0.2, CAB.z1 - 0.2))));
+  } else if (th.ambient === 'embers') {
+    // a volcano and palm trees at the back, ferns, a nest of eggs, embers floating up
+    // flattened against the back wall, so it never swallows the toys in the pit
+    const v = volcanoDeco(0.8);
+    v.position.set(0.95, 0, CAB.z0 - 0.02);
+    v.scale.z = 0.4;
+    parts.deco.add(v);
+    [[-1.35, -0.95, 2.6], [-0.7, -1.02, 2.0]].forEach(([x, z, hgt], i) => {
+      const palm = palmTree(hgt);
+      palm.position.set(x, 0, z);
+      palm.rotation.y = i * 2;
+      parts.deco.add(palm);
+    });
+    [[1.4, 0.95, 0.9], [-0.1, -1.02, 0.8], [1.42, 0.2, 0.7]].forEach(([x, z, k]) => {
+      const f = fern(k);
+      f.position.set(x, 0, z);
+      parts.deco.add(f);
+    });
+    const nest = eggNest(1);
+    nest.position.set(0.35, 0, -0.98);
+    parts.deco.add(nest, ambientParticles('embers', new THREE.Box3(new THREE.Vector3(CAB.x0 + 0.1, 0, CAB.z0 + 0.1), new THREE.Vector3(CAB.x1 - 0.1, CAB.top - 0.2, CAB.z1 - 0.2))));
   } else if (th.ambient === 'fog') {
     // gravestones and a dead tree at the back, jack-o'-lanterns, bats on the wall, low fog
     const tree = deadTree(2.2);
